@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors from ThinkMic DESIGN.md */
+  --color-background: #f9f9ff;
+  --color-surface: #ffffff;
+  --color-surface-border: #E2E6F4;
+  --color-sidebar: #1E2255;
+  --color-sidebar-active: #3A3F8F;
+  --color-sidebar-text: #C5CAE9;
+  --color-primary: #3A3F8F;
+  --color-cyan: #00C2CB;
+  --color-cyan-soft: #E6FBFC;
+
+  /* Typography */
+  --font-sans: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* Custom Spacing (This allows w-sidebar and ml-sidebar to work) */
+  --spacing-sidebar: 280px;
+  --spacing-content: 1280px;
+} /* <-- This is the brace that was missing! */
+
+/* Optional: Reset base background color for the whole app */
+body {
+  background-color: var(--color-background);
+  color: #181c22;
+}

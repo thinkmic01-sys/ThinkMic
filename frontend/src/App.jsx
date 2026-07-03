@@ -7,15 +7,19 @@ import { store } from './store/store';
 // Pages & Components
 import Layout from './components/Layout';
 import Auth from './pages/Auth';
-import Dashboard from './pages/Dashboard';
-import SpeechWorkspace from './pages/SpeechWorkspace';
+import Dashboard from './pages/dahboard/Dashboard.jsx';
+import SpeechWorkspace from './pages/projects/SpeechWorkspace.jsx';
 import ReportExport from './pages/ReportExport';
 import Settings from './pages/Settings';
 import Support from "./pages/Support.jsx";
 import Achievements from "./pages/Achievements.jsx";
 import Courses from "./pages/Courses.jsx";
-import Management from "./pages/UserManagement.jsx";
-import Collaboration from "./pages/Collaboration.jsx"; // <-- New Settings Page
+import UserManagement from "./pages/UserManagement.jsx";
+import Collaboration from "./pages/Collaboration.jsx";
+import ResearchResults from "./pages/projects/ResearchResults.jsx";
+import SchemaBuilder from "./pages/SchemaBuilder.jsx";
+import SchemaLibrary from "./pages/SchemaLibrary.jsx";
+import AdminDashboard from "./pages/AdminDashboard.jsx";
 
 const Placeholder = ({ title }) => (
     <div className="p-8 bg-white rounded-xl shadow-md h-64 flex items-center justify-center border border-gray-100">
@@ -39,17 +43,31 @@ function App() {
                                 {/* Live Modules we have built */}
                                 <Route path="dashboard" element={<Dashboard />} />
                                 <Route path="research" element={<SpeechWorkspace />} />
+                                {/* <Route path="research/results" element={<ResearchResults />} /> */}
                                 <Route path="reports" element={<ReportExport />} />
                                 <Route path="support" element={<Support />} />
-
-                                {/* The new Settings Route (using * catches /profile, /security, etc) */}
                                 <Route path="settings/*" element={<Settings />} />
-
-                                {/* Placeholders for the remaining modules */}
                                 <Route path="courses" element={<Courses />} />
                                 <Route path="forms" element={<Collaboration />} />
-                                <Route path="admin/users" element={<Management/>} />
                                 <Route path="achievements" element={<Achievements />} />
+
+                                {/* ADMIN ZONE (Nested Routes) */}
+                                <Route path="admin">
+                                    {/* By default, navigating to /app/admin opens the Analytics Dashboard */}
+                                    <Route index element={<Navigate to="dashboard" replace />} />
+
+                                    {/* /app/admin/dashboard */}
+                                    <Route path="dashboard" element={<AdminDashboard />} />
+
+                                    {/* /app/admin/users */}
+                                    <Route path="users" element={<UserManagement />} />
+
+                                    {/* /app/admin/schemas */}
+                                    <Route path="schemas" element={<SchemaLibrary />} />
+
+                                    {/* /app/admin/schemas/new */}
+                                    <Route path="schemas/new" element={<SchemaBuilder />} />
+                                </Route>
 
                             </Routes>
                         </Layout>

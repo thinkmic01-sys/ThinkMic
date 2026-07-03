@@ -1,5 +1,6 @@
 // frontend/src/pages/Management.jsx
 import React, { useState } from 'react';
+import {Link} from "react-router-dom";
 
 // Mock User Database
 const initialUsers = [
@@ -10,7 +11,7 @@ const initialUsers = [
     { id: 5, name: 'Michael Chang', initials: 'MC', email: 'm.chang@thinkmic.ai', role: 'user', status: 'active', lastActive: 'Yesterday' },
 ];
 
-export default function Management() {
+export default function UserManagement() {
     // Application State
     const [users, setUsers] = useState(initialUsers);
     const [searchQuery, setSearchQuery] = useState('');
@@ -62,6 +63,15 @@ export default function Management() {
 
     return (
         <div className="w-full max-w-7xl mx-auto p-4 md:p-8 flex flex-col h-full">
+            {/* Example sub-nav inside UserManagement.jsx */}
+            <div className="flex gap-6 border-b border-gray-200 mb-6">
+                <Link to="/app/admin/users" className="border-b-2 border-primary text-primary font-bold pb-2">
+                    Users
+                </Link>
+                <Link to="/app/admin/schemas" className="text-gray-500 font-bold pb-2 hover:text-primary">
+                    Form Schemas
+                </Link>
+            </div>
 
             {/* Page Header & Controls */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">

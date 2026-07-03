@@ -34,6 +34,7 @@ const FooterLink = ({ to, icon, label }) => {
     const location = useLocation();
     const isActive = location.pathname.startsWith(to);
 
+
     return (
         <Link
             to={to}
@@ -55,6 +56,9 @@ const FooterLink = ({ to, icon, label }) => {
 };
 
 export default function Sidebar({ isOpen, setIsOpen }) {
+
+    const location = useLocation();
+    const isManagementActive = location.pathname.includes('/app/admin');
     return (
         <aside className={`w-[280px] h-screen bg-gradient-to-b from-primary to-sidebar flex flex-col fixed left-0 top-0 text-white z-50 border-r border-[#2A2E6B] transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
 
@@ -83,7 +87,31 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 <NavLink to="/app/reports" icon="description" label="Reports" />
                 <NavLink to="/app/courses" icon="school" label="Courses" />
                 <NavLink to="/app/forms" icon="group" label="Collaboration" />
-                <NavLink to="/app/admin/users" icon="admin_panel_settings" label="Management" />
+                <Link
+                    to="/app/admin/users"
+                    className={`w-full flex items-center gap-4 px-6 py-3.5 text-left transition-all duration-200
+                  ${isManagementActive
+                            ? 'bg-white/10 border-l-[3px] border-cyan text-white shadow-sm'
+                            : 'text-sidebar-text border-l-[3px] border-transparent hover:bg-white/5 hover:text-white'
+                    }`}
+                >
+                    <span
+                        className="material-symbols-outlined text-[22px]"
+                        style={{
+            fontVariationSettings: isManagementActive ? "'FILL' 1" : "'FILL' 0",
+        }}
+                    >
+                        admin_panel_settings
+                    </span>
+
+                    <span
+                        className={`text-[15px] ${
+                            isManagementActive ? 'font-semibold' : 'font-medium'
+                        }`}
+                    >
+        Management
+    </span>
+                </Link>
                 <NavLink to="/app/achievements" icon="military_tech" label="Achievements" />
             </nav>
 

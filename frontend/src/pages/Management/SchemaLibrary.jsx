@@ -13,15 +13,6 @@ export default function SchemaLibrary() {
     return (
         <div className="p-8 w-full max-w-[1280px] mx-auto">
 
-            {/* Sub-Navigation Tabs */}
-            <div className="flex gap-8 border-b border-[#e0e2eb] mb-8">
-                <Link to="/app/admin/users" className="text-[#777682] font-bold pb-3 hover:text-[#222777] transition-colors">
-                    Users
-                </Link>
-                <Link to="/app/admin/schemas" className="border-b-[3px] border-[#222777] text-[#222777] font-bold pb-3">
-                    Form Schemas
-                </Link>
-            </div>
 
             {/* Page Header & Actions */}
             <div className="flex justify-between items-center mb-6">

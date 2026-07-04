@@ -1,8 +1,10 @@
 // frontend/src/pages/SpeechWorkspace.jsx
 import React, { useState, useEffect, useRef } from 'react';
+import {useNavigate} from "react-router-dom";
 
 export default function SpeechWorkspace() {
     // --- STATE MANAGEMENT ---
+    const navigate = useNavigate();
     const [recordingState, setRecordingState] = useState('idle');
     const [timeElapsed, setTimeElapsed] = useState(872); // 00:14:32
     const [transcripts, setTranscripts] = useState([
@@ -190,7 +192,6 @@ export default function SpeechWorkspace() {
 
                     <div className="h-6 w-px bg-[#e0e2eb] mx-1"></div>
 
-                    {/* FIXED: Sync button now hides when not recording to stop the endless spinning */}
                     <div className={`font-bold text-xs px-4 py-2 rounded-md flex items-center gap-2 border shadow-sm transition-opacity duration-200 ${recordingState === 'recording' ? 'opacity-100 bg-[#f9f9ff] text-[#222777] border-[#e0e2eb]' : 'opacity-0 pointer-events-none'}`}>
                         <span className={`material-symbols-outlined text-[16px] ${recordingState === 'recording' ? 'animate-spin' : ''}`}>sync</span> Recording...
                     </div>
@@ -214,7 +215,6 @@ export default function SpeechWorkspace() {
                         <div className="px-6 py-4 border-b border-[#e0e2eb] flex justify-between items-center bg-[#f9f9ff] rounded-t-lg">
                             <div className="flex items-center gap-3">
                                 <h2 className="text-2xl font-bold text-[#222777] tracking-tight">Speech to Text</h2>
-                                {/* FIXED: Pulse animation class is now conditional based on recording state */}
                                 <span className={`border text-[12px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1 ${recordingState === 'recording' ? 'border-[#61f4fd] text-[#006e73]' : 'border-[#c7c5d3] text-[#777682]'}`}>
                                     <span className={`w-1.5 h-1.5 rounded-full ${recordingState === 'recording' ? 'bg-[#00c2cb] live-pulse' : 'bg-[#777682]'}`}></span> Live
                                 </span>
@@ -406,8 +406,8 @@ export default function SpeechWorkspace() {
                 </div>
             </div>
 
-            {/* Sticky Bottom Action Bar */}
-            <div className="absolute bottom-0 right-0 w-full md:w-[calc(100%-280px)] bg-white border-t border-[#e0e2eb] px-6 py-4 flex justify-between items-center z-20 shadow-[0_-4px_16px_rgba(58,63,143,0.06)]">
+            {/* Sticky Bottom Action Bar - FIXED WIDTH */}
+            <div className="absolute bottom-0 left-0 w-full bg-white border-t border-[#e0e2eb] px-6 py-4 flex justify-between items-center z-20 shadow-[0_-4px_16px_rgba(58,63,143,0.06)]">
                 <div className="flex items-center gap-2 text-[#777682] text-[14px] font-bold">
                     <span className="material-symbols-outlined text-[18px]">check_circle</span> Saved 2 min ago
                 </div>
@@ -419,8 +419,8 @@ export default function SpeechWorkspace() {
                         Save Draft
                     </button>
                     <button
-                        onClick={() => alert("Queries Generated!")}
-                        className="bg-[#222777] text-white text-[14px] font-bold py-2 px-6 rounded-[6px] shadow-sm hover:bg-[#3a3f8f] transition-colors flex items-center gap-2"
+                        onClick={() => navigate('/app/research/results')}
+                        className="bg-[#222777] text-white text-[14px] font-bold py-2 px-6 rounded-[6px] shadow-sm hover:bg-[#3a3f8f] hover:cursor-pointer transition-colors flex items-center gap-2"
                     >
                         Approve & Generate Queries <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
                     </button>

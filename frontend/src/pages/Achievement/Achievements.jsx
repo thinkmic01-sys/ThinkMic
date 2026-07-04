@@ -1,6 +1,7 @@
 // frontend/src/pages/Achievements.jsx
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
+import {Link} from "react-router-dom";
 
 export default function Achievements() {
     // Pull the live coin balance from our Redux store
@@ -26,6 +27,7 @@ export default function Achievements() {
 
     return (
         <div className="w-full max-w-7xl mx-auto p-4 md:p-8 flex flex-col pb-20">
+
 
             {/* Header */}
             <div className="mb-8">

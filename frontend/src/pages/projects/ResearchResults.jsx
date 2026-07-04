@@ -1,5 +1,6 @@
 // frontend/src/pages/ResearchResults.jsx
 import React, { useState } from 'react';
+import { useNavigate } from "react-router-dom";
 
 // --- MOCK DATA ---
 const initialQueries = [
@@ -50,6 +51,7 @@ const initialResults = [
 
 export default function ResearchResults() {
     // --- STATE MANAGEMENT ---
+    const navigate = useNavigate();
     const [queries, setQueries] = useState(initialQueries);
     const [activeQueryId, setActiveQueryId] = useState(2);
     const [activeSourceId, setActiveSourceId] = useState(2);
@@ -267,6 +269,7 @@ export default function ResearchResults() {
                     )}
                 </div>
 
+
                 {/* Sticky Bottom Bar */}
                 <div className="absolute bottom-0 w-full bg-white border-t border-gray-200 p-4 flex justify-between items-center shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
                     <div className="flex items-center gap-4">
@@ -278,12 +281,14 @@ export default function ResearchResults() {
                             <p className="font-mono text-[11px] text-gray-500 font-bold">AI is ready to synthesize selected sources.</p>
                         </div>
                     </div>
+                    {/* FIXED ROUTING: Now points to the Reports module as per System Design Step 28 */}
                     <button
+                        onClick={() => navigate('/app/reports/preview')}
                         disabled={selectedResultIds.length === 0}
-                        className={`px-6 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-colors flex items-center gap-2
-              ${selectedResultIds.length > 0 ? 'bg-primary text-white hover:bg-opacity-90' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                        className={`px-6 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-colors flex items-center gap-2 hover:bg-[#3a3f8f] hover:cursor-pointer
+              ${selectedResultIds.length > 0 ? 'bg-primary text-white hover:bg-opacity-90 hover:bg-[#3a3f8f] hover:cursor-pointer' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
                     >
-                        Continue to Report <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                        Generate Report <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
                     </button>
                 </div>
             </section>

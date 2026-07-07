@@ -102,13 +102,13 @@ export default function Dashboard() {
 
                     <div className="lg:col-span-2 flex flex-col gap-6">
                         {/* SVG Line Chart */}
-                        <div className="bg-white shadow-card rounded-lg p-6 border border-[#e0e2eb] h-[390px] flex flex-col">
+                        <div className="bg-white shadow-card rounded-lg p-8 border border-[#e0e2eb] h-[390px] flex flex-col">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-[20px] font-bold text-[#181c22]">Recording Activity (7 Days)</h3>
                                 <button className="text-[#777682] hover:text-[#222777] transition-colors"><span className="material-symbols-outlined">more_vert</span></button>
                             </div>
                             <div className="flex-1 relative w-full border-l border-b border-[#e0e2eb] pb-6 pl-4 flex flex-col justify-between">
-                                <div className="absolute left-[-30px] top-0 bottom-6 flex flex-col justify-between text-[11px] font-mono font-bold text-[#777682]">
+                                <div className="absolute left-[-28px] top-0 bottom-6  flex flex-col justify-between items-end text-[11px] font-mono font-bold text-[#777682]">
                                     <span>450</span><span>300</span><span>150</span><span>0</span>
                                 </div>
                                 <div className="absolute left-4 right-0 bottom-[-24px] flex justify-between text-[12px] font-bold text-[#777682]">

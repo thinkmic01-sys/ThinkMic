@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// --- CUSTOM MAP ICONS (Using your exact Tailwind HTML) ---
+// --- CUSTOM MAP ICONS ---
 const mainSeminarIcon = L.divIcon({
     className: 'bg-transparent border-none',
     html: `
@@ -76,107 +76,116 @@ export default function NearbySeminars() {
     return (
         <div className="flex flex-col h-[calc(100vh-64px)] w-full bg-[#f9f9ff] font-sans">
 
-            {/* Top Toolbar matching screenshot exactly */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#e0e2eb] bg-white shrink-0 shadow-sm z-10">
-                <div className="flex items-center gap-4">
-                    {/* Optional: Add back button to match your other pages */}
-                    <button onClick={() => navigate('/app/courses/my-learning')} className="text-[#777682] hover:text-[#222777] transition-colors w-8 h-8 rounded-full hover:bg-[#f1f3fc] flex items-center justify-center">
-                        <span className="material-symbols-outlined">arrow_back</span>
+            <style>{`
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c7c5d3; border-radius: 10px; }
+            `}</style>
+
+            {/* Top Toolbar */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[#e0e2eb] bg-white shrink-0 shadow-sm z-20 gap-3 sm:gap-0">
+                <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                    <button onClick={() => navigate('/app/courses/my-learning')} className="text-[#777682] hover:text-[#222777] transition-colors w-8 h-8 rounded-full hover:bg-[#f1f3fc] flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-[20px] sm:text-[24px]">arrow_back</span>
                     </button>
-                    <h1 className="text-[28px] font-bold text-[#222777]">Nearby Seminars</h1>
+                    <h1 className="text-[20px] sm:text-[24px] md:text-[28px] font-bold text-[#222777] truncate">Nearby Seminars</h1>
                 </div>
-                <div className="flex gap-4">
-                    <div className="relative">
-                        <select className="appearance-none bg-white border border-[#c7c5d3] rounded text-[#181c22] px-4 py-2 pr-10 text-[14px] font-medium outline-none focus:border-[#222777] cursor-pointer">
+                <div className="flex gap-2 sm:gap-4 w-full sm:w-auto pl-11 sm:pl-0">
+                    <div className="relative flex-1 sm:flex-none">
+                        <select className="w-full appearance-none bg-[#f9f9ff] sm:bg-white border border-[#e0e2eb] sm:border-[#c7c5d3] rounded text-[#181c22] px-3 sm:px-4 py-2 pr-8 sm:pr-10 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#222777] cursor-pointer">
                             <option>All Topics</option>
+                            <option>Machine Learning</option>
+                            <option>Ethics</option>
                         </select>
-                        <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none">expand_more</span>
+                        <span className="material-symbols-outlined absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none text-[18px]">expand_more</span>
                     </div>
-                    <div className="relative">
-                        <select className="appearance-none bg-white border border-[#c7c5d3] rounded text-[#181c22] px-4 py-2 pr-10 text-[14px] font-medium outline-none focus:border-[#222777] cursor-pointer">
+                    <div className="relative flex-1 sm:flex-none">
+                        <select className="w-full appearance-none bg-[#f9f9ff] sm:bg-white border border-[#e0e2eb] sm:border-[#c7c5d3] rounded text-[#181c22] px-3 sm:px-4 py-2 pr-8 sm:pr-10 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#222777] cursor-pointer">
                             <option>Any Distance</option>
+                            <option>&lt; 5 km</option>
+                            <option>&lt; 10 km</option>
                         </select>
-                        <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none">expand_more</span>
+                        <span className="material-symbols-outlined absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none text-[18px]">expand_more</span>
                     </div>
                 </div>
             </div>
 
-            <div className="flex flex-1 overflow-hidden relative">
+            {/* Changed to flex-col on mobile, flex-row on desktop */}
+            <div className="flex flex-col md:flex-row flex-1 overflow-hidden relative">
 
-                {/* Left List Column */}
-                <div className="w-[420px] border-r border-[#e0e2eb] bg-white overflow-y-auto p-5 space-y-4 shrink-0 shadow-[2px_0_10px_rgba(0,0,0,0.03)] z-10">
+                {/* Left List Column: takes 50% height on mobile, full height on desktop */}
+                <div className="w-full md:w-[360px] lg:w-[420px] h-[50vh] md:h-full border-b md:border-b-0 md:border-r border-[#e0e2eb] bg-[#f9f9ff] overflow-y-auto p-4 sm:p-5 space-y-4 shrink-0 shadow-[2px_0_10px_rgba(0,0,0,0.03)] z-10 custom-scrollbar pb-6 md:pb-20">
 
                     {/* Card 1 */}
-                    <div className="bg-white border border-[#c7c5d3] rounded-lg p-5 hover:border-[#222777] transition-colors cursor-pointer relative shadow-sm">
+                    <div className="bg-white border border-[#c7c5d3] rounded-lg p-4 sm:p-5 hover:border-[#222777] transition-colors cursor-pointer relative shadow-sm">
                         <div className="absolute top-0 left-0 w-1 h-full bg-[#00c2cb] rounded-l-lg"></div>
-                        <div className="flex justify-between items-start mb-3 pl-2">
-                            <span className="bg-[#e6fbfc] text-[#006e73] font-mono text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 uppercase">
-                                <span className="material-symbols-outlined text-[14px]">school</span> Workshop
+                        <div className="flex justify-between items-start mb-2 sm:mb-3 pl-2">
+                            <span className="bg-[#e6fbfc] text-[#006e73] font-mono text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 uppercase">
+                                <span className="material-symbols-outlined text-[12px] sm:text-[14px]">school</span> Workshop
                             </span>
-                            <span className="text-[12px] font-mono font-bold text-[#00c2cb] flex items-center gap-1">
-                                <span className="material-symbols-outlined text-[14px]">location_on</span> 1.2 km
+                            <span className="text-[11px] sm:text-[12px] font-mono font-bold text-[#00c2cb] flex items-center gap-1">
+                                <span className="material-symbols-outlined text-[12px] sm:text-[14px]">location_on</span> 1.2 km
                             </span>
                         </div>
-                        <h3 className="text-[18px] font-bold text-[#181c22] mb-2 leading-snug pl-2">Applied NLP in Clinical Research</h3>
-                        <p className="text-[14px] text-[#464651] line-clamp-2 mb-5 pl-2 leading-relaxed">Exploring transformer models for extracting patient outcomes from unstructured medical records...</p>
-                        <div className="flex items-center justify-between pt-4 border-t border-[#e0e2eb] pl-2">
-                            <div className="flex items-center gap-2 font-mono text-[11px] font-semibold text-[#777682]">
+                        <h3 className="text-[16px] sm:text-[18px] font-bold text-[#181c22] mb-1.5 sm:mb-2 leading-snug pl-2">Applied NLP in Clinical Research</h3>
+                        <p className="text-[13px] sm:text-[14px] text-[#464651] line-clamp-2 mb-4 sm:mb-5 pl-2 leading-relaxed">Exploring transformer models for extracting patient outcomes from unstructured medical records...</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3 sm:pt-4 border-t border-[#e0e2eb] pl-2 gap-3 sm:gap-0">
+                            <div className="flex items-center gap-1.5 font-mono text-[10px] sm:text-[11px] font-semibold text-[#777682]">
                                 <span className="material-symbols-outlined text-[14px]">calendar_today</span> Oct 24 • 14:00 - 16:30
                             </div>
-                            <button className="bg-[#222777] text-white px-5 py-1.5 rounded text-[12px] font-bold hover:bg-[#3a3f8f] transition-colors shadow-sm">Register</button>
+                            <button className="w-full sm:w-auto bg-[#222777] text-white px-5 py-2 sm:py-1.5 rounded text-[12px] font-bold shadow-sm hover:bg-[#3a3f8f] transition-colors text-center">Register</button>
                         </div>
                     </div>
 
                     {/* Card 2 */}
-                    <div className="bg-white border border-[#e0e2eb] rounded-lg p-5 hover:border-[#c7c5d3] transition-colors cursor-pointer shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-                        <div className="flex justify-between items-start mb-3">
-                            <span className="bg-[#f1f3fc] text-[#464651] font-mono text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 uppercase">
-                                <span className="material-symbols-outlined text-[14px]">record_voice_over</span> Lecture
+                    <div className="bg-white border border-[#e0e2eb] rounded-lg p-4 sm:p-5 hover:border-[#c7c5d3] transition-colors cursor-pointer shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                        <div className="flex justify-between items-start mb-2 sm:mb-3">
+                            <span className="bg-[#f1f3fc] text-[#464651] font-mono text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 uppercase">
+                                <span className="material-symbols-outlined text-[12px] sm:text-[14px]">record_voice_over</span> Lecture
                             </span>
-                            <span className="text-[12px] font-mono font-bold text-[#777682] flex items-center gap-1">
-                                <span className="material-symbols-outlined text-[14px]">location_on</span> 3.8 km
+                            <span className="text-[11px] sm:text-[12px] font-mono font-bold text-[#777682] flex items-center gap-1">
+                                <span className="material-symbols-outlined text-[12px] sm:text-[14px]">location_on</span> 3.8 km
                             </span>
                         </div>
-                        <h3 className="text-[18px] font-bold text-[#181c22] mb-2 leading-snug">Ethics of Autonomous Agents</h3>
-                        <p className="text-[14px] text-[#464651] line-clamp-2 mb-5 leading-relaxed">A panel discussion on alignment, bias, and regulatory frameworks for next-generation intelligence...</p>
-                        <div className="flex items-center justify-between pt-4 border-t border-[#e0e2eb]">
-                            <div className="flex items-center gap-2 font-mono text-[11px] font-semibold text-[#777682]">
+                        <h3 className="text-[16px] sm:text-[18px] font-bold text-[#181c22] mb-1.5 sm:mb-2 leading-snug">Ethics of Autonomous Agents</h3>
+                        <p className="text-[13px] sm:text-[14px] text-[#464651] line-clamp-2 mb-4 sm:mb-5 leading-relaxed">A panel discussion on alignment, bias, and regulatory frameworks for next-generation intelligence...</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3 sm:pt-4 border-t border-[#e0e2eb] gap-3 sm:gap-0">
+                            <div className="flex items-center gap-1.5 font-mono text-[10px] sm:text-[11px] font-semibold text-[#777682]">
                                 <span className="material-symbols-outlined text-[14px]">calendar_today</span> Oct 26 • 18:00 - 20:00
                             </div>
-                            <button className="bg-white border border-[#222777] text-[#222777] px-5 py-1.5 rounded text-[12px] font-bold hover:bg-[#f1f3fc] transition-colors">Register</button>
+                            <button className="w-full sm:w-auto bg-white border border-[#222777] text-[#222777] px-5 py-2 sm:py-1.5 rounded text-[12px] font-bold hover:bg-[#f1f3fc] transition-colors text-center">Register</button>
                         </div>
                     </div>
 
                     {/* Card 3 */}
-                    <div className="bg-white border border-[#e0e2eb] rounded-lg p-5 hover:border-[#c7c5d3] transition-colors cursor-pointer shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-                        <div className="flex justify-between items-start mb-3">
-                            <span className="bg-[#ebeef6] text-[#464651] font-mono text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 uppercase">
-                                <span className="material-symbols-outlined text-[14px]">code</span> Hackathon
+                    <div className="bg-white border border-[#e0e2eb] rounded-lg p-4 sm:p-5 hover:border-[#c7c5d3] transition-colors cursor-pointer shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                        <div className="flex justify-between items-start mb-2 sm:mb-3">
+                            <span className="bg-[#ebeef6] text-[#464651] font-mono text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 uppercase">
+                                <span className="material-symbols-outlined text-[12px] sm:text-[14px]">code</span> Hackathon
                             </span>
-                            <span className="text-[12px] font-mono font-bold text-[#777682] flex items-center gap-1">
-                                <span className="material-symbols-outlined text-[14px]">location_on</span> 5.1 km
+                            <span className="text-[11px] sm:text-[12px] font-mono font-bold text-[#777682] flex items-center gap-1">
+                                <span className="material-symbols-outlined text-[12px] sm:text-[14px]">location_on</span> 5.1 km
                             </span>
                         </div>
-                        <h3 className="text-[18px] font-bold text-[#181c22] mb-2 leading-snug">Edge Computing Solutions</h3>
-                        <p className="text-[14px] text-[#464651] line-clamp-2 mb-5 leading-relaxed">Building low-latency inference pipelines for IoT devices.</p>
-                        <div className="flex items-center justify-between pt-4 border-t border-[#e0e2eb]">
-                            <div className="flex items-center gap-2 font-mono text-[11px] font-semibold text-[#777682]">
+                        <h3 className="text-[16px] sm:text-[18px] font-bold text-[#181c22] mb-1.5 sm:mb-2 leading-snug">Edge Computing Solutions</h3>
+                        <p className="text-[13px] sm:text-[14px] text-[#464651] line-clamp-2 mb-4 sm:mb-5 leading-relaxed">Building low-latency inference pipelines for IoT devices.</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3 sm:pt-4 border-t border-[#e0e2eb] gap-3 sm:gap-0">
+                            <div className="flex items-center gap-1.5 font-mono text-[10px] sm:text-[11px] font-semibold text-[#777682]">
                                 <span className="material-symbols-outlined text-[14px]">calendar_today</span> Nov 02 • 09:00 - 21:00
                             </div>
-                            <button className="bg-white border border-[#222777] text-[#222777] px-5 py-1.5 rounded text-[12px] font-bold hover:bg-[#f1f3fc] transition-colors">Register</button>
+                            <button className="w-full sm:w-auto bg-white border border-[#222777] text-[#222777] px-5 py-2 sm:py-1.5 rounded text-[12px] font-bold hover:bg-[#f1f3fc] transition-colors text-center">Register</button>
                         </div>
                     </div>
                 </div>
 
-                {/* REAL MAP AREA */}
-                <div className="hidden md:flex flex-1 relative overflow-hidden bg-[#d7dae2]">
+                {/* Map Area: flex-1 ensures it takes the remaining height on mobile and width on desktop */}
+                <div className="flex flex-1 relative overflow-hidden bg-[#d7dae2] min-h-[300px] md:min-h-0">
                     <MapContainer
-                        center={[42.3601, -71.0589]} // Coordinates for Boston
+                        center={[42.3601, -71.0589]}
                         zoom={14}
-                        zoomControl={false} // Disabled so we can use your custom buttons
+                        zoomControl={false}
                         style={{ height: '100%', width: '100%', zIndex: 0 }}
                     >
-                        {/* Light theme tiles matching the screenshot */}
                         <TileLayer
                             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -194,17 +203,17 @@ export default function NearbySeminars() {
                         <Marker position={[42.345, -71.080]} icon={backgroundPinIcon} />
                     </MapContainer>
 
-                    {/* Area Activity Overlay Chart (Floats over the map via z-index) */}
-                    <div className="absolute bottom-6 right-6 bg-white p-5 rounded border border-[#e0e2eb] w-[280px] shadow-lg z-[1000] pointer-events-none">
-                        <h4 className="font-mono text-[11px] font-bold text-[#181c22] uppercase tracking-wider mb-4">Area Activity</h4>
-                        <div className="flex items-end gap-1.5 h-16 mb-4">
+                    {/* Area Activity Overlay Chart */}
+                    <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 bg-white p-3 sm:p-5 rounded border border-[#e0e2eb] w-[200px] sm:w-[280px] shadow-lg z-[1000] pointer-events-none">
+                        <h4 className="font-mono text-[9px] sm:text-[11px] font-bold text-[#181c22] uppercase tracking-wider mb-2 sm:mb-4">Area Activity</h4>
+                        <div className="flex items-end gap-1 sm:gap-1.5 h-10 sm:h-16 mb-2 sm:mb-4">
                             <div className="flex-1 bg-[#e0e0ff] rounded-sm" style={{ height: '30%' }}></div>
                             <div className="flex-1 bg-[#bfc2ff] rounded-sm" style={{ height: '60%' }}></div>
                             <div className="flex-1 bg-[#6bf6ff] rounded-sm" style={{ height: '100%' }}></div>
                             <div className="flex-1 bg-[#e0e0ff] rounded-sm" style={{ height: '40%' }}></div>
                             <div className="flex-1 bg-[#e0e0ff] rounded-sm" style={{ height: '20%' }}></div>
                         </div>
-                        <p className="text-[11px] font-mono text-[#464651] leading-relaxed">High concentration of events in the innovation district this week.</p>
+                        <p className="text-[9px] sm:text-[11px] font-mono text-[#464651] leading-relaxed hidden sm:block">High concentration of events in the innovation district this week.</p>
                     </div>
                 </div>
             </div>

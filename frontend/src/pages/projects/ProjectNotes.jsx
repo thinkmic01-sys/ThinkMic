@@ -1,10 +1,13 @@
-// frontend/src/pages/ProjectNotes.jsx
 import React, { useState } from 'react';
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function ProjectNotes() {
-
     const navigate = useNavigate();
+
+    // --- RESPONSIVE STATE ---
+    const [isLeftPaneOpen, setIsLeftPaneOpen] = useState(false);
+    const [isRightPaneOpen, setIsRightPaneOpen] = useState(false);
+
     // --- MOCK DATA STATE ---
     const [notes, setNotes] = useState([
         {
@@ -68,6 +71,7 @@ export default function ProjectNotes() {
         };
         setNotes([newNote, ...notes]);
         setActiveNoteId(newNote.id);
+        if (window.innerWidth < 768) setIsLeftPaneOpen(false); // Close drawer on mobile after adding
     };
 
     const handleTitleChange = (e) => {
@@ -85,6 +89,11 @@ export default function ProjectNotes() {
         alert("Microphone activated. Dictating directly into document...");
     };
 
+    const selectNoteOnMobile = (id) => {
+        setActiveNoteId(id);
+        if (window.innerWidth < 768) setIsLeftPaneOpen(false);
+    };
+
     return (
         <div className="flex w-full h-[calc(100vh-64px)] bg-[#f9f9ff] overflow-hidden relative">
 
@@ -95,16 +104,33 @@ export default function ProjectNotes() {
                     70% { box-shadow: 0 0 0 8px rgba(0, 194, 203, 0); }
                     100% { box-shadow: 0 0 0 0 rgba(0, 194, 203, 0); }
                 }
-                /* Hide scrollbars but allow scrolling */
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                .hide-scroll-x::-webkit-scrollbar { display: none; }
             `}</style>
 
-            {/* LEFT PANE: Notes List (320px) */}
-            <div className="w-80 border-r border-[#c7c5d3] bg-white flex flex-col h-full shrink-0 shadow-[1px_0_4px_rgba(58,63,143,0.04)] z-10">
-                {/* NEW DUAL-ACTION HEADER */}
+            {/* --- MOBILE BACKDROP OVERLAYS --- */}
+            {(isLeftPaneOpen || isRightPaneOpen) && (
+                <div
+                    className="fixed inset-0 bg-[#181c22]/40 backdrop-blur-sm z-40 md:hidden"
+                    onClick={() => { setIsLeftPaneOpen(false); setIsRightPaneOpen(false); }}
+                ></div>
+            )}
+
+            {/* --- LEFT PANE: Notes List --- */}
+            <div className={`
+                fixed md:relative top-[64px] md:top-0 left-0 h-[calc(100vh-64px)] md:h-full 
+                w-[280px] lg:w-80 bg-white border-r border-[#c7c5d3] flex flex-col shrink-0 shadow-[1px_0_4px_rgba(58,63,143,0.04)] z-50 md:z-10
+                transform transition-transform duration-300 ease-in-out md:translate-x-0
+                ${isLeftPaneOpen ? 'translate-x-0' : '-translate-x-full absolute'}
+            `}>
                 <div className="p-4 border-b border-[#c7c5d3] flex flex-col gap-3 bg-[#f1f3fc]">
-                    <h3 className="text-[20px] font-bold text-[#181c22]">Workspace</h3>
+                    <div className="flex justify-between items-center md:block">
+                        <h3 className="text-[20px] font-bold text-[#181c22]">Workspace</h3>
+                        <button className="md:hidden text-[#777682]" onClick={() => setIsLeftPaneOpen(false)}>
+                            <span className="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
                     <div className="flex gap-2">
                         <button
                             onClick={handleAddNote}
@@ -116,16 +142,16 @@ export default function ProjectNotes() {
                             onClick={() => navigate('/app/projects/create-seminar')}
                             className="flex-1 bg-[#222777] text-white hover:bg-[#3a3f8f] py-1.5 rounded-md text-[12px] font-bold flex items-center justify-center gap-1 transition-colors shadow-sm"
                         >
-                            <span className="material-symbols-outlined text-[16px]">record_voice_over</span> Seminar
+                            <span className="material-symbols-outlined text-[16px]">record_voice_over</span> <span className="hidden sm:inline">Seminar</span>
                         </button>
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto no-scrollbar">
+                <div className="flex-1 overflow-y-auto no-scrollbar pb-20 md:pb-0">
                     {notes.map(note => (
                         <div
                             key={note.id}
-                            onClick={() => setActiveNoteId(note.id)}
+                            onClick={() => selectNoteOnMobile(note.id)}
                             className={`p-4 border-b border-[#e0e2eb] cursor-pointer transition-colors group
                                 ${activeNoteId === note.id ? 'bg-[#e0e0ff]/30 border-l-4 border-l-[#222777]' : 'hover:bg-[#f1f3fc] border-l-4 border-l-transparent'}
                             `}
@@ -144,43 +170,48 @@ export default function ProjectNotes() {
                 </div>
             </div>
 
-            {/* CENTER PANE: Editor */}
-            <div className="flex-1 flex flex-col h-full bg-white relative">
+            {/* --- CENTER PANE: Editor --- */}
+            <div className="flex-1 w-full flex flex-col h-full bg-white relative z-0 md:z-10 min-w-0">
+
+                {/* Mobile Top Context Bar (Only visible on small screens) */}
+                <div className="md:hidden h-12 bg-[#f9f9ff] border-b border-[#e0e2eb] flex items-center justify-between px-4 shrink-0">
+                    <button onClick={() => setIsLeftPaneOpen(true)} className="flex items-center gap-1 text-[#222777] font-bold text-[13px]">
+                        <span className="material-symbols-outlined text-[18px]">menu_open</span> Notes
+                    </button>
+                    <button onClick={() => setIsRightPaneOpen(true)} className="flex items-center gap-1 text-[#00696e] font-bold text-[13px]">
+                        Context <span className="material-symbols-outlined text-[18px]">info</span>
+                    </button>
+                </div>
 
                 {/* Toolbar */}
-                <div className="h-14 border-b border-[#c7c5d3] bg-white flex items-center px-4 space-x-2 shrink-0 z-20">
-                    <button onClick={() => handleToolbarAction('Bold')} className="p-1.5 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[20px]">format_bold</span></button>
-                    <button onClick={() => handleToolbarAction('Italic')} className="p-1.5 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[20px]">format_italic</span></button>
-                    <div className="w-px h-6 bg-[#c7c5d3] mx-1"></div>
-                    <button onClick={() => handleToolbarAction('H1')} className="p-1.5 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors text-[13px] font-bold">H1</button>
-                    <button onClick={() => handleToolbarAction('H2')} className="p-1.5 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors text-[13px] font-bold">H2</button>
-                    <div className="w-px h-6 bg-[#c7c5d3] mx-1"></div>
-                    <button onClick={() => handleToolbarAction('Bullet List')} className="p-1.5 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[20px]">format_list_bulleted</span></button>
-                    <button onClick={() => handleToolbarAction('Numbered List')} className="p-1.5 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[20px]">format_list_numbered</span></button>
-                    <button onClick={() => handleToolbarAction('Task List')} className="p-1.5 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[20px]">check_box</span></button>
-                    <div className="w-px h-6 bg-[#c7c5d3] mx-1"></div>
-                    <button onClick={() => handleToolbarAction('Code Block')} className="p-1.5 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[20px]">code</span></button>
-                    <button onClick={() => handleToolbarAction('Highlight')} className="p-1.5 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[20px]">format_ink_highlighter</span></button>
-                    <button onClick={() => handleToolbarAction('Add Link')} className="p-1.5 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[20px]">link</span></button>
+                <div className="h-14 border-b border-[#c7c5d3] bg-white flex items-center px-2 md:px-4 space-x-1 md:space-x-2 shrink-0 z-20 overflow-x-auto hide-scroll-x">
+                    <button onClick={() => handleToolbarAction('Bold')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[18px] md:text-[20px]">format_bold</span></button>
+                    <button onClick={() => handleToolbarAction('Italic')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[18px] md:text-[20px]">format_italic</span></button>
+                    <div className="w-px h-6 bg-[#c7c5d3] mx-1 shrink-0"></div>
+                    <button onClick={() => handleToolbarAction('H1')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors text-[12px] md:text-[13px] font-bold">H1</button>
+                    <button onClick={() => handleToolbarAction('H2')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors text-[12px] md:text-[13px] font-bold">H2</button>
+                    <div className="w-px h-6 bg-[#c7c5d3] mx-1 shrink-0"></div>
+                    <button onClick={() => handleToolbarAction('Bullet List')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[18px] md:text-[20px]">format_list_bulleted</span></button>
+                    <button onClick={() => handleToolbarAction('Numbered List')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[18px] md:text-[20px]">format_list_numbered</span></button>
+                    <button onClick={() => handleToolbarAction('Task List')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[18px] md:text-[20px]">check_box</span></button>
+                    <div className="w-px h-6 bg-[#c7c5d3] mx-1 shrink-0 hidden sm:block"></div>
+                    <button onClick={() => handleToolbarAction('Code Block')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors hidden sm:block"><span className="material-symbols-outlined text-[18px] md:text-[20px]">code</span></button>
+                    <button onClick={() => handleToolbarAction('Highlight')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors hidden sm:block"><span className="material-symbols-outlined text-[18px] md:text-[20px]">format_ink_highlighter</span></button>
+                    <button onClick={() => handleToolbarAction('Add Link')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[18px] md:text-[20px]">link</span></button>
                 </div>
 
                 {/* Editor Area */}
-                <div className="flex-1 overflow-y-auto p-10 relative no-scrollbar">
-                    <div className="max-w-3xl mx-auto pb-24">
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10 relative no-scrollbar">
+                    <div className="max-w-3xl mx-auto pb-32 md:pb-24">
                         <input
-                            className="w-full bg-transparent border-none outline-none text-[36px] font-bold text-[#181c22] mb-6 p-0 focus:ring-0 placeholder:text-[#c7c5d3] tracking-tight"
+                            className="w-full bg-transparent border-none outline-none text-[24px] sm:text-[32px] md:text-[36px] font-bold text-[#181c22] mb-4 sm:mb-6 p-0 focus:ring-0 placeholder:text-[#c7c5d3] tracking-tight leading-tight"
                             placeholder="Note Title..."
                             type="text"
                             value={activeNote.title}
                             onChange={handleTitleChange}
                         />
-
-                        {/*
-                          Using dangerouslySetInnerHTML to map your exact HTML mock data perfectly.
-                          In a full production build, this would be a TipTap or Slate.js rich-text editor instance.
-                        */}
                         <div
-                            className="text-[16px] text-[#181c22] leading-[1.85] outline-none min-h-[400px]"
+                            className="text-[15px] md:text-[16px] text-[#181c22] leading-[1.7] md:leading-[1.85] outline-none min-h-[400px]"
                             contentEditable="true"
                             suppressContentEditableWarning={true}
                             dangerouslySetInnerHTML={{ __html: activeNote.content }}
@@ -191,23 +222,31 @@ export default function ProjectNotes() {
                 {/* Floating Voice Note Button */}
                 <button
                     onClick={handleVoiceNote}
-                    className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white text-[#222777] border border-[#c7c5d3] shadow-[0_4px_16px_rgba(58,63,143,0.12)] rounded-full px-6 py-3 flex items-center space-x-3 hover:bg-[#f9f9ff] hover:shadow-[0_8px_24px_rgba(58,63,143,0.16)] transition-all group z-30"
+                    className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 bg-white text-[#222777] border border-[#c7c5d3] shadow-[0_4px_16px_rgba(58,63,143,0.12)] rounded-full px-4 md:px-6 py-2 md:py-3 flex items-center space-x-2 md:space-x-3 hover:bg-[#f9f9ff] hover:shadow-[0_8px_24px_rgba(58,63,143,0.16)] transition-all group z-30"
                 >
-                    <div className="w-8 h-8 rounded-full bg-[#222777] flex items-center justify-center pulse-ring">
-                        <span className="material-symbols-outlined text-white text-[18px]">mic</span>
+                    <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-[#222777] flex items-center justify-center pulse-ring shrink-0">
+                        <span className="material-symbols-outlined text-white text-[14px] md:text-[18px]">mic</span>
                     </div>
-                    <span className="text-[13px] font-bold tracking-wide uppercase text-[#222777]">Voice Note</span>
+                    <span className="text-[12px] md:text-[13px] font-bold tracking-wide uppercase text-[#222777] whitespace-nowrap">Voice Note</span>
                 </button>
             </div>
 
-            {/* RIGHT PANE: Context/Outline (288px) */}
-            <div className="w-72 border-l border-[#c7c5d3] bg-white flex flex-col h-full shrink-0 z-10 hidden lg:flex">
+            {/* --- RIGHT PANE: Context/Outline --- */}
+            <div className={`
+                fixed md:relative top-[64px] md:top-0 right-0 h-[calc(100vh-64px)] md:h-full 
+                w-[280px] lg:w-72 bg-white border-l border-[#c7c5d3] flex flex-col shrink-0 z-50 md:z-10
+                transform transition-transform duration-300 ease-in-out md:translate-x-0
+                ${isRightPaneOpen ? 'translate-x-0' : 'translate-x-full absolute'}
+                md:flex md:absolute lg:relative md:translate-x-full lg:translate-x-0
+            `}>
                 <div className="p-4 border-b border-[#c7c5d3] flex justify-between items-center bg-[#f1f3fc]">
                     <h3 className="font-mono text-[13px] font-bold text-[#181c22] uppercase tracking-wider">Contextual Links</h3>
-                    <button className="text-[#777682] hover:text-[#222777] transition-colors"><span className="material-symbols-outlined text-[18px]">close_fullscreen</span></button>
+                    <button className="text-[#777682] hover:text-[#222777] transition-colors md:hidden" onClick={() => setIsRightPaneOpen(false)}>
+                        <span className="material-symbols-outlined text-[18px]">close</span>
+                    </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-5 space-y-8 no-scrollbar">
+                <div className="flex-1 overflow-y-auto p-5 space-y-8 no-scrollbar pb-20 md:pb-5">
 
                     {/* Linked Items */}
                     <div>

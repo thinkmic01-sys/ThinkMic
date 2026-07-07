@@ -1,6 +1,5 @@
-// frontend/src/pages/UserTimeline.jsx
 import React, { useState } from 'react';
-import {Link} from "react-router-dom";
+import { Link } from "react-router-dom";
 
 export default function UserTimeline() {
     const [activeFilter, setActiveFilter] = useState('All');
@@ -62,8 +61,7 @@ export default function UserTimeline() {
         : timelineEvents.filter(event => event.type === activeFilter);
 
     return (
-        <div className="flex-1 w-full bg-[#f1f3fc] p-4 md:p-8 flex justify-center h-[calc(100vh-64px)] overflow-y-auto">
-
+        <div className="flex-1 w-full bg-[#f1f3fc] p-4 sm:p-6 md:p-8 flex justify-center h-[calc(100vh-64px)] overflow-y-auto custom-scrollbar font-sans">
 
             <style>{`
                 .pulse-ring { animation: pulse 1.8s infinite cubic-bezier(0.4, 0, 0.2, 1); }
@@ -73,9 +71,14 @@ export default function UserTimeline() {
                     100% { box-shadow: 0 0 0 0 rgba(0, 194, 203, 0); }
                 }
                 .shadow-card { box-shadow: 0 1px 4px rgba(58,63,143,0.08), 0 4px 16px rgba(58,63,143,0.06); }
+                .hide-scrollbar::-webkit-scrollbar { display: none; }
+                .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c7c5d3; border-radius: 10px; }
             `}</style>
 
-            <div className="w-full max-w-[900px] flex flex-col md:flex-row gap-8 pb-12">
+            <div className="w-full max-w-[1000px] flex flex-col lg:flex-row gap-6 sm:gap-8 pb-12">
 
                 {/* Timeline Container */}
                 <div className="flex-1">
@@ -164,54 +167,54 @@ export default function UserTimeline() {
                 </div>
 
                 {/* Right Rail: Gamification Widgets */}
-                <div className="w-full md:w-[280px] shrink-0 space-y-6">
+                <div className="w-full lg:w-[280px] xl:w-[320px] shrink-0 space-y-6">
 
                     {/* Streak Widget */}
-                    <div className="bg-white rounded-xl p-5 shadow-card border border-[#e0e2eb]">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-[18px] font-bold text-[#181c22]">Activity Streak</h3>
-                            <span className="material-symbols-outlined text-[#00c2cb] text-[24px]">local_fire_department</span>
+                    <div className="bg-white rounded-xl p-4 sm:p-5 shadow-card border border-[#e0e2eb]">
+                        <div className="flex items-center justify-between mb-3 sm:mb-4">
+                            <h3 className="text-[16px] sm:text-[18px] font-bold text-[#181c22]">Activity Streak</h3>
+                            <span className="material-symbols-outlined text-[#00c2cb] text-[20px] sm:text-[24px]">local_fire_department</span>
                         </div>
-                        <div className="flex items-baseline gap-2 mb-2">
-                            <span className="text-[40px] font-bold text-[#222777] tracking-tighter">14</span>
-                            <span className="font-mono text-[12px] font-bold text-[#777682] uppercase tracking-wider">Days</span>
+                        <div className="flex items-baseline gap-2 mb-1 sm:mb-2">
+                            <span className="text-[32px] sm:text-[40px] font-bold text-[#222777] tracking-tighter leading-none">14</span>
+                            <span className="font-mono text-[11px] sm:text-[12px] font-bold text-[#777682] uppercase tracking-wider">Days</span>
                         </div>
-                        <p className="font-mono text-[11px] text-[#464651] mb-5 leading-relaxed font-bold">Keep recording or synthesizing to maintain your streak!</p>
+                        <p className="font-mono text-[10px] sm:text-[11px] text-[#464651] mb-4 sm:mb-5 leading-relaxed font-bold">Keep recording or synthesizing to maintain your streak!</p>
 
                         {/* Mini Week View */}
                         <div className="flex justify-between items-center px-1">
                             {['M', 'T', 'W'].map((day, i) => (
                                 <div key={i} className="flex flex-col items-center gap-1 opacity-50">
-                                    <span className="font-mono text-[10px] font-bold text-[#777682]">{day}</span>
-                                    <div className="w-6 h-6 rounded-full bg-[#3a3f8f] flex items-center justify-center"><span className="material-symbols-outlined text-[12px] text-white">check</span></div>
+                                    <span className="font-mono text-[9px] sm:text-[10px] font-bold text-[#777682]">{day}</span>
+                                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#3a3f8f] flex items-center justify-center"><span className="material-symbols-outlined text-[10px] sm:text-[12px] text-white">check</span></div>
                                 </div>
                             ))}
                             <div className="flex flex-col items-center gap-1">
-                                <span className="font-mono text-[10px] font-bold text-[#222777]">T</span>
-                                <div className="w-6 h-6 rounded-full border-2 border-[#00c2cb] flex items-center justify-center pulse-ring"><span className="material-symbols-outlined text-[12px] text-[#00c2cb]">mic</span></div>
+                                <span className="font-mono text-[9px] sm:text-[10px] font-bold text-[#222777]">T</span>
+                                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-[#00c2cb] flex items-center justify-center pulse-ring"><span className="material-symbols-outlined text-[10px] sm:text-[12px] text-[#00c2cb]">mic</span></div>
                             </div>
                             <div className="flex flex-col items-center gap-1 opacity-30">
-                                <span className="font-mono text-[10px] font-bold text-[#777682]">F</span>
-                                <div className="w-6 h-6 rounded-full bg-[#ebeef6] flex items-center justify-center"></div>
+                                <span className="font-mono text-[9px] sm:text-[10px] font-bold text-[#777682]">F</span>
+                                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#ebeef6] flex items-center justify-center"></div>
                             </div>
                         </div>
                     </div>
 
                     {/* Impact Widget */}
-                    <div className="bg-white rounded-xl p-5 shadow-card border border-[#e0e2eb]">
-                        <h3 className="text-[16px] font-bold text-[#181c22] mb-4">This Week's Impact</h3>
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center border-b border-[#e0e2eb] pb-3">
-                                <span className="font-mono text-[12px] font-bold text-[#777682]">Hours Recorded</span>
-                                <span className="font-mono text-[14px] font-bold text-[#222777]">12.5h</span>
+                    <div className="bg-white rounded-xl p-4 sm:p-5 shadow-card border border-[#e0e2eb]">
+                        <h3 className="text-[15px] sm:text-[16px] font-bold text-[#181c22] mb-3 sm:mb-4">This Week's Impact</h3>
+                        <div className="space-y-3 sm:space-y-4">
+                            <div className="flex justify-between items-center border-b border-[#e0e2eb] pb-2.5 sm:pb-3">
+                                <span className="font-mono text-[11px] sm:text-[12px] font-bold text-[#777682]">Hours Recorded</span>
+                                <span className="font-mono text-[13px] sm:text-[14px] font-bold text-[#222777]">12.5h</span>
                             </div>
-                            <div className="flex justify-between items-center border-b border-[#e0e2eb] pb-3">
-                                <span className="font-mono text-[12px] font-bold text-[#777682]">Reports Gen.</span>
-                                <span className="font-mono text-[14px] font-bold text-[#222777]">4</span>
+                            <div className="flex justify-between items-center border-b border-[#e0e2eb] pb-2.5 sm:pb-3">
+                                <span className="font-mono text-[11px] sm:text-[12px] font-bold text-[#777682]">Reports Gen.</span>
+                                <span className="font-mono text-[13px] sm:text-[14px] font-bold text-[#222777]">4</span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="font-mono text-[12px] font-bold text-[#777682]">Coins Earned</span>
-                                <span className="font-mono text-[14px] font-bold text-[#006e73] bg-[#e6fbfc] px-2 py-0.5 rounded border border-[#6bf6ff]/50">+850</span>
+                                <span className="font-mono text-[11px] sm:text-[12px] font-bold text-[#777682]">Coins Earned</span>
+                                <span className="font-mono text-[13px] sm:text-[14px] font-bold text-[#006e73] bg-[#e6fbfc] px-2 py-0.5 rounded border border-[#6bf6ff]/50">+850</span>
                             </div>
                         </div>
                     </div>

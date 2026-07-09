@@ -5,12 +5,8 @@ export default function SpeechWorkspace() {
     // --- STATE MANAGEMENT ---
     const navigate = useNavigate();
     const [recordingState, setRecordingState] = useState('idle');
-    const [timeElapsed, setTimeElapsed] = useState(872); // 00:14:32
-    const [transcripts, setTranscripts] = useState([
-        { time: 605, text: "The initial findings from the AI model suggest a strong correlation between the selected features. However, we need to consider the variance in the secondary dataset." },
-        { time: 680, text: "Let's pivot the analysis to focus on the edge cases. I noticed a cluster forming around the upper quartile that wasn't present in the previous iteration. We should probably flag this for the review board next week." },
-        { time: 825, text: "And if we look at the..." }
-    ]);
+    const [timeElapsed, setTimeElapsed] = useState(0);
+    const [transcripts, setTranscripts] = useState([]);
 
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -21,18 +17,49 @@ export default function SpeechWorkspace() {
     const [summaryLength, setSummaryLength] = useState('Detailed');
     const [summaryStyle, setSummaryStyle] = useState('Bullets');
 
-    const [expandedTopicId, setExpandedTopicId] = useState(3);
-    const [topics, setTopics] = useState([
-        { id: 1, title: 'Feature Correlation', color: 'bg-[#222777]', tags: [] },
-        { id: 2, title: 'Secondary Dataset Variance', color: 'bg-[#61f4fd]', tags: [] },
-        { id: 3, title: 'Review Board Flag', color: 'bg-[#222777]', tags: ['Upper Quartile', 'Clustering'] }
-    ]);
+    const [expandedTopicId, setExpandedTopicId] = useState(null);
+    const [topics, setTopics] = useState([]);
 
     const mediaRecorderRef = useRef(null);
     const streamRef = useRef(null);
     const timerIntervalRef = useRef(null);
     const mockTranscriptIntervalRef = useRef(null);
     const fileInputRef = useRef(null);
+    const audioChunksRef = useRef([]); // To store audio data during recording
+
+    // --- UPLOAD LOGIC TO BACKEND ---
+    const uploadAudioToBackend = async (audioBlob, filename) => {
+        setIsUploading(true);
+        setUploadProgress(50); // Show intermediate progress
+
+        const formData = new FormData();
+        formData.append('audio', audioBlob, filename);
+        formData.append('title', filename || 'Live Workspace Recording');
+
+        try {
+            const response = await fetch('http://localhost:5000/api/v1/recordings/upload-local', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include' // Crucial for authentication
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setUploadProgress(100);
+                alert('Audio saved successfully to the server!');
+                // Here you would typically fetch the newly created recording or start polling for transcripts
+            } else {
+                alert(`Upload failed: ${data.message}`);
+            }
+        } catch (error) {
+            console.error("Upload error:", error);
+            alert("An error occurred during upload.");
+        } finally {
+            setIsUploading(false);
+            setUploadProgress(0);
+        }
+    };
 
     // --- AUDIO & RECORDING LOGIC ---
     const startRecording = async () => {
@@ -41,7 +68,21 @@ export default function SpeechWorkspace() {
             streamRef.current = stream;
             const mediaRecorder = new MediaRecorder(stream);
             mediaRecorderRef.current = mediaRecorder;
-            mediaRecorder.start(1000);
+            audioChunksRef.current = []; // Reset chunks
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                // When recording stops, assemble the blob and upload
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                uploadAudioToBackend(audioBlob, `live-recording-${Date.now()}.webm`);
+            };
+
+            mediaRecorder.start(1000); // Collect data in 1s chunks
             setRecordingState('recording');
         } catch (err) {
             console.error("Microphone access denied:", err);
@@ -61,7 +102,7 @@ export default function SpeechWorkspace() {
 
     const stopRecording = () => {
         if (mediaRecorderRef.current) {
-            mediaRecorderRef.current.stop();
+            mediaRecorderRef.current.stop(); // This triggers the onstop event defined in startRecording
             streamRef.current.getTracks().forEach(track => track.stop());
         }
         setRecordingState('idle');
@@ -73,19 +114,7 @@ export default function SpeechWorkspace() {
         const file = e.target.files[0];
         if (file) {
             if (file.size > 50 * 1024 * 1024) return alert("File exceeds the 50MB limit.");
-            setIsUploading(true);
-            setUploadProgress(0);
-            const uploadInterval = setInterval(() => {
-                setUploadProgress(prev => {
-                    if (prev >= 100) {
-                        clearInterval(uploadInterval);
-                        setIsUploading(false);
-                        alert(`${file.name} uploaded successfully!`);
-                        return 100;
-                    }
-                    return prev + 10;
-                });
-            }, 300);
+            uploadAudioToBackend(file, file.name);
         }
     };
 
@@ -197,8 +226,8 @@ export default function SpeechWorkspace() {
 
                     <div className="hidden sm:block h-6 w-px bg-[#e0e2eb] mx-1"></div>
 
-                    <div className={`hidden lg:flex font-bold text-xs px-4 py-2 rounded-md items-center gap-2 border shadow-sm transition-opacity duration-200 ${recordingState === 'recording' ? 'opacity-100 bg-[#f9f9ff] text-[#222777] border-[#e0e2eb]' : 'opacity-0 pointer-events-none absolute'}`}>
-                        <span className={`material-symbols-outlined text-[16px] ${recordingState === 'recording' ? 'animate-spin' : ''}`}>sync</span> Recording...
+                    <div className={`hidden lg:flex font-bold text-xs px-4 py-2 rounded-md items-center gap-2 border shadow-sm transition-opacity duration-200 ${isUploading ? 'opacity-100 bg-[#f9f9ff] text-[#222777] border-[#e0e2eb]' : 'opacity-0 pointer-events-none absolute'}`}>
+                        <span className={`material-symbols-outlined text-[16px] ${isUploading ? 'animate-spin' : ''}`}>sync</span> Uploading... {uploadProgress}%
                     </div>
 
                     <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".mp3,.wav,.m4a,.webm" />

@@ -1,8 +1,8 @@
-// frontend/src/App.jsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Provider } from 'react-redux';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import { store } from './store/store';
+import { login, logout } from './store/slices/authSlice'; // Ensure this path is correct
 
 // Pages & Components
 import Layout from './components/Layout';
@@ -35,71 +35,130 @@ const Placeholder = ({ title }) => (
     </div>
 );
 
+// Inner component to handle Redux logic and route protection
+function AppRoutes() {
+    const dispatch = useDispatch();
 
+    // Safely check if user is authenticated via Redux
+    const isAuthenticated = useSelector((state) => state.auth?.isAuthenticated);
+
+    // State to block rendering until the backend confirms the cookie
+    const [isAuthReady, setIsAuthReady] = useState(false);
+
+    useEffect(() => {
+        const attemptSilentLogin = async () => {
+            try {
+                // Silently request a new access token using our HttpOnly cookie
+                const response = await fetch('http://localhost:5000/api/v1/auth/refresh', {
+                    method: 'POST',
+                    credentials: 'include' // CRITICAL: sends the cookie
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Success! Put the user back into Redux
+                    dispatch(login({
+                        id: data.user.id,
+                        name: data.user.fullName,
+                        email: data.user.email,
+                        role: data.user.role,
+                        accessToken: data.accessToken,
+                        coins: 0,
+                        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.user.fullName)}&background=222777&color=fff`
+                    }));
+                } else {
+                    // No valid cookie, clear Redux
+                    dispatch(logout());
+                }
+            } catch (error) {
+                console.error("Silent login failed:", error);
+                dispatch(logout());
+            } finally {
+                // Tell React it's safe to render the UI
+                setIsAuthReady(true);
+            }
+        };
+
+        attemptSilentLogin();
+    }, [dispatch]);
+
+    // Show a full-screen loading spinner while checking the cookie on initial load
+    if (!isAuthReady) {
+        return (
+            <div className="w-screen h-screen flex items-center justify-center bg-[#222777]">
+                <svg className="animate-spin h-12 w-12 text-[#6bf6ff]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+        );
+    }
+
+    return (
+        <Routes>
+            {/* Public Routes - Redirect to dashboard if already logged in */}
+            <Route path="/" element={<Navigate to={isAuthenticated ? "/app/dashboard" : "/login"} replace />} />
+            <Route path="/login" element={isAuthenticated ? <Navigate to="/app/dashboard" replace /> : <Auth />} />
+
+            {/* Protected Routes Wrapper */}
+            <Route path="/app/*" element={
+                isAuthenticated ? (
+                    <Layout>
+                        <Routes>
+                            {/* Live Modules we have built */}
+                            <Route path="dashboard" element={<Dashboard />} />
+
+                            {/* The Research Pipeline (Step 1 & 2) */}
+                            <Route path="research" element={<SpeechWorkspace />} />
+                            <Route path="research/results" element={<ResearchResults />} />
+
+                            {/* The Projects Hub */}
+                            <Route path="projects" element={<ProjectNotes />} />
+                            <Route path="projects/create-seminar" element={<CreateSeminar />} />
+
+                            {/* Reports Module */}
+                            <Route path="reports" element={<ReportsLibrary />} />
+                            <Route path="reports/:id" element={<ReportExport />} />
+
+                            <Route path="support" element={<Support />} />
+                            <Route path="settings/*" element={<Settings />} />
+
+                            {/* Courses & Learning LMS */}
+                            <Route path="courses" element={<CourseLibrary />} />
+                            <Route path="courses/my-learning" element={<MyLearningList />} />
+                            <Route path="courses/workbook" element={<CourseWorkbook />} />
+                            <Route path="courses/seminars" element={<NearbySeminars />} />
+
+                            <Route path="forms" element={<Collaboration />} />
+
+                            <Route path="achievements" element={<Achievements />} />
+                            <Route path="achievements/timeline" element={<UserTimeline />} />
+
+                            {/* ADMIN ZONE (Nested Routes) */}
+                            <Route path="admin">
+                                <Route index element={<Navigate to="dashboard" replace />} />
+                                <Route path="dashboard" element={<AdminDashboard />} />
+                                <Route path="users" element={<UserManagement />} />
+                                <Route path="schemas" element={<SchemaLibrary />} />
+                                <Route path="schemas/new" element={<SchemaBuilder />} />
+                            </Route>
+                        </Routes>
+                    </Layout>
+                ) : (
+                    // Kick unauthenticated users back to login
+                    <Navigate to="/login" replace />
+                )
+            } />
+        </Routes>
+    );
+}
 
 function App() {
     return (
         <Provider store={store}>
             <BrowserRouter>
-                <Routes>
-                    {/* Public Routes */}
-                    <Route path="/" element={<Navigate to="/login" replace />} />
-                    <Route path="/login" element={<Auth />} />
-
-                    {/* Authenticated Routes (Inside Layout) */}
-                    <Route path="/app/*" element={
-                        <Layout>
-                            <Routes>
-                                {/* Live Modules we have built */}
-                                <Route path="dashboard" element={<Dashboard />} />
-
-                                {/* The Research Pipeline (Step 1 & 2) */}
-                                <Route path="research" element={<SpeechWorkspace />} />
-                                <Route path="research/results" element={<ResearchResults />} />
-
-                                {/* The Projects Hub (Acts as Step 3 AND the Sidebar target) */}
-                                <Route path="projects" element={<ProjectNotes />} />
-                                <Route path="projects/create-seminar" element={<CreateSeminar />} />
-
-                                {/* Reports Module */}
-                                <Route path="reports" element={<ReportsLibrary />} />
-                                <Route path="reports/:id" element={<ReportExport />} />
-
-                                <Route path="support" element={<Support />} />
-                                <Route path="settings/*" element={<Settings />} />
-                                {/* Courses & Learning LMS */}
-                                <Route path="courses" element={<CourseLibrary />} />
-                                <Route path="courses/my-learning" element={<MyLearningList />} />
-                                <Route path="courses/workbook" element={<CourseWorkbook />} />
-                                <Route path="courses/seminars" element={<NearbySeminars />} />
-
-                                <Route path="forms" element={<Collaboration />} />
-
-                                <Route path="achievements" element={<Achievements />} />
-                                <Route path="achievements/timeline" element={<UserTimeline />} />
-
-                                {/* ADMIN ZONE (Nested Routes) */}
-                                <Route path="admin">
-                                    {/* By default, navigating to /app/admin opens the Analytics Dashboard */}
-                                    <Route index element={<Navigate to="dashboard" replace />} />
-
-                                    {/* /app/admin/dashboard */}
-                                    <Route path="dashboard" element={<AdminDashboard />} />
-
-                                    {/* /app/admin/users */}
-                                    <Route path="users" element={<UserManagement />} />
-
-                                    {/* /app/admin/schemas */}
-                                    <Route path="schemas" element={<SchemaLibrary />} />
-
-                                    {/* /app/admin/schemas/new */}
-                                    <Route path="schemas/new" element={<SchemaBuilder />} />
-                                </Route>
-
-                            </Routes>
-                        </Layout>
-                    } />
-                </Routes>
+                <AppRoutes />
             </BrowserRouter>
         </Provider>
     );

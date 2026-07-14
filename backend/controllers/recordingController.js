@@ -1,4 +1,5 @@
 const Recording = require('../models/Recording');
+const { transcriptionQueue } = require('../queues');
 // const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 // const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 // const { v4: uuidv4 } = require('uuid');
@@ -49,8 +50,8 @@ const Recording = require('../models/Recording');
 //     }
 // };
 
-// @desc    Upload audio locally (Fallback for S3)
-// @route   POST /api/v1/recordings/upload-local
+// @desc    Upload audio locally
+// @route   POST /api/v1/recordings
 // @access  Private
 exports.uploadAudioLocal = async (req, res) => {
     try {
@@ -69,8 +70,15 @@ exports.uploadAudioLocal = async (req, res) => {
             status: 'uploaded'
         });
 
+        // Enqueue transcription job
+        await transcriptionQueue.add('transcribe', {
+            recordingId: recording._id,
+            s3Key: req.file.filename,
+            userId: req.user._id
+        });
+
         res.status(201).json({
-            message: 'Audio uploaded successfully to local storage',
+            message: 'Audio uploaded successfully',
             recording
         });
     } catch (error) {

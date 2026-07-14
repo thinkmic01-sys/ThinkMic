@@ -1,26 +1,52 @@
 import React, { useState, useEffect } from 'react';
-
-// --- MOCK DATA FOR REFERRALS ---
-const referralStats = { total: 142, pending: 450, earned: 3200, conversion: 28.4 };
-const recentReferrals = [
-    { id: 1, initials: 'EL', name: 'Dr. Elena Rostova', date: 'Oct 24, 2026', status: 'Premium', rewards: '500 Coins' },
-    { id: 2, initials: 'MS', name: 'Marcus Sterling', date: 'Oct 22, 2026', status: 'Active', rewards: '150 Coins' },
-    { id: 3, initials: 'AJ', name: 'alex.j@university.edu', date: 'Oct 21, 2026', status: 'Invited', rewards: '-' },
-];
+import { useSelector } from 'react-redux';
 
 export default function Collaboration() {
+    const token = useSelector(state => state.auth?.accessToken);
+    const user = useSelector(state => state.auth?.user || {});
+    
     // --- STATE: REFERRALS ---
     const [isCopied, setIsCopied] = useState(false);
-    const referralLink = "https://thinkmic.com/join?ref=scholarly_mind";
+    const referralCode = user.referralCode || 'welcome';
+    const referralLink = typeof window !== 'undefined' ? `${window.location.origin}/join?ref=${referralCode}` : `https://thinkmic.com/join?ref=${referralCode}`;
+    const [stats, setStats] = useState({ total: 0, pending: 0, earned: 0, conversion: 0 });
+    const [recentReferrals, setRecentReferrals] = useState([]);
+    
+    // Custom Toast State
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast({ show: false, message: '', type }), 4000);
+    };
+
+    // Fetch Referrals from Backend
+    useEffect(() => {
+        if (!token) return;
+        const fetchReferrals = async () => {
+            try {
+                const res = await fetch('http://localhost:5000/api/v1/collaboration/referrals', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.stats) {
+                    setStats(data.stats);
+                    setRecentReferrals(data.recent);
+                }
+            } catch (err) {
+                console.error("Failed to fetch referrals", err);
+            }
+        };
+        fetchReferrals();
+    }, [token]);
 
     // --- STATE: FORM MODAL ---
     const [isFormOpen, setIsFormOpen] = useState(false);
 
     // --- STATE: FORM FIELDS ---
-    const [researcherName, setResearcherName] = useState('Eleanor Shellstrop');
+    const [researcherName, setResearcherName] = useState(user.fullName || 'User');
     const [projectCategory, setProjectCategory] = useState('AI Ethics');
     const [submissionId, setSubmissionId] = useState('');
-    const [researchSummary, setResearchSummary] = useState('Our methodology focused on evaluating the ethical implications of large language models in educational settings, primarily...');
+    const [researchSummary, setResearchSummary] = useState('');
     const [dataSources, setDataSources] = useState({ generatedData: true, surveyResults: false });
     const [uploadedFiles, setUploadedFiles] = useState([]);
     const [isRecording, setIsRecording] = useState(false);
@@ -55,10 +81,40 @@ export default function Collaboration() {
         setUploadedFiles(prev => [...prev, ...files]);
     };
 
-    const handleFormSubmit = () => {
-        if (!submissionId) return alert("Please fill out the required Submission ID field.");
-        alert("Form successfully locked and submitted for peer review queue.");
-        setIsFormOpen(false);
+    const handleFormSubmit = async () => {
+        if (!submissionId) return showToast("Please fill out the required Submission ID field.", "error");
+        
+        try {
+            const response = await fetch('http://localhost:5000/api/v1/collaboration/submissions', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    researcherName,
+                    category: projectCategory,
+                    submissionId,
+                    summary: researchSummary,
+                    dataSources,
+                    status: 'submitted'
+                })
+            });
+
+            if (response.ok) {
+                showToast("Form successfully locked and submitted for peer review queue.", "success");
+                setIsFormOpen(false);
+                // Clear form
+                setSubmissionId('');
+                setResearchSummary('');
+            } else {
+                showToast("Failed to submit form.", "error");
+            }
+        } catch (error) {
+            console.error("Submission failed", error);
+            showToast("An error occurred during submission.", "error");
+        }
     };
 
     return (
@@ -101,28 +157,28 @@ export default function Collaboration() {
                             <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">Total Referrals</span>
                             <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">person_add</span>
                         </div>
-                        <span className="text-[28px] sm:text-[32px] font-bold text-[#222777] leading-none">{referralStats.total}</span>
+                        <span className="text-[28px] sm:text-[32px] font-bold text-[#222777] leading-none">{stats.total}</span>
                     </div>
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-6 flex flex-col justify-between h-auto sm:h-[120px] gap-2 sm:gap-0">
                         <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center text-[#777682] gap-1 sm:gap-0">
                             <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">Pending Coins</span>
                             <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">hourglass_empty</span>
                         </div>
-                        <span className="text-[28px] sm:text-[32px] font-bold text-[#00c2cb] leading-none">{referralStats.pending}</span>
+                        <span className="text-[28px] sm:text-[32px] font-bold text-[#00c2cb] leading-none">{stats.pending}</span>
                     </div>
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-6 flex flex-col justify-between h-auto sm:h-[120px] gap-2 sm:gap-0">
                         <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center text-[#777682] gap-1 sm:gap-0">
                             <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">Earned Coins</span>
                             <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">toll</span>
                         </div>
-                        <span className="text-[28px] sm:text-[32px] font-bold text-[#00c2cb] leading-none">{referralStats.earned.toLocaleString()}</span>
+                        <span className="text-[28px] sm:text-[32px] font-bold text-[#00c2cb] leading-none">{stats.earned.toLocaleString()}</span>
                     </div>
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-6 flex flex-col justify-between h-auto sm:h-[120px] gap-2 sm:gap-0">
                         <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center text-[#777682] gap-1 sm:gap-0">
                             <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">Conversion</span>
                             <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">trending_up</span>
                         </div>
-                        <span className="text-[28px] sm:text-[32px] font-bold text-[#222777] leading-none">{referralStats.conversion}%</span>
+                        <span className="text-[28px] sm:text-[32px] font-bold text-[#222777] leading-none">{stats.conversion}%</span>
                     </div>
                 </div>
 
@@ -369,6 +425,21 @@ export default function Collaboration() {
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+            
+            {/* --- CUSTOM TOAST NOTIFICATION --- */}
+            <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#e6fbfc] border-[#00c2cb] text-[#006e73]'}`}>
+                    <span className="material-symbols-outlined text-[20px]">
+                        {toast.type === 'error' ? 'error' : 'check_circle'}
+                    </span>
+                    <span className="text-[13px] sm:text-[14px] font-bold">
+                        {toast.message}
+                    </span>
+                    <button onClick={() => setToast(prev => ({...prev, show: false}))} className="ml-2 hover:opacity-70">
+                        <span className="material-symbols-outlined text-[18px]">close</span>
+                    </button>
                 </div>
             </div>
         </div>

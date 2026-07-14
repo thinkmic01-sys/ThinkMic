@@ -3,9 +3,10 @@ import { useSelector } from 'react-redux';
 import { Link } from "react-router-dom";
 
 export default function Achievements() {
-    // Pull the live coin balance from our Redux store
-    const { user } = useSelector((state) => state.auth);
-    const currentCoins = user?.coins || 1250;
+    // Pull the live coin balance and auth token from our Redux store
+    const { user, accessToken: token } = useSelector((state) => state.auth);
+    const currentCoins = user?.coins ?? 0;
+    const progressPercent = Math.min((currentCoins / 2000) * 100, 100);
 
     const [activeTab, setActiveTab] = useState('history');
 
@@ -16,13 +17,55 @@ export default function Achievements() {
         { id: 3, title: 'Invite a peer', desc: 'Refer a colleague to join ThinkMic.', amount: 200, icon: 'group_add' },
     ];
 
-    const transactions = [
-        { id: 1, date: '2023-10-27 14:30', action: 'Seminar: Quantum Computing', icon: 'school', amount: 50 },
-        { id: 2, date: '2023-10-26 09:15', action: 'Notes Published', icon: 'edit_document', amount: 100 },
-        { id: 3, date: '2023-10-25 18:45', action: 'PDF Export', icon: 'download', amount: -20 },
-        { id: 4, date: '2023-10-24 11:00', action: '7-Day Streak Bonus', icon: 'local_fire_department', amount: 200 },
-        { id: 5, date: '2023-10-22 16:20', action: 'Seminar: Intro to Neural Nets', icon: 'school', amount: 50 },
-    ];
+    const [transactions, setTransactions] = useState([]);
+    const [leaderboard, setLeaderboard] = useState([]);
+    const [stats, setStats] = useState({ weekEarned: 0, lifetime: 0, rank: '-', streak: 0 });
+
+    React.useEffect(() => {
+        const fetchTransactions = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/v1/achievements/transactions', {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setTransactions(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch transactions", error);
+            }
+        };
+        const fetchLeaderboard = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/v1/achievements/leaderboard', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setLeaderboard(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch leaderboard", error);
+            }
+        };
+        const fetchStats = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/v1/achievements/stats', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setStats(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch stats", error);
+            }
+        };
+        fetchTransactions();
+        fetchLeaderboard();
+        fetchStats();
+    }, [token]);
 
     return (
         /* FIXED: Added strict height and overflow-y-auto to the outermost container */
@@ -69,10 +112,10 @@ export default function Achievements() {
                         <div className="w-full lg:w-1/3 shrink-0">
                             <div className="flex justify-between text-[11px] sm:text-xs font-bold mb-2">
                                 <span className="text-[#777682]">Progress to Level 5</span>
-                                <span className="text-[#222777]">1,250 / 2,000</span>
+                                <span className="text-[#222777]">{currentCoins.toLocaleString()} / 2,000</span>
                             </div>
                             <div className="h-1.5 sm:h-2 w-full bg-[#e0e2eb] rounded-full overflow-hidden">
-                                <div className="h-full bg-[#00c2cb] rounded-full transition-all duration-1000 ease-out" style={{ width: '62.5%' }}></div>
+                                <div className="h-full bg-[#00c2cb] rounded-full transition-all duration-1000 ease-out" style={{ width: `${progressPercent}%` }}></div>
                             </div>
                         </div>
                     </div>
@@ -81,19 +124,19 @@ export default function Achievements() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-[#e0e2eb]">
                         <div>
                             <p className="text-[10px] sm:text-xs text-[#777682] mb-0.5 sm:mb-1 flex items-center gap-1 font-bold uppercase tracking-wider"><span className="material-symbols-outlined text-[14px]">calendar_today</span> Week Earned</p>
-                            <p className="text-lg sm:text-xl md:text-2xl text-[#222777] font-bold">+350</p>
+                            <p className="text-lg sm:text-xl md:text-2xl text-[#222777] font-bold">+{stats.weekEarned}</p>
                         </div>
                         <div>
                             <p className="text-[10px] sm:text-xs text-[#777682] mb-0.5 sm:mb-1 flex items-center gap-1 font-bold uppercase tracking-wider"><span className="material-symbols-outlined text-[14px]">all_inclusive</span> Lifetime</p>
-                            <p className="text-lg sm:text-xl md:text-2xl text-[#222777] font-bold">4,850</p>
+                            <p className="text-lg sm:text-xl md:text-2xl text-[#222777] font-bold">{stats.lifetime?.toLocaleString()}</p>
                         </div>
                         <div>
                             <p className="text-[10px] sm:text-xs text-[#777682] mb-0.5 sm:mb-1 flex items-center gap-1 font-bold uppercase tracking-wider"><span className="material-symbols-outlined text-[14px]">leaderboard</span> Rank</p>
-                            <p className="text-lg sm:text-xl md:text-2xl text-[#222777] font-bold">#42</p>
+                            <p className="text-lg sm:text-xl md:text-2xl text-[#222777] font-bold">#{stats.rank}</p>
                         </div>
                         <div>
                             <p className="text-[10px] sm:text-xs text-[#777682] mb-0.5 sm:mb-1 flex items-center gap-1 font-bold uppercase tracking-wider"><span className="material-symbols-outlined text-[14px]">local_fire_department</span> Streak</p>
-                            <p className="text-lg sm:text-xl md:text-2xl text-[#222777] font-bold">14 Days</p>
+                            <p className="text-lg sm:text-xl md:text-2xl text-[#222777] font-bold">{stats.streak} Days</p>
                         </div>
                     </div>
                 </div>
@@ -158,8 +201,8 @@ export default function Achievements() {
                                         </thead>
                                         <tbody className="divide-y divide-[#e0e2eb] text-[13px] sm:text-sm">
                                         {transactions.map((tx) => (
-                                            <tr key={tx.id} className={`hover:bg-[#f1f3fc] transition-colors ${tx.amount < 0 ? 'bg-[#ffdad6]/20 hover:bg-[#ffdad6]/40' : ''}`}>
-                                                <td className="py-3 sm:py-4 px-3 sm:px-4 font-mono text-[11px] sm:text-xs text-[#777682] whitespace-nowrap">{tx.date}</td>
+                                            <tr key={tx._id} className={`hover:bg-[#f1f3fc] transition-colors ${tx.amount < 0 ? 'bg-[#ffdad6]/20 hover:bg-[#ffdad6]/40' : ''}`}>
+                                                <td className="py-3 sm:py-4 px-3 sm:px-4 font-mono text-[11px] sm:text-xs text-[#777682] whitespace-nowrap">{new Date(tx.date).toLocaleString()}</td>
                                                 <td className="py-3 sm:py-4 px-3 sm:px-4 text-[#181c22] flex items-center gap-2 sm:gap-3 font-semibold min-w-[200px]">
                                                     <span className="material-symbols-outlined text-[16px] sm:text-[18px] text-[#c7c5d3] shrink-0">{tx.icon}</span>
                                                     <span className="truncate">{tx.action}</span>
@@ -172,11 +215,40 @@ export default function Achievements() {
                                         </tbody>
                                     </table>
                                 </div>
-                            ) : (
-                                <div className="flex items-center justify-center h-48 sm:h-64 text-[#c7c5d3] font-bold text-[13px] sm:text-sm px-4 text-center">
-                                    Leaderboard synchronization coming soon
+                            ) : activeTab === 'leaderboard' ? (
+                                <div className="overflow-x-auto w-full custom-scrollbar">
+                                    <table className="w-full text-left border-collapse min-w-[450px]">
+                                        <thead className="bg-[#f9f9ff] border-b border-[#e0e2eb]">
+                                        <tr>
+                                            <th className="py-3 px-3 sm:px-4 text-[10px] sm:text-[11px] text-[#777682] font-bold uppercase tracking-wider whitespace-nowrap">Rank</th>
+                                            <th className="py-3 px-3 sm:px-4 text-[10px] sm:text-[11px] text-[#777682] font-bold uppercase tracking-wider">Scholar</th>
+                                            <th className="py-3 px-3 sm:px-4 text-[10px] sm:text-[11px] text-[#777682] font-bold uppercase tracking-wider text-right whitespace-nowrap">Lifetime Coins</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-[#e0e2eb] text-[13px] sm:text-sm">
+                                        {leaderboard.map((u, idx) => (
+                                            <tr key={u._id} className={`hover:bg-[#f1f3fc] transition-colors ${u._id === user?.id ? 'bg-[#e6fbfc] hover:bg-[#cbf4f6]' : ''}`}>
+                                                <td className="py-3 sm:py-4 px-3 sm:px-4 font-mono text-[12px] sm:text-[14px] text-[#222777] font-bold whitespace-nowrap">
+                                                    #{idx + 1}
+                                                </td>
+                                                <td className="py-3 sm:py-4 px-3 sm:px-4 text-[#181c22] flex items-center gap-2 sm:gap-3 font-semibold min-w-[200px]">
+                                                    <img src={u.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName)}&background=222777&color=fff`} className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border border-[#c7c5d3] object-cover" alt="Avatar"/>
+                                                    <span className="truncate">{u.fullName} {u._id === user?.id && <span className="ml-2 text-[10px] bg-[#00c2cb] text-white px-2 py-0.5 rounded-full">You</span>}</span>
+                                                </td>
+                                                <td className="py-3 sm:py-4 px-3 sm:px-4 text-right font-bold font-mono text-[12px] sm:text-[13px] whitespace-nowrap text-[#006e73]">
+                                                    {u.lifetimeCoins?.toLocaleString() || 0}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {leaderboard.length === 0 && (
+                                            <tr>
+                                                <td colSpan="3" className="py-8 text-center text-[#777682] font-mono text-xs">No ranking data available</td>
+                                            </tr>
+                                        )}
+                                        </tbody>
+                                    </table>
                                 </div>
-                            )}
+                            ) : null}
                         </div>
                     </div>
 

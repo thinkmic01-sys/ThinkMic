@@ -1,13 +1,34 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 export default function SchemaLibrary() {
-    // Mock data for the schemas list
-    const mockSchemas = [
-        { id: 1, name: "Patient Intake Form", submissions: 142, status: "Draft", lastUpdated: "2 mins ago" },
-        { id: 2, name: "Weekly Research Log", submissions: 856, status: "Active", lastUpdated: "4 days ago" },
-        { id: 3, name: "Hardware Request", submissions: 12, status: "Archived", lastUpdated: "1 month ago" }
-    ];
+    const accessToken = useSelector((state) => state.auth?.accessToken);
+    const [schemas, setSchemas] = useState([]);
+
+    useEffect(() => {
+        if (!accessToken) return;
+        const fetchSchemas = async () => {
+            try {
+                const res = await fetch('http://localhost:5000/api/v1/schemas', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                const data = await res.json();
+                if (data.schemas) {
+                    setSchemas(data.schemas.map(s => ({
+                        id: s._id,
+                        name: s.name,
+                        submissions: 0, // Not implemented in backend schema count yet
+                        status: s.isActive ? 'Active' : 'Archived',
+                        lastUpdated: new Date(s.updatedAt).toLocaleDateString()
+                    })));
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        fetchSchemas();
+    }, [accessToken]);
 
     return (
         <div className="p-4 sm:p-6 md:p-8 w-full max-w-[1280px] mx-auto font-sans">
@@ -48,7 +69,9 @@ export default function SchemaLibrary() {
                         </tr>
                         </thead>
                         <tbody className="text-[13px] sm:text-sm">
-                        {mockSchemas.map((schema) => (
+                        {schemas.length === 0 ? (
+                            <tr><td colSpan="5" className="p-6 text-center text-[#777682] font-semibold">No schemas found. Create one to get started.</td></tr>
+                        ) : schemas.map((schema) => (
                             <tr key={schema.id} className="border-b border-[#e0e2eb] hover:bg-[#f1f3fc] transition-colors group">
                                 <td className="p-3 sm:p-4 pl-4 sm:pl-6 font-bold text-[#181c22] whitespace-nowrap">{schema.name}</td>
                                 <td className="p-3 sm:p-4 font-mono font-bold text-[#464651]">{schema.submissions}</td>

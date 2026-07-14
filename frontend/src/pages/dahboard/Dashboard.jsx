@@ -1,22 +1,59 @@
-// frontend/src/pages/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 
 export default function Dashboard() {
+    const accessToken = useSelector((state) => state.auth?.accessToken);
+    const userName = useSelector((state) => state.auth?.name || 'User');
     const [currentDate, setCurrentDate] = useState('');
+    const [stats, setStats] = useState({ recordings: 0, reports: 0, searchesRun: 0 });
+    const [timelineActivity, setTimelineActivity] = useState([]);
 
     useEffect(() => {
         const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+        // Moved to avoid synchronous update in effect, or simply set it
         setCurrentDate(new Date().toLocaleDateString('en-US', options));
-    }, []);
 
-    const timelineActivity = [
-        { id: 1, text: 'Recording "Quantum Physics Lec 4" started.', time: 'Just now', color: 'bg-[#6bf6ff]', pulse: true },
-        { id: 2, text: 'Report generated for "AI Ethics Seminar".', time: '10 mins ago', color: 'bg-[#222777]', pulse: false },
-        { id: 3, text: 'Search query "neural network optimization" executed.', time: '1 hour ago', color: 'bg-[#00696e]', pulse: false },
-        { id: 4, text: 'Failed to sync "Lab Notes 12". Retrying...', time: '2 hours ago', color: 'bg-[#ba1a1a]', pulse: false },
-        { id: 5, text: 'Recording "Team Sync" saved.', time: 'Yesterday, 14:30', color: 'bg-[#222777]', pulse: false },
-        { id: 6, text: 'Report generated for "Market Analysis".', time: 'Yesterday, 11:15', color: 'bg-[#222777]', pulse: false },
-    ];
+        if (!accessToken) return;
+
+        const fetchData = async () => {
+            try {
+                // Fetch KPIs
+                const kpiRes = await fetch('http://localhost:5000/api/v1/analytics/usage', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                const kpiData = await kpiRes.json();
+
+                // Fetch Recent Recordings
+                const recRes = await fetch('http://localhost:5000/api/v1/recordings', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                const recData = await recRes.json();
+
+                if (kpiData.kpis) {
+                    setStats({
+                        recordings: kpiData.kpis.recordings || recData.count || 0,
+                        reports: kpiData.kpis.reports || 0,
+                        searchesRun: kpiData.kpis.searchesRun || 0
+                    });
+                }
+
+                if (recData.recordings) {
+                    const activity = recData.recordings.map((rec, index) => ({
+                        id: rec._id,
+                        text: `Recording "${rec.title}" saved.`,
+                        time: new Date(rec.createdAt).toLocaleString(),
+                        color: index === 0 ? 'bg-[#6bf6ff]' : 'bg-[#222777]',
+                        pulse: index === 0
+                    }));
+                    setTimelineActivity(activity);
+                }
+            } catch (error) {
+                console.error("Error fetching dashboard data:", error);
+            }
+        };
+
+        fetchData();
+    }, [accessToken]);
 
     return (
         <div className="h-[calc(100vh-64px)] overflow-y-auto bg-[#f9f9ff] w-full relative">
@@ -34,7 +71,7 @@ export default function Dashboard() {
                 {/* Welcome Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end">
                     <div>
-                        <h2 className="text-[32px] text-[#222777] font-bold mb-1 tracking-tight">Good morning, User</h2>
+                        <h2 className="text-[32px] text-[#222777] font-bold mb-1 tracking-tight">Good morning, {userName}</h2>
                         <p className="font-mono text-[12px] text-[#777682] uppercase tracking-wider">{currentDate}</p>
                     </div>
                     <div className="mt-4 md:mt-0 flex gap-3">
@@ -55,21 +92,21 @@ export default function Dashboard() {
                     <div className="bg-white shadow-card rounded-lg p-5 border-l-[8px] border-[#222777] flex flex-col justify-between h-[120px]">
                         <p className="font-mono text-[14px] font-bold text-[#464651] uppercase tracking-wider">Total Recordings</p>
                         <div className="flex items-end justify-between">
-                            <p className="text-[32px] font-bold text-[#222777] leading-none">142</p>
+                            <p className="text-[32px] font-bold text-[#222777] leading-none">{stats.recordings}</p>
                             <span className="material-symbols-outlined text-[#c7c5d3] text-[24px]">mic</span>
                         </div>
                     </div>
                     <div className="bg-white shadow-card rounded-lg p-5 border-l-[8px] border-[#222777] flex flex-col justify-between h-[120px]">
                         <p className="font-mono text-[14px] font-bold text-[#464651] uppercase tracking-wider">Reports Generated</p>
                         <div className="flex items-end justify-between">
-                            <p className="text-[32px] font-bold text-[#222777] leading-none">87</p>
+                            <p className="text-[32px] font-bold text-[#222777] leading-none">{stats.reports}</p>
                             <span className="material-symbols-outlined text-[#c7c5d3] text-[24px]">description</span>
                         </div>
                     </div>
                     <div className="bg-white shadow-card rounded-lg p-5 border-l-[8px] border-[#222777] flex flex-col justify-between h-[120px]">
                         <p className="font-mono text-[14px] font-bold text-[#464651] uppercase tracking-wider">Searches Run</p>
                         <div className="flex items-end justify-between">
-                            <p className="text-[32px] font-bold text-[#222777] leading-none">1,024</p>
+                            <p className="text-[32px] font-bold text-[#222777] leading-none">{stats.searchesRun}</p>
                             <span className="material-symbols-outlined text-[#c7c5d3] text-[24px]">search</span>
                         </div>
                     </div>

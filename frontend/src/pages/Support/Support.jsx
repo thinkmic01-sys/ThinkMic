@@ -27,7 +27,8 @@ export default function Support() {
     );
 
     return (
-        <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 md:p-8 flex flex-col pb-20 font-sans">
+        <div className="w-full h-[calc(100vh-64px)] overflow-y-auto bg-[#f9f9ff] font-sans custom-scrollbar">
+            <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 md:p-8 flex flex-col pb-20">
 
             {/* Hero Section */}
             <div className="text-center py-8 sm:py-12 flex flex-col items-center px-2 sm:px-0">
@@ -113,6 +114,7 @@ export default function Support() {
 
                     </div>
                 </div>
+            </div>
             </div>
         </div>
     );

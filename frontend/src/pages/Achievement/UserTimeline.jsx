@@ -1,58 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from "react-router-dom";
+import { useSelector } from 'react-redux';
 
 export default function UserTimeline() {
     const [activeFilter, setActiveFilter] = useState('All');
+    const [timelineEvents, setTimelineEvents] = useState([]);
+    const [stats, setStats] = useState({ weekEarned: 0, streak: 0, hoursRecorded: 0, reportsGenerated: 0 });
+    const token = useSelector(state => state.auth?.accessToken);
 
-    // MOCK DATA: Timeline Events
-    const timelineEvents = [
-        {
-            id: 1,
-            type: 'Recording',
-            title: 'Recording AI Ethics Lecture',
-            timestamp: 'Live',
-            description: "Capturing live audio from Professor Harrison's seminar on algorithmic bias. Processing real-time transcription and key entity extraction.",
-            icon: 'mic',
-            color: 'text-[#00c2cb]',
-            borderColor: 'border-[#00c2cb]',
-            isLive: true
-        },
-        {
-            id: 2,
-            type: 'Rewards',
-            title: 'Milestone Achieved',
-            timestamp: '2 hours ago',
-            description: 'Completed "Deep Learning Fundamentals" workbook.',
-            icon: 'emoji_events',
-            color: 'text-[#006e73]',
-            borderColor: 'border-[#3edae3]',
-            coinReward: '+500',
-            isLive: false
-        },
-        {
-            id: 3,
-            type: 'Reports',
-            title: 'Report Generated',
-            timestamp: 'Yesterday, 4:30 PM',
-            description: 'Comprehensive literature review on Transformer architectures. Synthesized from 14 individual research papers and 3 seminar transcripts.',
-            icon: 'description',
-            color: 'text-[#222777]',
-            borderColor: 'border-[#222777]',
-            hasLink: true,
-            isLive: false
-        },
-        {
-            id: 4,
-            type: 'Seminars',
-            title: 'Seminar Synthesized',
-            timestamp: 'Oct 12, 10:00 AM',
-            description: '"The Future of Generative Models" by Dr. Aris. Extracted 5 key themes and generated flashcards for review.',
-            icon: 'record_voice_over',
-            color: 'text-[#3f4378]',
-            borderColor: 'border-[#3f4378]',
-            isLive: false
-        }
-    ];
+    useEffect(() => {
+        const fetchEvents = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/v1/achievements/timeline', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setTimelineEvents(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch timeline events", error);
+            }
+        };
+        const fetchStats = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/v1/achievements/stats', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setStats(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch stats", error);
+            }
+        };
+        fetchEvents();
+        fetchStats();
+    }, [token]);
 
     const filters = ['All', 'Recordings', 'Summaries', 'Reports', 'Seminars', 'Notes', 'Rewards'];
 
@@ -115,7 +100,7 @@ export default function UserTimeline() {
                             <div className="pl-12 pt-8 pb-8 text-[#777682] font-bold font-mono">No activity found for this filter.</div>
                         ) : (
                             filteredEvents.map(event => (
-                                <div key={event.id} className="relative pl-10 pb-8 group animate-in slide-in-from-bottom-4 duration-300">
+                                <div key={event._id} className="relative pl-10 pb-8 group animate-in slide-in-from-bottom-4 duration-300">
 
                                     {/* Timeline Node */}
                                     <div className={`absolute left-0 top-1 w-6 h-6 rounded-full bg-white border-2 ${event.borderColor} flex items-center justify-center shadow-sm z-10 ${event.isLive ? 'pulse-ring' : ''}`}>
@@ -133,7 +118,7 @@ export default function UserTimeline() {
                                                 <span className="font-mono text-[14px] font-bold text-[#181c22]">{event.title}</span>
                                             </div>
                                             <span className={`font-mono text-[11px] font-bold ${event.isLive ? 'text-[#00c2cb]' : 'text-[#777682]'}`}>
-                                                {event.timestamp}
+                                                {event.isLive ? 'Live' : new Date(event.createdAt).toLocaleString()}
                                             </span>
                                         </div>
 
@@ -176,7 +161,7 @@ export default function UserTimeline() {
                             <span className="material-symbols-outlined text-[#00c2cb] text-[20px] sm:text-[24px]">local_fire_department</span>
                         </div>
                         <div className="flex items-baseline gap-2 mb-1 sm:mb-2">
-                            <span className="text-[32px] sm:text-[40px] font-bold text-[#222777] tracking-tighter leading-none">14</span>
+                            <span className="text-[32px] sm:text-[40px] font-bold text-[#222777] tracking-tighter leading-none">{stats.streak}</span>
                             <span className="font-mono text-[11px] sm:text-[12px] font-bold text-[#777682] uppercase tracking-wider">Days</span>
                         </div>
                         <p className="font-mono text-[10px] sm:text-[11px] text-[#464651] mb-4 sm:mb-5 leading-relaxed font-bold">Keep recording or synthesizing to maintain your streak!</p>
@@ -206,15 +191,15 @@ export default function UserTimeline() {
                         <div className="space-y-3 sm:space-y-4">
                             <div className="flex justify-between items-center border-b border-[#e0e2eb] pb-2.5 sm:pb-3">
                                 <span className="font-mono text-[11px] sm:text-[12px] font-bold text-[#777682]">Hours Recorded</span>
-                                <span className="font-mono text-[13px] sm:text-[14px] font-bold text-[#222777]">12.5h</span>
+                                <span className="font-mono text-[13px] sm:text-[14px] font-bold text-[#222777]">{stats.hoursRecorded}h</span>
                             </div>
                             <div className="flex justify-between items-center border-b border-[#e0e2eb] pb-2.5 sm:pb-3">
                                 <span className="font-mono text-[11px] sm:text-[12px] font-bold text-[#777682]">Reports Gen.</span>
-                                <span className="font-mono text-[13px] sm:text-[14px] font-bold text-[#222777]">4</span>
+                                <span className="font-mono text-[13px] sm:text-[14px] font-bold text-[#222777]">{stats.reportsGenerated}</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="font-mono text-[11px] sm:text-[12px] font-bold text-[#777682]">Coins Earned</span>
-                                <span className="font-mono text-[13px] sm:text-[14px] font-bold text-[#006e73] bg-[#e6fbfc] px-2 py-0.5 rounded border border-[#6bf6ff]/50">+850</span>
+                                <span className="font-mono text-[13px] sm:text-[14px] font-bold text-[#006e73] bg-[#e6fbfc] px-2 py-0.5 rounded border border-[#6bf6ff]/50">+{stats.weekEarned}</span>
                             </div>
                         </div>
                     </div>

@@ -1,5 +1,7 @@
 const User = require('../models/User');
+const Referral = require('../models/Referral');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 // Helper to generate access token
 const generateAccessToken = (id, role) => {
@@ -11,16 +13,36 @@ const generateAccessToken = (id, role) => {
 // @access  Public
 exports.register = async (req, res) => {
     try {
-        const { email, password, fullName } = req.body;
+        const { email, password, fullName, referralCode } = req.body;
 
         const userExists = await User.findOne({ email });
         if (userExists) return res.status(400).json({ message: 'User already exists' });
 
+        const newReferralCode = crypto.randomBytes(4).toString('hex');
+
         const user = await User.create({
             email,
             passwordHash: password,
-            fullName
+            fullName,
+            referralCode: newReferralCode
         });
+
+        if (referralCode) {
+            const referrer = await User.findOne({ referralCode });
+            if (referrer) {
+                referrer.coins += 150;
+                referrer.lifetimeCoins += 150;
+                await referrer.save();
+
+                await Referral.create({
+                    referrerId: referrer._id,
+                    referredName: fullName,
+                    referredEmail: email,
+                    status: 'Active',
+                    rewards: 150
+                });
+            }
+        }
 
         res.status(201).json({ userId: user._id, message: 'User registered successfully. Please verify your email.' }); // 201 per spec[cite: 1]
     } catch (error) {
@@ -53,6 +75,11 @@ exports.login = async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
+        // Generate referral code for legacy users if they don't have one
+        if (!user.referralCode) {
+            user.referralCode = crypto.randomBytes(4).toString('hex');
+        }
+
         // Update last login
         user.lastLoginAt = Date.now();
         await user.save();
@@ -63,7 +90,9 @@ exports.login = async (req, res) => {
                 id: user._id,
                 email: user.email,
                 fullName: user.fullName,
-                role: user.role
+                role: user.role,
+                coins: user.coins,
+                referralCode: user.referralCode
             }
         });
     } catch (error) {
@@ -92,6 +121,12 @@ exports.refresh = async (req, res) => {
             return res.status(401).json({ message: 'User no longer exists' });
         }
 
+        // Generate referral code for legacy users if they don't have one
+        if (!user.referralCode) {
+            user.referralCode = crypto.randomBytes(4).toString('hex');
+            await user.save();
+        }
+
         // Generate a fresh short-lived access token[cite: 1]
         const newAccessToken = jwt.sign(
             { sub: user._id, role: user.role },
@@ -105,11 +140,25 @@ exports.refresh = async (req, res) => {
                 id: user._id,
                 email: user.email,
                 fullName: user.fullName,
-                role: user.role
+                role: user.role,
+                coins: user.coins,
+                referralCode: user.referralCode
             }
         });
     } catch (error) {
         console.error('Refresh Error:', error.message);
         res.status(401).json({ message: 'Invalid or expired refresh token' });
     }
+};
+
+// @desc    Logout user & clear cookie
+// @route   POST /api/v1/auth/logout
+// @access  Public
+exports.logout = (req, res) => {
+    res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Strict'
+    });
+    res.status(200).json({ message: 'Logged out successfully' });
 };

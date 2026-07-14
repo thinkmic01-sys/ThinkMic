@@ -34,7 +34,7 @@ const upload = multer({
 router.use(protect);
 
 // Our new Local Upload route. Multer handles the file labeled 'audio' in the form data
-router.post('/upload-local', upload.single('audio'), uploadAudioLocal);
+router.post('/', upload.single('audio'), uploadAudioLocal);
 
 // Get recordings
 router.get('/', getMyRecordings);

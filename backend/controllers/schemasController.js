@@ -1,0 +1,84 @@
+const FieldSchema = require('../models/FieldSchema');
+
+exports.listSchemas = async (req, res) => {
+    try {
+        const { status } = req.query;
+        const query = {};
+        if (status) query.status = status;
+
+        const schemas = await FieldSchema.find(query).sort({ createdAt: -1 });
+        res.status(200).json({ schemas });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+exports.createSchema = async (req, res) => {
+    try {
+        const { name, description, targetRole, fields } = req.body;
+        
+        const schema = await FieldSchema.create({
+            createdBy: req.user._id,
+            name,
+            description,
+            targetRole,
+            fields,
+            status: 'draft'
+        });
+
+        res.status(201).json({ schema });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+exports.updateSchema = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const schema = await FieldSchema.findOneAndUpdate(
+            { _id: id, status: 'draft' }, // Only drafts can be updated this way
+            req.body,
+            { new: true }
+        );
+
+        if (!schema) {
+            return res.status(404).json({ message: 'Draft schema not found or already published' });
+        }
+
+        res.status(200).json({ schema });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+exports.publishSchema = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const schema = await FieldSchema.findByIdAndUpdate(
+            id,
+            { status: 'active', $inc: { version: 1 } },
+            { new: true }
+        );
+
+        if (!schema) return res.status(404).json({ message: 'Schema not found' });
+        
+        res.status(200).json({ schema, version: schema.version });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+exports.listPublishedForms = async (req, res) => {
+    try {
+        // Users can only see active forms
+        // Depending on role, we might filter by targetRole, but assuming user sees targetRole: 'user' or 'all'
+        const forms = await FieldSchema.find({ 
+            status: 'active',
+            targetRole: { $in: [req.user.role, 'all'] }
+        }).sort({ createdAt: -1 });
+        
+        res.status(200).json({ forms });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};

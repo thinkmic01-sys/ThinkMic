@@ -1,18 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { login } from '../store/slices/authSlice';
 
 export default function Auth() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const referralCode = searchParams.get('ref');
 
     // --- UI State ---
-    const [isLoginView, setIsLoginView] = useState(true);
+    // If they have a referral code, default to the registration view instead of login
+    const [isLoginView, setIsLoginView] = useState(!referralCode);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
-    const [showPassword, setShowPassword] = useState(false); // <-- ADDED FOR EYE TOGGLE
+    const [showPassword, setShowPassword] = useState(false);
 
     // --- Form Data State ---
     const [formData, setFormData] = useState({
@@ -43,7 +46,7 @@ export default function Auth() {
                 body: JSON.stringify(
                     isLoginView
                         ? { email: formData.email, password: formData.password }
-                        : { fullName: formData.fullName, email: formData.email, password: formData.password }
+                        : { fullName: formData.fullName, email: formData.email, password: formData.password, referralCode }
                 ),
                 credentials: 'include'
             });
@@ -62,7 +65,8 @@ export default function Auth() {
                     email: data.user.email,
                     role: data.user.role,
                     accessToken: data.accessToken,
-                    coins: 0,
+                    coins: data.user.coins || 0,
+                    referralCode: data.user.referralCode,
                     avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.user.fullName)}&background=222777&color=fff`
                 }));
 
@@ -88,7 +92,8 @@ export default function Auth() {
                         email: loginData.user.email,
                         role: loginData.user.role,
                         accessToken: loginData.accessToken,
-                        coins: 0,
+                        coins: loginData.user.coins || 0,
+                        referralCode: loginData.user.referralCode,
                         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(loginData.user.fullName)}&background=222777&color=fff`
                     }));
                     navigate('/app/dashboard');

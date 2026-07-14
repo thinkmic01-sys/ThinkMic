@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 
 export default function SchemaBuilder() {
+    const accessToken = useSelector((state) => state.auth?.accessToken);
+    const [schemaName, setSchemaName] = useState('New Dynamic Form');
     // --- STATE MANAGEMENT ---
-    const [fields, setFields] = useState([
-        { id: 1, type: 'Text', label: 'Patient Full Name', required: true, active: false, icon: 'short_text' },
-        { id: 2, type: 'Voice', label: 'Chief Complaint (Audio)', required: true, active: true, icon: 'mic', prompt: 'Please describe your primary reason for visiting today, including when symptoms started.' }
-    ]);
+    const [fields, setFields] = useState([]);
 
     const activeField = fields.find(f => f.active);
 
@@ -25,7 +25,7 @@ export default function SchemaBuilder() {
 
     const handleAddField = (type, icon) => {
         const newField = {
-            id: Date.now(),
+            id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(), // Avoid impure Date.now() directly in render, though it's in a handler here so Date.now() was actually fine, but linter complained. Wait, linter complained about Date.now() in handler? Yes. We'll use a string id.
             type: type,
             label: `New ${type} Field`,
             required: false,
@@ -69,12 +69,41 @@ export default function SchemaBuilder() {
     };
 
     // --- ACTION BUTTON HANDLERS ---
-    const handleSaveDraft = () => alert("Draft saved! (This will trigger POST /api/schemas with status: 'draft')");
-    const handlePreview = () => alert("Launching Preview Mode...");
-    const handlePublish = () => {
-        if (fields.length === 0) return alert("You must add at least one field to publish a schema.");
-        alert("Schema Published Successfully!");
+    const saveSchema = async (isActive) => {
+        if (!accessToken) return alert("Not authenticated");
+        if (fields.length === 0) return alert("You must add at least one field.");
+        
+        try {
+            const res = await fetch('http://localhost:5000/api/v1/schemas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({
+                    name: schemaName,
+                    description: "Custom built schema",
+                    isActive,
+                    fields: fields.map(f => ({
+                        label: f.label,
+                        type: f.type,
+                        required: f.required,
+                        options: f.options,
+                        prompt: f.prompt
+                    }))
+                })
+            });
+            if (res.ok) alert(isActive ? "Schema Published Successfully!" : "Draft saved!");
+            else alert("Failed to save schema");
+        } catch (err) {
+            console.error(err);
+            alert("Error saving schema");
+        }
     };
+
+    const handleSaveDraft = () => saveSchema(false);
+    const handlePreview = () => alert("Launching Preview Mode...");
+    const handlePublish = () => saveSchema(true);
 
     return (
         <div className="flex flex-col h-[calc(100vh-64px)] w-full bg-[#f9f9ff] overflow-hidden font-sans">
@@ -91,7 +120,11 @@ export default function SchemaBuilder() {
             <header className="h-16 md:h-20 border-b border-[#c7c5d3] bg-white flex flex-wrap items-center justify-between px-4 sm:px-6 shrink-0 z-20">
                 <div className="flex items-center gap-3 sm:gap-6">
                     <div className="flex items-center gap-1 sm:gap-2 group cursor-pointer">
-                        <h2 className="text-[18px] sm:text-[22px] md:text-2xl font-bold text-[#181c22] truncate max-w-[150px] sm:max-w-none">Patient Intake Form</h2>
+                        <input 
+                            value={schemaName} 
+                            onChange={(e) => setSchemaName(e.target.value)} 
+                            className="text-[18px] sm:text-[22px] md:text-2xl font-bold text-[#181c22] truncate max-w-[150px] sm:max-w-[300px] bg-transparent outline-none border-b border-transparent focus:border-[#c7c5d3] transition-colors"
+                        />
                         <span className="material-symbols-outlined text-[#777682] group-hover:text-[#222777] transition-colors text-[16px] sm:text-[20px]">edit</span>
                     </div>
                     <div className="hidden lg:flex items-center gap-4 text-[#464651] font-mono text-[13px] font-bold">

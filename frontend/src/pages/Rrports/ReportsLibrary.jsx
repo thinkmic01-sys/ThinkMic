@@ -1,16 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 export default function ReportsLibrary() {
     const navigate = useNavigate();
+    const accessToken = useSelector((state) => state.auth?.accessToken);
 
-    // MOCK DATA: Matches the 'reports' DB schema from the System Design
-    const [reports, setReports] = useState([
-        { id: 'rpt_101', title: 'Market Analysis: Q4 AI Adoption Trends', date: '2026-10-24', status: 'ready', format: 'Standard Academic' },
-        { id: 'rpt_102', title: 'Transformer Architecture Memory Retention', date: '2026-10-22', status: 'ready', format: 'Executive Brief' },
-        { id: 'rpt_103', title: 'Quantum Encryption Implications', date: '2026-10-25', status: 'generating', format: 'Data Dense' },
-        { id: 'rpt_104', title: 'Failed Extraction Log', date: '2026-10-20', status: 'failed', format: 'Standard Academic' },
-    ]);
+    const [reports, setReports] = useState([]);
+
+    useEffect(() => {
+        if (!accessToken) return;
+        const fetchReports = async () => {
+            try {
+                const res = await fetch('http://localhost:5000/api/v1/reports', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                const data = await res.json();
+                if (data.reports) {
+                    setReports(data.reports.map(r => ({
+                        id: r._id,
+                        title: r.title || 'Untitled Report',
+                        date: r.createdAt,
+                        status: r.status, // 'generating', 'ready', 'failed'
+                        format: r.format || 'Standard'
+                    })));
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        fetchReports();
+    }, [accessToken]);
 
     const handleRowClick = (reportId, status) => {
         if (status === 'ready') {

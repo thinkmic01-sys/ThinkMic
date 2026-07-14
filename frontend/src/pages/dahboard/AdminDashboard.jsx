@@ -1,6 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 
 export default function AdminDashboard() {
+    const accessToken = useSelector((state) => state.auth?.accessToken);
+    const [kpis, setKpis] = useState({ submissions: 0, recordings: 0, reports: 0, activeUsers: 0, searchesRun: 0 });
+
+    useEffect(() => {
+        if (!accessToken) return;
+        const fetchAnalytics = async () => {
+            try {
+                const res = await fetch('http://localhost:5000/api/v1/analytics/usage', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                const data = await res.json();
+                if (data.kpis) setKpis(data.kpis);
+            } catch (err) {
+                console.error("Failed to fetch analytics:", err);
+            }
+        };
+        fetchAnalytics();
+    }, [accessToken]);
     const topUsers = [
         { id: 1, name: "Dr. Alan Grant", submissions: 142, initials: "AG", color: "bg-[#222777]" },
         { id: 2, name: "Ellie Sattler", submissions: 118, initials: "ES", color: "bg-[#3a3f8f]" },
@@ -68,27 +87,27 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-4 sm:p-5 flex flex-col gap-3 sm:gap-4">
                         <div className="flex justify-between items-center"><span className="text-[11px] sm:text-[13px] font-bold text-[#464651]">Submissions</span><span className="material-symbols-outlined text-[#c7c5d3] text-[16px] sm:text-[18px]">description</span></div>
-                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">1,492</span><span className="text-[11px] sm:text-[12px] font-bold text-[#00c2cb] mb-0.5 sm:mb-1">↑12%</span></div>
+                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">{kpis.submissions}</span><span className="text-[11px] sm:text-[12px] font-bold text-[#00c2cb] mb-0.5 sm:mb-1">↑12%</span></div>
                         <div className="flex items-end gap-1 h-6 sm:h-8 mt-1 sm:mt-2"><div className="flex-1 bg-[#61f4fd] h-[20%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[30%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[45%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[35%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[80%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[100%] rounded-t-sm"></div></div>
                     </div>
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-4 sm:p-5 flex flex-col gap-3 sm:gap-4">
                         <div className="flex justify-between items-center"><span className="text-[11px] sm:text-[13px] font-bold text-[#464651]">Recordings</span><span className="material-symbols-outlined text-[#c7c5d3] text-[16px] sm:text-[18px]">mic</span></div>
-                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">384</span><span className="text-[11px] sm:text-[12px] font-bold text-[#ba1a1a] mb-0.5 sm:mb-1">↓3%</span></div>
+                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">{kpis.recordings}</span><span className="text-[11px] sm:text-[12px] font-bold text-[#ba1a1a] mb-0.5 sm:mb-1">↓3%</span></div>
                         <div className="flex items-end gap-1 h-6 sm:h-8 mt-1 sm:mt-2"><div className="flex-1 bg-[#61f4fd] h-[100%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[70%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[85%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[50%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[30%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[40%] rounded-t-sm"></div></div>
                     </div>
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-4 sm:p-5 flex flex-col gap-3 sm:gap-4">
                         <div className="flex justify-between items-center"><span className="text-[11px] sm:text-[13px] font-bold text-[#464651]">Reports</span><span className="material-symbols-outlined text-[#c7c5d3] text-[16px] sm:text-[18px]">analytics</span></div>
-                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">89</span><span className="text-[11px] sm:text-[12px] font-bold text-[#00c2cb] mb-0.5 sm:mb-1">↑24%</span></div>
+                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">{kpis.reports}</span><span className="text-[11px] sm:text-[12px] font-bold text-[#00c2cb] mb-0.5 sm:mb-1">↑24%</span></div>
                         <div className="flex items-end gap-1 h-6 sm:h-8 mt-1 sm:mt-2"><div className="flex-1 bg-[#61f4fd] h-[15%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[25%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[30%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[45%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[70%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[90%] rounded-t-sm"></div></div>
                     </div>
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-4 sm:p-5 flex flex-col gap-3 sm:gap-4">
                         <div className="flex justify-between items-center"><span className="text-[11px] sm:text-[13px] font-bold text-[#464651]">Active Users</span><span className="material-symbols-outlined text-[#c7c5d3] text-[16px] sm:text-[18px]">group</span></div>
-                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">4,210</span><span className="text-[11px] sm:text-[12px] font-bold text-[#00c2cb] mb-0.5 sm:mb-1">↑8%</span></div>
+                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">{kpis.activeUsers}</span><span className="text-[11px] sm:text-[12px] font-bold text-[#00c2cb] mb-0.5 sm:mb-1">↑8%</span></div>
                         <div className="flex items-end gap-1 h-6 sm:h-8 mt-1 sm:mt-2"><div className="flex-1 bg-[#61f4fd] h-[60%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[75%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[65%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[80%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[100%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[85%] rounded-t-sm"></div></div>
                     </div>
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-4 sm:p-5 flex flex-col gap-3 sm:gap-4 sm:col-span-3 lg:col-span-1">
                         <div className="flex justify-between items-center"><span className="text-[11px] sm:text-[13px] font-bold text-[#464651]">Searches Run</span><span className="material-symbols-outlined text-[#c7c5d3] text-[16px] sm:text-[18px]">search</span></div>
-                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">12.5k</span><span className="text-[11px] sm:text-[12px] font-bold text-[#c7c5d3] mb-0.5 sm:mb-1">—0%</span></div>
+                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">{kpis.searchesRun}</span><span className="text-[11px] sm:text-[12px] font-bold text-[#c7c5d3] mb-0.5 sm:mb-1">—0%</span></div>
                         <div className="flex items-end gap-1 h-6 sm:h-8 mt-1 sm:mt-2"><div className="flex-1 bg-[#61f4fd] h-[30%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[25%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[40%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[35%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[20%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[35%] rounded-t-sm"></div></div>
                     </div>
                 </div>

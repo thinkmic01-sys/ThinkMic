@@ -1,18 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from "react-router-dom";
-
-// Mock User Database
-const initialUsers = [
-    { id: 1, name: 'Jane Doe', initials: 'JD', email: 'jane.doe@thinkmic.ai', role: 'admin', status: 'active', lastActive: 'Just now' },
-    { id: 2, name: 'Alex Smith', initials: 'AS', email: 'alex.smith@thinkmic.ai', role: 'manager', status: 'active', lastActive: '2 hours ago' },
-    { id: 3, name: 'Pending Invite', initials: '?', email: 'sam.taylor@university.edu', role: 'user', status: 'invited', lastActive: '-' },
-    { id: 4, name: 'Robert Jones', initials: 'RJ', email: 'robert.j@thinkmic.ai', role: 'user', status: 'inactive', lastActive: 'Oct 12, 2026' },
-    { id: 5, name: 'Michael Chang', initials: 'MC', email: 'm.chang@thinkmic.ai', role: 'user', status: 'active', lastActive: 'Yesterday' },
-];
+import { useSelector } from 'react-redux';
 
 export default function UserManagement() {
+    const accessToken = useSelector((state) => state.auth?.accessToken);
     // Application State
-    const [users, setUsers] = useState(initialUsers);
+    const [users, setUsers] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
@@ -23,6 +16,36 @@ export default function UserManagement() {
     // Modal State
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
     const [inviteEmails, setInviteEmails] = useState('');
+    const [inviteRole, setInviteRole] = useState('user');
+
+    // Fetch users
+    const fetchUsers = async () => {
+        if (!accessToken) return;
+        try {
+            const res = await fetch('http://localhost:5000/api/v1/admin/users', {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+            const data = await res.json();
+            if (data.users) {
+                const formatted = data.users.map(u => ({
+                    id: u._id,
+                    name: u.name || 'Pending Invite',
+                    initials: u.name ? u.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() : '?',
+                    email: u.email,
+                    role: u.role,
+                    status: u.status,
+                    lastActive: 'Recently'
+                }));
+                setUsers(formatted);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    useEffect(() => {
+        fetchUsers();
+    }, [accessToken]);
 
     // --- FRONTEND LOGIC --- //
 
@@ -53,11 +76,24 @@ export default function UserManagement() {
     const isAllSelected = filteredUsers.length > 0 && selectedUserIds.length === filteredUsers.length;
 
     // 3. Bulk Action Logic
-    const handleBulkDeactivate = () => {
-        setUsers(users.map(user =>
-            selectedUserIds.includes(user.id) ? { ...user, status: 'inactive' } : user
-        ));
-        setSelectedUserIds([]); // Clear selection after action
+    const handleBulkDeactivate = async () => {
+        if (!accessToken) return;
+        try {
+            for (const id of selectedUserIds) {
+                await fetch(`http://localhost:5000/api/v1/admin/users/${id}`, {
+                    method: 'PATCH',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}` 
+                    },
+                    body: JSON.stringify({ status: 'inactive' })
+                });
+            }
+            await fetchUsers(); // Refresh list
+            setSelectedUserIds([]); // Clear selection
+        } catch (err) {
+            console.error("Failed to deactivate users", err);
+        }
     };
 
     return (
@@ -308,7 +344,11 @@ export default function UserManagement() {
                             <div className="flex flex-col gap-2">
                                 <label className="text-[11px] sm:text-xs font-bold text-[#464651] uppercase tracking-wider">Assign Role</label>
                                 <div className="relative">
-                                    <select className="w-full appearance-none bg-[#f9f9ff] border border-[#c7c5d3] rounded-lg py-2.5 sm:py-3 pl-3 pr-8 text-[13px] sm:text-sm focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none cursor-pointer text-[#181c22]">
+                                    <select 
+                                        value={inviteRole}
+                                        onChange={(e) => setInviteRole(e.target.value)}
+                                        className="w-full appearance-none bg-[#f9f9ff] border border-[#c7c5d3] rounded-lg py-2.5 sm:py-3 pl-3 pr-8 text-[13px] sm:text-sm focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none cursor-pointer text-[#181c22]"
+                                    >
                                         <option value="user">User (Standard Access)</option>
                                         <option value="manager">Manager (Can manage projects)</option>
                                         <option value="admin">Admin (Full system access)</option>
@@ -326,10 +366,31 @@ export default function UserManagement() {
                                 Cancel
                             </button>
                             <button
-                                onClick={() => {
-                                    alert("Invites sent successfully!");
-                                    setIsInviteModalOpen(false);
-                                    setInviteEmails('');
+                                onClick={async () => {
+                                    if (!accessToken || !inviteEmails) return;
+                                    try {
+                                        const emails = inviteEmails.split(',').map(e => e.trim());
+                                        const res = await fetch('http://localhost:5000/api/v1/admin/users/invite', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                                'Authorization': `Bearer ${accessToken}`
+                                            },
+                                            body: JSON.stringify({ emails, role: inviteRole })
+                                        });
+                                        if (res.ok) {
+                                            alert("Invites sent successfully!");
+                                            setIsInviteModalOpen(false);
+                                            setInviteEmails('');
+                                            setInviteRole('user');
+                                            fetchUsers();
+                                        } else {
+                                            const data = await res.json();
+                                            alert(`Failed: ${data.message}`);
+                                        }
+                                    } catch (err) {
+                                        alert("An error occurred");
+                                    }
                                 }}
                                 className="bg-[#222777] text-white px-5 sm:px-6 py-2 rounded-lg text-[13px] sm:text-sm font-bold hover:bg-[#3a3f8f] transition-colors flex items-center gap-2 shadow-sm"
                             >

@@ -1,18 +1,196 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { MapContainer, TileLayer, Marker, useMapEvents, ZoomControl } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Use the beautiful custom marker from NearbySeminars
+const customMarkerIcon = L.divIcon({
+    className: 'bg-transparent border-none',
+    html: `
+        <div class="flex flex-col items-center" style="transform: translate(-50%, -100%); margin-top: 8px;">
+            <div class="w-5 h-5 bg-[#00c2cb] rounded-full border-2 border-white shadow-md flex items-center justify-center relative">
+                <div class="w-1.5 h-1.5 bg-white rounded-full"></div>
+                <div class="absolute inset-0 rounded-full border-2 border-[#00c2cb] animate-ping opacity-50"></div>
+            </div>
+            <div class="w-1 h-3 bg-gradient-to-b from-[#00c2cb] to-transparent mt-0.5"></div>
+        </div>
+    `,
+    iconSize: [0, 0]
+});
+
+function LocationMapPicker({ locationString, setLocationString }) {
+    // Default to Boston center
+    const [position, setPosition] = useState([42.3601, -71.0589]);
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
+    const mapRef = useRef(null);
+
+    const MapEvents = () => {
+        useMapEvents({
+            click(e) {
+                setPosition([e.latlng.lat, e.latlng.lng]);
+                setLocationString(`${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`);
+            },
+        });
+        return null;
+    };
+
+    const handleSearch = async (e) => {
+        e.preventDefault();
+        if (!searchQuery.trim()) return;
+        
+        setIsSearching(true);
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`);
+            const data = await res.json();
+            if (data && data.length > 0) {
+                const lat = parseFloat(data[0].lat);
+                const lon = parseFloat(data[0].lon);
+                setPosition([lat, lon]);
+                setLocationString(data[0].display_name);
+                if (mapRef.current) {
+                    mapRef.current.flyTo([lat, lon], 14);
+                }
+            } else {
+                alert("Location not found.");
+            }
+        } catch (err) {
+            console.error("Geocoding error", err);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    // Handle Leaflet resize when expanding or initially loading
+    useEffect(() => {
+        if (mapRef.current) {
+            setTimeout(() => {
+                mapRef.current.invalidateSize();
+            }, 100);
+            setTimeout(() => {
+                mapRef.current.invalidateSize();
+            }, 400); // Wait for CSS transition
+        }
+    }, [isExpanded]);
+
+    return (
+        <div className={`w-full rounded-xl border border-[#c7c5d3] overflow-hidden mt-3 relative z-0 transition-all duration-300 ease-in-out bg-[#e0e2eb] ${isExpanded ? 'h-[65vh] shadow-[0_8px_30px_rgba(34,39,119,0.15)] ring-2 ring-[#00c2cb]/50' : 'h-64 hover:shadow-md'}`}>
+            
+            {/* Top Toolbar overlay - moved below map zoom controls by shifting right and styled better */}
+            <div className="absolute top-3 left-3 right-3 z-[1000] flex gap-2 sm:gap-3 items-center pointer-events-none">
+                <form onSubmit={handleSearch} className="flex-1 flex shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg overflow-hidden bg-white/95 backdrop-blur pointer-events-auto border border-[#c7c5d3]/50 transition-all focus-within:ring-2 focus-within:ring-[#00c2cb]/50">
+                    <span className="material-symbols-outlined text-[#777682] text-[18px] pl-3 py-2">search</span>
+                    <input 
+                        type="text" 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search for a city, landmark, or address..."
+                        className="flex-1 px-2 py-2 text-[13px] outline-none bg-transparent font-medium text-[#181c22] placeholder:text-[#777682]"
+                    />
+                    <button type="submit" disabled={isSearching} className="bg-transparent px-3 text-[#222777] border-l border-[#e0e2eb]/50 hover:bg-[#f1f3fc] transition-colors flex items-center justify-center">
+                        <span className="material-symbols-outlined text-[18px]">{isSearching ? 'hourglass_empty' : 'arrow_forward'}</span>
+                    </button>
+                </form>
+                
+                <button 
+                    type="button"
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="bg-white/95 backdrop-blur shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg w-9 h-9 sm:w-10 sm:h-10 text-[#222777] border border-[#c7c5d3]/50 hover:bg-[#f1f3fc] transition-colors flex items-center justify-center pointer-events-auto shrink-0"
+                    title={isExpanded ? "Collapse Map" : "Expand Map"}
+                >
+                    <span className="material-symbols-outlined text-[20px]">{isExpanded ? 'fullscreen_exit' : 'fullscreen'}</span>
+                </button>
+            </div>
+
+            <MapContainer 
+                center={position} 
+                zoom={13} 
+                style={{ height: '100%', width: '100%' }} 
+                attributionControl={false} 
+                zoomControl={false}
+                ref={mapRef}
+            >
+                <TileLayer
+                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                />
+                <ZoomControl position="bottomright" />
+                <Marker position={position} icon={customMarkerIcon} />
+                <MapEvents />
+            </MapContainer>
+        </div>
+    );
+}
 
 export default function CreateSeminar() {
     const navigate = useNavigate();
+    const user = useSelector(state => state.auth?.user);
+    const token = useSelector(state => state.auth?.accessToken);
+    const userName = user?.name || 'Dr. A. Turing';
+    const userInitials = userName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0];
 
     // --- FORM STATE ---
     const [title, setTitle] = useState('');
     const [abstract, setAbstract] = useState('');
     const [category, setCategory] = useState('Machine Learning');
     const [tags, setTags] = useState('');
-    const [date, setDate] = useState('2023-11-15');
+    const [imageUrl, setImageUrl] = useState('');
+    const [locationInput, setLocationInput] = useState('');
+    const [hostName, setHostName] = useState('');
+    const [hostImageUrl, setHostImageUrl] = useState('');
+    const [date, setDate] = useState(today);
     const [startTime, setStartTime] = useState('14:00');
     const [endTime, setEndTime] = useState('15:30');
     const [format, setFormat] = useState('Live Broadcast');
+
+    // --- CUSTOM TOAST STATE ---
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast(prev => ({ ...prev, show: false })), 4000);
+    };
+
+    const imageInputRef = useRef(null);
+    const hostImageInputRef = useRef(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [isUploadingHost, setIsUploadingHost] = useState(false);
+
+    const handleImageUpload = async (e, isHost = false) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        if (isHost) setIsUploadingHost(true);
+        else setIsUploading(true);
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        try {
+            const response = await fetch('http://localhost:5000/api/v1/upload', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+            if (response.ok) {
+                const data = await response.json();
+                if (isHost) setHostImageUrl(data.url);
+                else setImageUrl(data.url);
+                showToast('Image uploaded successfully!', 'success');
+            } else {
+                showToast('Failed to upload image.', 'error');
+            }
+        } catch (error) {
+            showToast('An error occurred during upload.', 'error');
+        } finally {
+            if (isHost) setIsUploadingHost(false);
+            else setIsUploading(false);
+        }
+    };
 
     const formatOptions = [
         { id: 'Live Broadcast', icon: 'sensors' },
@@ -20,14 +198,50 @@ export default function CreateSeminar() {
         { id: 'In-Person', icon: 'location_on' }
     ];
 
-    const handleSchedule = () => {
+    const handleSchedule = async (statusToSave = 'scheduled') => {
         if (!title) return alert("Please enter a seminar title.");
-        alert(`Seminar "${title}" scheduled successfully for ${date}!`);
-        navigate('/app/projects');
+        
+        try {
+            const response = await fetch('http://localhost:5000/api/v1/seminars', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    title,
+                    abstract,
+                    category,
+                    tags,
+                    imageUrl,
+                    date,
+                    startTime,
+                    endTime,
+                    format,
+                    location: locationInput,
+                    hostName,
+                    hostImageUrl,
+                    status: statusToSave
+                })
+            });
+
+            if (response.ok) {
+                showToast(`Seminar "${title}" ${statusToSave === 'scheduled' ? 'scheduled' : 'saved as draft'} successfully!`, 'success');
+                setTimeout(() => navigate('/app/projects'), 2000);
+            } else {
+                const errData = await response.json().catch(() => ({}));
+                showToast(`Failed to save seminar: ${errData.message || response.statusText}`, 'error');
+                console.error("Save error:", errData);
+            }
+        } catch (error) {
+            console.error(error);
+            showToast('An error occurred while saving.', 'error');
+        }
     };
 
     return (
-        <div className="w-full min-h-[calc(100vh-64px)] bg-[#f9f9ff] overflow-y-auto font-sans">
+        <div className="w-full h-[calc(100vh-64px)] bg-[#f9f9ff] overflow-y-auto font-sans">
             <div className="max-w-[1280px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6 pb-20">
 
                 {/* Page Header */}
@@ -40,15 +254,21 @@ export default function CreateSeminar() {
                     {/* Responsive Button Group */}
                     <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto mt-2 md:mt-0">
                         <div className="flex gap-2 sm:gap-3 w-full md:w-auto">
-                            <button className="flex-1 md:flex-none px-4 sm:px-5 py-2 sm:py-2.5 border border-[#c7c5d3] rounded-md font-bold text-[12px] sm:text-[13px] text-[#181c22] hover:bg-[#f1f3fc] transition-colors bg-white justify-center">
+                            <button 
+                                onClick={() => handleSchedule('draft')}
+                                className="flex-1 md:flex-none px-4 sm:px-5 py-2 sm:py-2.5 border border-[#c7c5d3] rounded-md font-bold text-[12px] sm:text-[13px] text-[#181c22] hover:bg-[#f1f3fc] transition-colors bg-white justify-center"
+                            >
                                 Save Draft
                             </button>
-                            <button className="flex-1 md:flex-none px-4 sm:px-5 py-2 sm:py-2.5 border border-[#c7c5d3] rounded-md font-bold text-[12px] sm:text-[13px] text-[#181c22] hover:bg-[#f1f3fc] transition-colors flex items-center justify-center gap-1 sm:gap-2 bg-white">
+                            <button 
+                                onClick={() => alert('Live preview is continuously updated on the right panel (or below on mobile).')}
+                                className="flex-1 md:flex-none px-4 sm:px-5 py-2 sm:py-2.5 border border-[#c7c5d3] rounded-md font-bold text-[12px] sm:text-[13px] text-[#181c22] hover:bg-[#f1f3fc] transition-colors flex items-center justify-center gap-1 sm:gap-2 bg-white"
+                            >
                                 <span className="material-symbols-outlined text-[16px] sm:text-[18px]">visibility</span> Preview
                             </button>
                         </div>
                         <button
-                            onClick={handleSchedule}
+                            onClick={() => handleSchedule('scheduled')}
                             className="w-full md:w-auto px-5 sm:px-6 py-2 sm:py-2.5 bg-[#222777] rounded-md font-bold text-[13px] text-white hover:bg-[#3a3f8f] transition-colors flex items-center justify-center gap-2 shadow-sm"
                         >
                             <span className="material-symbols-outlined text-[18px]">event</span> Schedule Seminar
@@ -120,6 +340,111 @@ export default function CreateSeminar() {
                                             className="w-full border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none"
                                         />
                                     </div>
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] sm:text-[12px] font-bold text-[#464651] mb-2 uppercase tracking-wider">
+                                        Cover Image
+                                    </label>
+                                    <div className="flex flex-col gap-3">
+                                        {imageUrl && (
+                                            <div className="w-full h-32 sm:h-40 bg-gray-100 rounded-md border border-[#c7c5d3] overflow-hidden relative group">
+                                                <img src={imageUrl} alt="Cover Preview" className="w-full h-full object-cover" />
+                                                <button 
+                                                    type="button" 
+                                                    onClick={() => setImageUrl('')}
+                                                    className="absolute top-2 right-2 bg-white/90 text-red-500 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                                >
+                                                    <span className="material-symbols-outlined text-[16px]">close</span>
+                                                </button>
+                                            </div>
+                                        )}
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={imageUrl}
+                                                onChange={(e) => setImageUrl(e.target.value)}
+                                                placeholder="Paste image URL here..."
+                                                className="flex-1 border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none transition-shadow"
+                                            />
+                                            <input 
+                                                type="file" 
+                                                accept="image/*" 
+                                                ref={imageInputRef} 
+                                                className="hidden" 
+                                                onChange={(e) => handleImageUpload(e, false)} 
+                                            />
+                                            <button 
+                                                type="button"
+                                                onClick={() => imageInputRef.current.click()}
+                                                disabled={isUploading}
+                                                className="bg-[#f1f3fc] text-[#222777] border border-[#c7c5d3] px-4 rounded-md font-bold text-[13px] hover:bg-[#e0e2eb] transition-colors flex items-center justify-center gap-1 shadow-sm shrink-0 whitespace-nowrap"
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">
+                                                    {isUploading ? 'hourglass_empty' : 'upload'}
+                                                </span> 
+                                                {isUploading ? 'Uploading...' : 'Upload'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="col-span-1">
+                                    <label className="block text-[11px] sm:text-[12px] font-bold text-[#464651] mb-2 uppercase tracking-wider">
+                                        Guest Speaker / Host
+                                    </label>
+                                    <div className="flex flex-col gap-3">
+                                        {hostImageUrl && (
+                                            <div className="w-16 h-16 rounded-full border border-[#c7c5d3] overflow-hidden relative group self-center sm:self-start">
+                                                <img src={hostImageUrl} alt="Host Preview" className="w-full h-full object-cover" />
+                                                <button 
+                                                    type="button" 
+                                                    onClick={() => setHostImageUrl('')}
+                                                    className="absolute inset-0 bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <span className="material-symbols-outlined text-[16px]">close</span>
+                                                </button>
+                                            </div>
+                                        )}
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={hostName}
+                                                onChange={(e) => setHostName(e.target.value)}
+                                                placeholder="e.g. Dr. Jane Doe"
+                                                className="w-full border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none transition-shadow"
+                                            />
+                                            <input 
+                                                type="file" 
+                                                accept="image/*" 
+                                                ref={hostImageInputRef} 
+                                                className="hidden" 
+                                                onChange={(e) => handleImageUpload(e, true)} 
+                                            />
+                                            <button 
+                                                type="button"
+                                                onClick={() => hostImageInputRef.current.click()}
+                                                disabled={isUploadingHost}
+                                                className="bg-[#f1f3fc] text-[#222777] border border-[#c7c5d3] px-3 rounded-md font-bold text-[13px] hover:bg-[#e0e2eb] transition-colors flex items-center justify-center shadow-sm shrink-0 whitespace-nowrap"
+                                                title="Upload Host Picture"
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">
+                                                    {isUploadingHost ? 'hourglass_empty' : 'add_a_photo'}
+                                                </span> 
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="col-span-2">
+                                    <label className="block text-[11px] sm:text-[12px] font-bold text-[#464651] mb-2 uppercase tracking-wider">
+                                        Location / Stream Link
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={locationInput}
+                                        onChange={(e) => setLocationInput(e.target.value)}
+                                        placeholder={format === 'In-Person' ? 'Click map to drop pin or type address' : 'https://zoom.us/j/123456789 or click map for general location'}
+                                        className="w-full border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none transition-shadow"
+                                    />
+                                    <LocationMapPicker locationString={locationInput} setLocationString={setLocationInput} />
                                 </div>
                             </div>
                         </div>
@@ -207,9 +532,9 @@ export default function CreateSeminar() {
                         {/* Preview Card */}
                         <div className="bg-white rounded-xl shadow-[0_4px_20px_rgba(58,63,143,0.1)] border border-[#e0e2eb] overflow-hidden">
                             {/* Card Image Area */}
-                            <div className="h-32 sm:h-40 bg-[#181c22] relative flex items-center justify-center">
+                            <div className="h-32 sm:h-40 bg-[#181c22] relative flex items-center justify-center bg-cover bg-center" style={{ backgroundImage: imageUrl ? `url(${imageUrl})` : 'none' }}>
                                 {/* Abstract pattern or icon */}
-                                <span className="material-symbols-outlined text-[48px] sm:text-[64px] text-white/10">biotech</span>
+                                {!imageUrl && <span className="material-symbols-outlined text-[48px] sm:text-[64px] text-white/10">biotech</span>}
 
                                 {format === 'Live Broadcast' && (
                                     <div className="absolute top-3 right-3 bg-[#00696e] text-[#6bf6ff] text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded flex items-center gap-1 border border-[#00c2cb]">
@@ -239,8 +564,8 @@ export default function CreateSeminar() {
 
                                 <div className="flex items-center justify-between border-t border-[#e0e2eb] pt-4">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#222777] text-white flex items-center justify-center text-[10px] font-bold shrink-0">TM</div>
-                                        <span className="text-[12px] sm:text-[13px] font-semibold text-[#464651] truncate">Dr. A. Turing</span>
+                                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#222777] text-white flex items-center justify-center text-[10px] font-bold shrink-0">{userInitials}</div>
+                                        <span className="text-[12px] sm:text-[13px] font-semibold text-[#464651] truncate">{userName}</span>
                                     </div>
                                     <div className="bg-[#e6fbfc] text-[#006e73] px-2 py-1 rounded-full flex items-center gap-1 border border-[#6bf6ff]/50 shrink-0">
                                         <span className="material-symbols-outlined text-[14px]">toll</span>
@@ -264,6 +589,21 @@ export default function CreateSeminar() {
                         </div>
 
                     </div>
+                </div>
+            </div>
+
+            {/* --- CUSTOM TOAST NOTIFICATION --- */}
+            <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#e6fbfc] border-[#00c2cb] text-[#006e73]'}`}>
+                    <span className="material-symbols-outlined text-[20px]">
+                        {toast.type === 'error' ? 'error' : 'check_circle'}
+                    </span>
+                    <p className="font-bold text-[13px] tracking-wide">
+                        {toast.message}
+                    </p>
+                    <button onClick={() => setToast(prev => ({...prev, show: false}))} className="ml-2 hover:opacity-70">
+                        <span className="material-symbols-outlined text-[18px]">close</span>
+                    </button>
                 </div>
             </div>
         </div>

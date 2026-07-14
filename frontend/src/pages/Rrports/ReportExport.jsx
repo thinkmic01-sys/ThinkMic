@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 export default function ReportExport() {
+    const { id } = useParams();
+    const accessToken = useSelector((state) => state.auth?.accessToken);
+
     // State to manage the live preview updates
-    const [title, setTitle] = useState("Market Analysis: Q4 AI Adoption Trends");
+    const [title, setTitle] = useState("Loading Report...");
     const [subtitle, setSubtitle] = useState("Prepared by ThinkMic AI");
+    const [template, setTemplate] = useState("Standard Academic");
     const [sections, setSections] = useState({
         execSummary: true,
         findings: true,
@@ -12,6 +17,25 @@ export default function ReportExport() {
         sources: true,
     });
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+
+    useEffect(() => {
+        if (!accessToken || !id) return;
+        const fetchReport = async () => {
+            try {
+                const res = await fetch(`http://localhost:5000/api/v1/reports/${id}`, {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                const data = await res.json();
+                if (data.report) {
+                    setTitle(data.report.title || "Untitled Document");
+                    if (data.report.template) setTemplate(data.report.template);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        fetchReport();
+    }, [id, accessToken]);
 
     const toggleSection = (section) => {
         setSections((prev) => ({ ...prev, [section]: !prev[section] }));
@@ -50,7 +74,11 @@ export default function ReportExport() {
                             <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
                                 <span className="text-[11px] sm:text-[12px] text-[#464651] font-bold whitespace-nowrap">Template:</span>
                                 <div className="relative w-full sm:w-auto">
-                                    <select className="w-full sm:w-auto appearance-none bg-white border border-[#c7c5d3] rounded-md pl-3 pr-8 py-1.5 text-[12px] sm:text-[13px] font-bold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none cursor-pointer shadow-sm">
+                                    <select 
+                                        value={template}
+                                        onChange={(e) => setTemplate(e.target.value)}
+                                        className="w-full sm:w-auto appearance-none bg-white border border-[#c7c5d3] rounded-md pl-3 pr-8 py-1.5 text-[12px] sm:text-[13px] font-bold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none cursor-pointer shadow-sm"
+                                    >
                                         <option>Standard Academic</option>
                                         <option>Executive Brief</option>
                                         <option>Data Dense</option>
@@ -230,7 +258,14 @@ export default function ReportExport() {
                                 <button className="px-4 sm:px-5 py-2 text-[#464651] text-[12px] sm:text-[13px] font-bold hover:bg-[#e0e2eb] rounded-lg transition-colors border border-transparent" onClick={() => setIsEmailModalOpen(false)}>
                                     Cancel
                                 </button>
-                                <button className="px-4 sm:px-6 py-2 bg-[#222777] text-white text-[12px] sm:text-[13px] font-bold rounded-lg shadow-sm hover:bg-[#3a3f8f] transition-colors flex items-center gap-1 sm:gap-2">
+                                <button 
+                                    onClick={async () => {
+                                        // Mock email send
+                                        alert("Email sent successfully!");
+                                        setIsEmailModalOpen(false);
+                                    }}
+                                    className="px-4 sm:px-6 py-2 bg-[#222777] text-white text-[12px] sm:text-[13px] font-bold rounded-lg shadow-sm hover:bg-[#3a3f8f] transition-colors flex items-center gap-1 sm:gap-2"
+                                >
                                     <span className="material-symbols-outlined text-[16px] sm:text-[18px]">send</span> Send
                                 </button>
                             </div>

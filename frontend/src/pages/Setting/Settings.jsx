@@ -1,11 +1,16 @@
 import React, { useState, useRef } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { logout } from '../../store/slices/authSlice';
 
 export default function Settings() {
     const { user } = useSelector((state) => state.auth);
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
 
     const [activeTab, setActiveTab] = useState('profile');
     const [isSaving, setIsSaving] = useState(false);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     // We added 'avatar' to this state object so we can update it locally
     const [profileData, setProfileData] = useState({
@@ -60,6 +65,19 @@ export default function Settings() {
         alert(`Requesting key rotation for: ${service}`);
     };
 
+    const handleLogout = async () => {
+        try {
+            await fetch('http://localhost:5000/api/v1/auth/logout', { 
+                method: 'POST',
+                credentials: 'include'
+            });
+        } catch (error) {
+            console.error("Logout failed:", error);
+        }
+        dispatch(logout());
+        navigate('/login');
+    };
+
     return (
         <div className="flex flex-col md:flex-row gap-6 md:gap-8 w-full max-w-7xl mx-auto p-4 sm:p-6 md:p-8 font-sans">
 
@@ -94,8 +112,45 @@ export default function Settings() {
                             </button>
                         );
                     })}
+                    
+                    <button
+                        onClick={() => setShowLogoutModal(true)}
+                        className="w-full flex items-center justify-between px-4 py-2.5 sm:py-3 mt-6 sm:mt-8 rounded-lg bg-[#ba1a1a]/5 hover:bg-[#ba1a1a]/10 text-[#ba1a1a] font-bold text-[13px] sm:text-sm transition-colors border border-[#ba1a1a]/20"
+                    >
+                        Log Out of System
+                        <span className="material-symbols-outlined text-[18px]">logout</span>
+                    </button>
                 </nav>
             </aside>
+
+            {/* Logout Confirmation Modal */}
+            {showLogoutModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#002022]/40 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 transform transition-all border border-[#e0e2eb]">
+                        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#ba1a1a]/10 mb-4 mx-auto">
+                            <span className="material-symbols-outlined text-[#ba1a1a] text-2xl">logout</span>
+                        </div>
+                        <h3 className="text-xl font-bold text-center text-[#181c22] mb-2">Ready to Leave?</h3>
+                        <p className="text-sm text-center text-[#464651] mb-6">
+                            Are you sure you want to log out of your workspace?
+                        </p>
+                        <div className="flex gap-3">
+                            <button 
+                                onClick={() => setShowLogoutModal(false)}
+                                className="flex-1 px-4 py-2 bg-[#f1f3fc] text-[#464651] font-bold text-[13px] rounded-lg hover:bg-[#e0e2eb] transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={handleLogout}
+                                className="flex-1 px-4 py-2 bg-[#ba1a1a] text-white font-bold text-[13px] rounded-lg shadow-sm hover:bg-[#93000a] transition-colors"
+                            >
+                                Yes, Log Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Main Content Area */}
             <div className="flex-1 space-y-6 sm:space-y-8 w-full min-w-0">

@@ -1,63 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
-
-// --- MOCK DATA ---
-const initialQueries = [
-    { id: 1, text: "Efficacy of transformers in low-resource language translation", status: "running", results: 0 },
-    { id: 2, text: "Attention mechanisms vs RNN memory retention metrics", status: "done", results: 12 },
-    { id: 3, text: "Quantum computing implications on current encryption", status: "error", results: 0 },
-];
-
-const initialResults = [
-    {
-        id: 1, queryId: 2, domain: "arxiv.org", type: "Academic",
-        title: "Comparative Analysis of Memory Retention in Transformer Architecture vs LSTM",
-        snippet: "This paper evaluates the inherent limitations of context windows in standard transformer models compared to sequential memory handling in recurrent neural networks...",
-        metrics: ["Cited by 142", "PDF Available"], icon: "menu_book",
-        entities: ["Transformers", "RNNs", "Semantic Drift", "LSTM"],
-        metadata: { author: "A. Vaswani et al.", published: "Aug 15, 2023", reliability: "98/100" },
-        region: "North America", language: "English (US)", year: 2023
-    },
-    {
-        id: 2, queryId: 2, domain: "towardsdatascience.com", type: "Blog",
-        title: "Why Transformers Are Replacing RNNs in NLP Tasks",
-        snippet: "A deep dive into the computational advantages of self-attention mechanisms. While RNNs struggle with vanishing gradients on long sequences, transformers process entire contexts in parallel...",
-        metrics: ["Read Time: 8 min"], icon: "article",
-        entities: ["Transformers", "RNNs", "Self-Attention", "Vanishing Gradient"],
-        metadata: { author: "J. Doe et al.", published: "Oct 12, 2023", reliability: "94/100" },
-        region: "Europe", language: "English (US)", year: 2023
-    },
-    {
-        id: 3, queryId: 2, domain: "techcrunch.com", type: "News",
-        title: "New AI Startup Claims Hybrid Architecture Beats Standard Transformers",
-        snippet: "Emerging from stealth, Synthetica AI claims their new foundational model integrates legacy RNN gating mechanisms with modern self-attention to achieve superior memory retention...",
-        metrics: [], icon: "newspaper",
-        entities: ["Synthetica AI", "Hybrid Architecture", "Compute Optimization"],
-        metadata: { author: "M. Tech Reporter", published: "Nov 02, 2026", reliability: "82/100" },
-        region: "North America", language: "English (US)", year: 2026
-    },
-    {
-        id: 4, queryId: 2, domain: "nature.com", type: "Academic",
-        title: "Evaluating Semantic Drift in Large Language Models",
-        snippet: "We present a systematic study of how self-attention weights degrade over context windows exceeding 32k tokens. By comparing state-of-the-art LLMs, we map the exact points where factual hallucination...",
-        metrics: ["Cited by 45", "Peer Reviewed"], icon: "school",
-        entities: ["Semantic Drift", "LLMs", "Context Windows", "Hallucination"],
-        metadata: { author: "Dr. K. Sato", published: "Jan 19, 2024", reliability: "99/100" },
-        region: "Asia", language: "English (US)", year: 2024
-    }
-];
+import { useSelector } from 'react-redux';
 
 export default function ResearchResults() {
-    // --- STATE MANAGEMENT ---
     const navigate = useNavigate();
-    const [queries, setQueries] = useState(initialQueries);
-    const [activeQueryId, setActiveQueryId] = useState(2);
-    const [activeSourceId, setActiveSourceId] = useState(2);
-    const [selectedResultIds, setSelectedResultIds] = useState([1, 2]);
-
+    const accessToken = useSelector((state) => state.auth?.accessToken);
+    
+    // --- STATE MANAGEMENT ---
+    const [queries, setQueries] = useState([]);
+    const [allResults, setAllResults] = useState([]);
+    const [activeQueryId, setActiveQueryId] = useState(null);
+    const [activeSourceId, setActiveSourceId] = useState(null);
+    const [selectedResultIds, setSelectedResultIds] = useState([]);
+    
     // --- RESPONSIVE TOGGLE STATES ---
     const [isQueriesOpen, setIsQueriesOpen] = useState(false);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+    // Fetch data
+    useEffect(() => {
+        if (!accessToken) return;
+        const fetchSessions = async () => {
+            try {
+                const res = await fetch('http://localhost:5000/api/v1/search/sessions', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                const data = await res.json();
+                if (data.sessions && data.sessions.length > 0) {
+                    const latestSession = data.sessions[0];
+                    setQueries(latestSession.queries);
+                    if (latestSession.queries.length > 0) {
+                        setActiveQueryId(latestSession.queries[0].id);
+                    }
+                    
+                    // Fetch results for this session
+                    const res2 = await fetch(`http://localhost:5000/api/v1/search/sessions/${latestSession.id}`, {
+                        headers: { 'Authorization': `Bearer ${accessToken}` }
+                    });
+                    const data2 = await res2.json();
+                    if (data2.results) {
+                        const flattenedResults = [];
+                        data2.results.forEach(searchDoc => {
+                            searchDoc.results.forEach((r, idx) => {
+                                flattenedResults.push({
+                                    id: `${searchDoc._id}-${idx}`,
+                                    queryId: searchDoc._id,
+                                    domain: new URL(r.url || 'https://example.com').hostname,
+                                    type: "Web",
+                                    title: r.title,
+                                    snippet: r.snippet,
+                                    metrics: [],
+                                    icon: "language",
+                                    entities: [],
+                                    metadata: { author: "Unknown", published: "N/A", reliability: "N/A" },
+                                    region: "Global",
+                                    language: "English",
+                                    year: new Date().getFullYear()
+                                });
+                            });
+                        });
+                        setAllResults(flattenedResults);
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        fetchSessions();
+    }, [accessToken]);
 
     // Filter States
     const [languageFilter, setLanguageFilter] = useState('English (US)');
@@ -96,7 +106,7 @@ export default function ResearchResults() {
     };
 
     // --- FILTER LOGIC ---
-    const currentResults = initialResults.filter(result => {
+    const currentResults = allResults.filter(result => {
         if (result.queryId !== activeQueryId) return false;
         if (regionFilter !== 'Any Region' && result.region !== regionFilter) return false;
         const currentYear = 2026;
@@ -105,7 +115,7 @@ export default function ResearchResults() {
         return true;
     });
 
-    const activeSourceDetail = initialResults.find(r => r.id === activeSourceId);
+    const activeSourceDetail = allResults.find(r => r.id === activeSourceId);
 
     return (
         <div className="flex w-full h-[calc(100vh-64px)] bg-[#f9f9ff] p-0 md:p-4 lg:p-6 gap-0 md:gap-4 overflow-hidden relative">

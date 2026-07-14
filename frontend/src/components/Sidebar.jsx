@@ -57,6 +57,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             <nav className="flex flex-col gap-1 overflow-y-auto custom-scrollbar">
                 <NavLink to="/app/dashboard" icon="dashboard" label="Dashboard" />
                 <NavLink to="/app/projects" icon="workspaces" label="Projects" />
+                <NavLink to="/app/reports" icon="summarize" label="Reports" />
                 <NavLink to="/app/courses" icon="school" label="Courses" />
                 <NavLink to="/app/forms" icon="groups" label="Collaboration" />
                 <NavLink to="/app/admin/users" icon="admin_panel_settings" label="Management" isManagement />

@@ -34,7 +34,20 @@ const UserSchema = new mongoose.Schema({
     lastLoginAt: Date,
     inviteToken: { type: String, sparse: true },
     inviteExpiresAt: Date,
-    notificationPrefs: Object
+    notificationPrefs: Object,
+    coins: {
+        type: Number,
+        default: 0
+    },
+    lifetimeCoins: {
+        type: Number,
+        default: 0
+    },
+    referralCode: {
+        type: String,
+        unique: true,
+        sparse: true
+    }
 }, {
     timestamps: true,
     strict: true

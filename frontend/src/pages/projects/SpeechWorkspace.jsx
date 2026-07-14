@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from "react-router-dom";
+import { useSelector } from 'react-redux';
+import { io } from 'socket.io-client';
 
 export default function SpeechWorkspace() {
     // --- STATE MANAGEMENT ---
     const navigate = useNavigate();
+    const accessToken = useSelector((state) => state.auth?.accessToken);
+    const userId = useSelector((state) => state.auth?.user?.id);
     const [recordingState, setRecordingState] = useState('idle');
     const [timeElapsed, setTimeElapsed] = useState(0);
     const [transcripts, setTranscripts] = useState([]);
@@ -20,12 +24,65 @@ export default function SpeechWorkspace() {
     const [expandedTopicId, setExpandedTopicId] = useState(null);
     const [topics, setTopics] = useState([]);
 
+    // Custom Toast State
+    const [toast, setToast] = useState({ show: false, message: '', type: 'error' });
+
+    const showToast = (message, type = 'error') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast({ show: false, message: '', type }), 4000);
+    };
+
     const mediaRecorderRef = useRef(null);
     const streamRef = useRef(null);
     const timerIntervalRef = useRef(null);
     const mockTranscriptIntervalRef = useRef(null);
     const fileInputRef = useRef(null);
     const audioChunksRef = useRef([]); // To store audio data during recording
+    const socketRef = useRef(null);
+
+    // --- SOCKET.IO REAL-TIME UPDATES ---
+    useEffect(() => {
+        if (!userId) return;
+
+        const socket = io('http://localhost:5000', {
+            withCredentials: true
+        });
+        socketRef.current = socket;
+
+        socket.on('connect', () => {
+            console.log('Connected to WebSocket server');
+            socket.emit('join', userId);
+        });
+
+        socket.on('job_progress', (data) => {
+            if (data.status === 'processing') {
+                showToast(`AI is processing your ${data.type}...`, 'success');
+            } else if (data.status === 'error') {
+                showToast(`Error processing ${data.type}: ${data.error}`, 'error');
+            }
+        });
+
+        socket.on('transcription_complete', (data) => {
+            showToast('Transcription complete!', 'success');
+            setTranscripts(prev => [...prev, { time: 0, text: data.text }]);
+        });
+
+        socket.on('summarization_complete', (data) => {
+            showToast('Summary generation complete!', 'success');
+            if (data.tags) {
+                setTopics(data.tags.map((tag, i) => ({
+                    id: Date.now() + i,
+                    title: tag,
+                    color: ['bg-blue-500', 'bg-green-500', 'bg-[#00c2cb]', 'bg-[#222777]'][i % 4],
+                    tags: ['auto-generated']
+                })));
+            }
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, [userId]);
 
     // --- UPLOAD LOGIC TO BACKEND ---
     const uploadAudioToBackend = async (audioBlob, filename) => {
@@ -37,24 +94,27 @@ export default function SpeechWorkspace() {
         formData.append('title', filename || 'Live Workspace Recording');
 
         try {
-            const response = await fetch('http://localhost:5000/api/v1/recordings/upload-local', {
+            const response = await fetch('http://localhost:5000/api/v1/recordings', {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                },
                 body: formData,
-                credentials: 'include' // Crucial for authentication
+                credentials: 'include'
             });
 
             const data = await response.json();
 
             if (response.ok) {
                 setUploadProgress(100);
-                alert('Audio saved successfully to the server!');
+                showToast('Audio saved successfully to the server!', 'success');
                 // Here you would typically fetch the newly created recording or start polling for transcripts
             } else {
-                alert(`Upload failed: ${data.message}`);
+                showToast(`Upload failed: ${data.message || 'Unknown error'}`, 'error');
             }
         } catch (error) {
             console.error("Upload error:", error);
-            alert("An error occurred during upload.");
+            showToast("An error occurred during upload. Please try again.", "error");
         } finally {
             setIsUploading(false);
             setUploadProgress(0);
@@ -86,7 +146,7 @@ export default function SpeechWorkspace() {
             setRecordingState('recording');
         } catch (err) {
             console.error("Microphone access denied:", err);
-            alert("Please allow microphone access in your browser to use the workspace.");
+            showToast("Please allow microphone access in your browser to use the workspace.", "error");
         }
     };
 
@@ -106,6 +166,7 @@ export default function SpeechWorkspace() {
             streamRef.current.getTracks().forEach(track => track.stop());
         }
         setRecordingState('idle');
+        setTimeElapsed(0);
     };
 
     const handleUploadClick = () => fileInputRef.current.click();
@@ -113,7 +174,7 @@ export default function SpeechWorkspace() {
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            if (file.size > 50 * 1024 * 1024) return alert("File exceeds the 50MB limit.");
+            if (file.size > 50 * 1024 * 1024) return showToast("File exceeds the 50MB limit.", "error");
             uploadAudioToBackend(file, file.name);
         }
     };
@@ -135,7 +196,7 @@ export default function SpeechWorkspace() {
     };
 
     const handleSummarize = () => {
-        alert(`Generating new ${summaryLength.toLowerCase()} summary in ${summaryStyle.toLowerCase()} format...`);
+        showToast(`Generating new ${summaryLength.toLowerCase()} summary in ${summaryStyle.toLowerCase()} format...`, 'success');
     };
 
     useEffect(() => {
@@ -174,10 +235,34 @@ export default function SpeechWorkspace() {
                 }
                 .hide-scrollbar::-webkit-scrollbar { display: none; }
                 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                .custom-tooltip { position: relative; }
+                .custom-tooltip::after {
+                    content: attr(data-tooltip);
+                    position: absolute;
+                    top: calc(100% + 8px);
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background-color: #222777;
+                    color: white;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-size: 11px;
+                    font-weight: bold;
+                    white-space: nowrap;
+                    opacity: 0;
+                    visibility: hidden;
+                    transition: opacity 0.2s;
+                    z-index: 50;
+                    pointer-events: none;
+                }
+                .custom-tooltip:hover::after {
+                    opacity: 1;
+                    visibility: visible;
+                }
             `}</style>
 
             {/* --- TOP CONTROL BAR (RESPONSIVE) --- */}
-            <div className="bg-white border-b border-[#e0e2eb] shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between p-4 md:px-8 md:h-20 gap-4 shrink-0 z-10 overflow-x-auto hide-scrollbar">
+            <div className="bg-white border-b border-[#e0e2eb] shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between p-4 md:px-8 md:h-20 gap-4 shrink-0 z-10">
 
                 {/* Left: Input Source */}
                 <div className="flex items-center gap-3 shrink-0">
@@ -211,16 +296,24 @@ export default function SpeechWorkspace() {
 
                 {/* Right: Audio Controls */}
                 <div className="flex items-center gap-2 sm:gap-3 shrink-0 self-end md:self-auto">
-                    <button onClick={startRecording} disabled={recordingState !== 'idle' || isUploading}
-                            className={`w-9 h-9 md:w-10 md:h-10 rounded-md border flex items-center justify-center transition-colors ${recordingState !== 'idle' ? 'border-[#e0e2eb] text-[#c7c5d3] cursor-not-allowed' : 'border-[#e0e2eb] text-[#00696e] bg-white hover:bg-[#eef0f9] shadow-sm'}`}>
-                        <span className="material-symbols-outlined text-[20px] md:text-[24px]">play_arrow</span>
+                    {/* Combined Start/Pause/Resume Button */}
+                    <button 
+                        onClick={() => {
+                            if (recordingState === 'idle') startRecording();
+                            else pauseRecording();
+                        }}
+                        disabled={isUploading}
+                        data-tooltip={recordingState === 'idle' ? 'Start' : (recordingState === 'paused' ? 'Resume' : 'Pause')}
+                        className={`custom-tooltip w-9 h-9 md:w-10 md:h-10 rounded-md border flex items-center justify-center transition-colors ${recordingState === 'idle' ? 'border-[#e0e2eb] text-[#00696e] bg-white hover:bg-[#eef0f9] shadow-sm' : (recordingState === 'paused' ? 'bg-[#e0e0ff] border-[#bfc2ff] text-[#222777]' : 'border-[#e0e2eb] text-[#222777] bg-white hover:bg-[#eef0f9] shadow-sm')}`}
+                    >
+                        <span className="material-symbols-outlined text-[20px] md:text-[24px]">
+                            {recordingState === 'idle' ? 'play_arrow' : (recordingState === 'paused' ? 'play_arrow' : 'pause')}
+                        </span>
                     </button>
-                    <button onClick={pauseRecording} disabled={recordingState === 'idle' || isUploading}
-                            className={`w-9 h-9 md:w-10 md:h-10 rounded-md border flex items-center justify-center transition-colors ${recordingState === 'idle' ? 'border-[#e0e2eb] text-[#c7c5d3] cursor-not-allowed' : 'border-[#e0e2eb] text-[#222777] bg-white hover:bg-[#eef0f9] shadow-sm'} ${recordingState === 'paused' ? 'bg-[#e0e0ff] border-[#bfc2ff]' : ''}`}>
-                        <span className="material-symbols-outlined text-[18px] md:text-[20px]">pause</span>
-                    </button>
+                    
                     <button onClick={stopRecording} disabled={recordingState === 'idle' || isUploading}
-                            className={`w-9 h-9 md:w-10 md:h-10 rounded-md border flex items-center justify-center transition-colors ${recordingState === 'idle' ? 'border-[#e0e2eb] text-[#c7c5d3] cursor-not-allowed' : 'border-[#ffdad6] text-[#ba1a1a] bg-[#ffdad6] hover:bg-[#ba1a1a]/10 shadow-sm'}`}>
+                            data-tooltip="Stop"
+                            className={`custom-tooltip w-9 h-9 md:w-10 md:h-10 rounded-md border flex items-center justify-center transition-colors ${recordingState === 'idle' ? 'border-[#e0e2eb] text-[#c7c5d3] cursor-not-allowed' : 'border-[#ffdad6] text-[#ba1a1a] bg-[#ffdad6] hover:bg-[#ba1a1a]/10 shadow-sm'}`}>
                         <span className="material-symbols-outlined text-[16px] md:text-[18px]">stop</span>
                     </button>
 
@@ -232,7 +325,8 @@ export default function SpeechWorkspace() {
 
                     <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".mp3,.wav,.m4a,.webm" />
                     <button onClick={handleUploadClick} disabled={recordingState !== 'idle' || isUploading}
-                            className="w-9 h-9 md:w-10 md:h-10 rounded-md border border-[#e0e2eb] text-[#3a3f8f] bg-white flex items-center justify-center hover:bg-[#f1f3fc] shadow-sm transition-colors disabled:opacity-50">
+                            data-tooltip="Upload Audio"
+                            className="custom-tooltip w-9 h-9 md:w-10 md:h-10 rounded-md border border-[#e0e2eb] text-[#3a3f8f] bg-white flex items-center justify-center hover:bg-[#f1f3fc] shadow-sm transition-colors disabled:opacity-50">
                         <span className="material-symbols-outlined text-[18px] md:text-[20px]">upload_file</span>
                     </button>
                 </div>
@@ -318,7 +412,7 @@ export default function SpeechWorkspace() {
                                 className="w-full h-20 sm:h-24 p-3 sm:p-4 text-[14px] sm:text-[16px] text-[#464651] outline-none resize-none bg-transparent placeholder:text-[#c7c5d3]"
                             />
                             <button
-                                onClick={() => alert(`Running prompt: ${customPrompt || "Default"}`)}
+                                onClick={() => showToast(`Running prompt: ${customPrompt || "Default"}`, 'success')}
                                 className="absolute bottom-2 right-2 bg-[#61f4fd] text-[#004f53] text-[12px] sm:text-[14px] font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-[6px] hover:bg-[#3edae3] transition-colors flex items-center gap-1 shadow-sm">
                                 <span className="material-symbols-outlined text-[14px] sm:text-[16px]">magic_button</span> <span className="hidden sm:inline">Run Prompt</span>
                             </button>
@@ -449,7 +543,7 @@ export default function SpeechWorkspace() {
                 </div>
                 <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                     <button
-                        onClick={() => alert("Draft saved.")}
+                        onClick={() => showToast("Draft saved successfully.", "success")}
                         className="bg-white border border-[#c7c5d3] text-[#181c22] text-[12px] sm:text-[14px] font-bold py-1.5 sm:py-2 px-3 sm:px-6 rounded-[6px] hover:bg-[#f9f9ff] transition-colors"
                     >
                         Save <span className="hidden sm:inline">Draft</span>
@@ -459,6 +553,21 @@ export default function SpeechWorkspace() {
                         className="bg-[#222777] text-white text-[12px] sm:text-[14px] font-bold py-1.5 sm:py-2 px-3 sm:px-6 rounded-[6px] shadow-sm hover:bg-[#3a3f8f] hover:cursor-pointer transition-colors flex items-center gap-1 sm:gap-2"
                     >
                         Approve <span className="hidden sm:inline">& Generate Queries</span> <span className="material-symbols-outlined text-[16px] sm:text-[18px]">arrow_forward</span>
+                    </button>
+                </div>
+            </div>
+
+            {/* --- CUSTOM TOAST NOTIFICATION --- */}
+            <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#e6fbfc] border-[#00c2cb] text-[#006e73]'}`}>
+                    <span className="material-symbols-outlined text-[20px]">
+                        {toast.type === 'error' ? 'error' : 'check_circle'}
+                    </span>
+                    <span className="text-[13px] sm:text-[14px] font-bold">
+                        {toast.message}
+                    </span>
+                    <button onClick={() => setToast(prev => ({...prev, show: false}))} className="ml-2 hover:opacity-70">
+                        <span className="material-symbols-outlined text-[18px]">close</span>
                     </button>
                 </div>
             </div>

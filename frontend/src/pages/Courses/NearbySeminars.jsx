@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -72,6 +73,26 @@ const CustomMapControls = () => {
 
 export default function NearbySeminars() {
     const navigate = useNavigate();
+    const token = useSelector(state => state.auth?.accessToken);
+    const [seminars, setSeminars] = useState([]);
+
+    useEffect(() => {
+        const fetchSeminars = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/v1/seminars', {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setSeminars(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch seminars", error);
+            }
+        };
+        fetchSeminars();
+    }, [token]);
 
     return (
         <div className="flex flex-col h-[calc(100vh-64px)] w-full bg-[#f9f9ff] font-sans">
@@ -116,66 +137,44 @@ export default function NearbySeminars() {
                 {/* Left List Column: takes 50% height on mobile, full height on desktop */}
                 <div className="w-full md:w-[360px] lg:w-[420px] h-[50vh] md:h-full border-b md:border-b-0 md:border-r border-[#e0e2eb] bg-[#f9f9ff] overflow-y-auto p-4 sm:p-5 space-y-4 shrink-0 shadow-[2px_0_10px_rgba(0,0,0,0.03)] z-10 custom-scrollbar pb-6 md:pb-20">
 
-                    {/* Card 1 */}
-                    <div className="bg-white border border-[#c7c5d3] rounded-lg p-4 sm:p-5 hover:border-[#222777] transition-colors cursor-pointer relative shadow-sm">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-[#00c2cb] rounded-l-lg"></div>
-                        <div className="flex justify-between items-start mb-2 sm:mb-3 pl-2">
-                            <span className="bg-[#e6fbfc] text-[#006e73] font-mono text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 uppercase">
-                                <span className="material-symbols-outlined text-[12px] sm:text-[14px]">school</span> Workshop
-                            </span>
-                            <span className="text-[11px] sm:text-[12px] font-mono font-bold text-[#00c2cb] flex items-center gap-1">
-                                <span className="material-symbols-outlined text-[12px] sm:text-[14px]">location_on</span> 1.2 km
-                            </span>
-                        </div>
-                        <h3 className="text-[16px] sm:text-[18px] font-bold text-[#181c22] mb-1.5 sm:mb-2 leading-snug pl-2">Applied NLP in Clinical Research</h3>
-                        <p className="text-[13px] sm:text-[14px] text-[#464651] line-clamp-2 mb-4 sm:mb-5 pl-2 leading-relaxed">Exploring transformer models for extracting patient outcomes from unstructured medical records...</p>
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3 sm:pt-4 border-t border-[#e0e2eb] pl-2 gap-3 sm:gap-0">
-                            <div className="flex items-center gap-1.5 font-mono text-[10px] sm:text-[11px] font-semibold text-[#777682]">
-                                <span className="material-symbols-outlined text-[14px]">calendar_today</span> Oct 24 • 14:00 - 16:30
+                    {/* Dynamic Cards */}
+                    {seminars.length === 0 ? (
+                        <div className="text-center py-10 text-[#777682] text-[14px]">No seminars found.</div>
+                    ) : (
+                        seminars.map((seminar, idx) => (
+                            <div key={seminar._id || idx} className="bg-white border border-[#e0e2eb] rounded-lg p-4 sm:p-5 hover:border-[#222777] transition-colors cursor-pointer relative shadow-sm">
+                                {idx === 0 && <div className="absolute top-0 left-0 w-1 h-full bg-[#00c2cb] rounded-l-lg"></div>}
+                                <div className="flex justify-between items-start mb-2 sm:mb-3 pl-2">
+                                    <span className="bg-[#e6fbfc] text-[#006e73] font-mono text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 uppercase">
+                                        <span className="material-symbols-outlined text-[12px] sm:text-[14px]">{seminar.format === 'Live Broadcast' ? 'sensors' : seminar.format === 'In-Person' ? 'location_on' : 'videocam'}</span> {seminar.format}
+                                    </span>
+                                    {seminar.format === 'In-Person' && (
+                                        <span className="text-[11px] sm:text-[12px] font-mono font-bold text-[#00c2cb] flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-[12px] sm:text-[14px]">location_on</span> Near you
+                                        </span>
+                                    )}
+                                </div>
+                                <h3 className="text-[16px] sm:text-[18px] font-bold text-[#181c22] mb-1.5 sm:mb-2 leading-snug pl-2">{seminar.title}</h3>
+                                <p className="text-[13px] sm:text-[14px] text-[#464651] line-clamp-2 mb-4 sm:mb-5 pl-2 leading-relaxed">{seminar.abstract || 'No description provided.'}</p>
+                                
+                                {seminar.location && (
+                                    <div className="text-[12px] sm:text-[13px] text-[#222777] font-semibold mb-3 pl-2 flex items-center gap-1">
+                                        <span className="material-symbols-outlined text-[16px]">link</span>
+                                        <span className="truncate">{seminar.location}</span>
+                                    </div>
+                                )}
+                                
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3 sm:pt-4 border-t border-[#e0e2eb] pl-2 gap-3 sm:gap-0">
+                                    <div className="flex items-center gap-1.5 font-mono text-[10px] sm:text-[11px] font-semibold text-[#777682]">
+                                        <span className="material-symbols-outlined text-[14px]">calendar_today</span> {new Date(seminar.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • {seminar.startTime} - {seminar.endTime}
+                                    </div>
+                                    <button className={`w-full sm:w-auto px-5 py-2 sm:py-1.5 rounded text-[12px] font-bold transition-colors text-center ${idx === 0 ? 'bg-[#222777] text-white hover:bg-[#3a3f8f] shadow-sm' : 'bg-white border border-[#222777] text-[#222777] hover:bg-[#f1f3fc]'}`}>
+                                        {seminar.format === 'Pre-Recorded' ? 'Watch Now' : 'Register'}
+                                    </button>
+                                </div>
                             </div>
-                            <button className="w-full sm:w-auto bg-[#222777] text-white px-5 py-2 sm:py-1.5 rounded text-[12px] font-bold shadow-sm hover:bg-[#3a3f8f] transition-colors text-center">Register</button>
-                        </div>
-                    </div>
-
-                    {/* Card 2 */}
-                    <div className="bg-white border border-[#e0e2eb] rounded-lg p-4 sm:p-5 hover:border-[#c7c5d3] transition-colors cursor-pointer shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-                        <div className="flex justify-between items-start mb-2 sm:mb-3">
-                            <span className="bg-[#f1f3fc] text-[#464651] font-mono text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 uppercase">
-                                <span className="material-symbols-outlined text-[12px] sm:text-[14px]">record_voice_over</span> Lecture
-                            </span>
-                            <span className="text-[11px] sm:text-[12px] font-mono font-bold text-[#777682] flex items-center gap-1">
-                                <span className="material-symbols-outlined text-[12px] sm:text-[14px]">location_on</span> 3.8 km
-                            </span>
-                        </div>
-                        <h3 className="text-[16px] sm:text-[18px] font-bold text-[#181c22] mb-1.5 sm:mb-2 leading-snug">Ethics of Autonomous Agents</h3>
-                        <p className="text-[13px] sm:text-[14px] text-[#464651] line-clamp-2 mb-4 sm:mb-5 leading-relaxed">A panel discussion on alignment, bias, and regulatory frameworks for next-generation intelligence...</p>
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3 sm:pt-4 border-t border-[#e0e2eb] gap-3 sm:gap-0">
-                            <div className="flex items-center gap-1.5 font-mono text-[10px] sm:text-[11px] font-semibold text-[#777682]">
-                                <span className="material-symbols-outlined text-[14px]">calendar_today</span> Oct 26 • 18:00 - 20:00
-                            </div>
-                            <button className="w-full sm:w-auto bg-white border border-[#222777] text-[#222777] px-5 py-2 sm:py-1.5 rounded text-[12px] font-bold hover:bg-[#f1f3fc] transition-colors text-center">Register</button>
-                        </div>
-                    </div>
-
-                    {/* Card 3 */}
-                    <div className="bg-white border border-[#e0e2eb] rounded-lg p-4 sm:p-5 hover:border-[#c7c5d3] transition-colors cursor-pointer shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-                        <div className="flex justify-between items-start mb-2 sm:mb-3">
-                            <span className="bg-[#ebeef6] text-[#464651] font-mono text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 uppercase">
-                                <span className="material-symbols-outlined text-[12px] sm:text-[14px]">code</span> Hackathon
-                            </span>
-                            <span className="text-[11px] sm:text-[12px] font-mono font-bold text-[#777682] flex items-center gap-1">
-                                <span className="material-symbols-outlined text-[12px] sm:text-[14px]">location_on</span> 5.1 km
-                            </span>
-                        </div>
-                        <h3 className="text-[16px] sm:text-[18px] font-bold text-[#181c22] mb-1.5 sm:mb-2 leading-snug">Edge Computing Solutions</h3>
-                        <p className="text-[13px] sm:text-[14px] text-[#464651] line-clamp-2 mb-4 sm:mb-5 leading-relaxed">Building low-latency inference pipelines for IoT devices.</p>
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3 sm:pt-4 border-t border-[#e0e2eb] gap-3 sm:gap-0">
-                            <div className="flex items-center gap-1.5 font-mono text-[10px] sm:text-[11px] font-semibold text-[#777682]">
-                                <span className="material-symbols-outlined text-[14px]">calendar_today</span> Nov 02 • 09:00 - 21:00
-                            </div>
-                            <button className="w-full sm:w-auto bg-white border border-[#222777] text-[#222777] px-5 py-2 sm:py-1.5 rounded text-[12px] font-bold hover:bg-[#f1f3fc] transition-colors text-center">Register</button>
-                        </div>
-                    </div>
+                        ))
+                    )}
                 </div>
 
                 {/* Map Area: flex-1 ensures it takes the remaining height on mobile and width on desktop */}

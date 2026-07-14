@@ -64,7 +64,8 @@ function AppRoutes() {
                         email: data.user.email,
                         role: data.user.role,
                         accessToken: data.accessToken,
-                        coins: 0,
+                        coins: data.user.coins || 0,
+                        referralCode: data.user.referralCode,
                         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.user.fullName)}&background=222777&color=fff`
                     }));
                 } else {
@@ -100,6 +101,7 @@ function AppRoutes() {
             {/* Public Routes - Redirect to dashboard if already logged in */}
             <Route path="/" element={<Navigate to={isAuthenticated ? "/app/dashboard" : "/login"} replace />} />
             <Route path="/login" element={isAuthenticated ? <Navigate to="/app/dashboard" replace /> : <Auth />} />
+            <Route path="/join" element={isAuthenticated ? <Navigate to="/app/dashboard" replace /> : <Auth />} />
 
             {/* Protected Routes Wrapper */}
             <Route path="/app/*" element={

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 // --- MOCK DATA ---
 const featuredCourse = {
@@ -51,11 +52,74 @@ export default function CourseLibrary() {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [activeFilter, setActiveFilter] = useState('All');
     const [selectedCourse, setSelectedCourse] = useState(featuredCourse);
+    const [toast, setToast] = useState(null);
+
+    const showToast = (message, type = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
+
+    const [courses, setCourses] = useState([]);
+    const [myRegistrations, setMyRegistrations] = useState([]);
+    const token = useSelector(state => state.auth?.accessToken);
+    const user = useSelector(state => state.auth?.user);
+
+    React.useEffect(() => {
+        const fetchSeminars = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/v1/seminars', {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    credentials: 'include'
+                });
+                
+                let combinedCourses = [...mockCourses]; // Start with dummy data for visual aesthetics
+
+                if (response.ok) {
+                    const seminarsData = await response.json();
+                    
+                    // Also fetch registrations
+                    const regResponse = await fetch('http://localhost:5000/api/v1/seminars/registrations', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (regResponse.ok) {
+                        const regData = await regResponse.json();
+                        setMyRegistrations(regData.map(r => r.seminarId));
+                    }
+                    
+                    // Map seminars to match the Course card format
+                    const mappedSeminars = seminarsData.map(s => ({
+                        id: s._id,
+                        status: s.status === 'live' ? 'LIVE' : s.status === 'scheduled' ? 'UPCOMING' : s.status === 'draft' ? 'DRAFT' : 'RECORDED',
+                        tag: s.category || 'Seminar',
+                        time: s.startTime ? `${s.startTime} - ${s.endTime}` : 'TBA',
+                        title: s.title,
+                        desc: s.abstract || 'No description provided.',
+                        host: s.hostName || 'Guest Speaker',
+                        hostTitle: 'Host',
+                        hostImage: s.hostImageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(s.hostName || 'Guest Speaker')}&background=0D8ABC&color=fff&rounded=true&bold=true`,
+                        img: s.imageUrl || 'https://images.unsplash.com/photo-1540317580384-e5d43616b9aa?auto=format&fit=crop&q=80&w=600',
+                        bullets: s.tags || [],
+                        type: 'seminar',
+                        location: s.location,
+                        hostId: s.hostId
+                    }));
+
+                    combinedCourses = [...mappedSeminars, ...combinedCourses]; // Put new seminars first
+                }
+                
+                setCourses(combinedCourses);
+            } catch (error) {
+                console.error("Failed to fetch seminars", error);
+                setCourses(mockCourses); // Fallback to mocks
+            }
+        };
+        fetchSeminars();
+    }, [token]);
 
     // Filter Logic
-    const filteredCourses = mockCourses.filter(course => {
-        if (activeFilter === 'All') return true;
-        return course.status === activeFilter.toUpperCase();
+    const filteredCourses = courses.filter(course => {
+        if (activeFilter !== 'All' && course.status !== activeFilter.toUpperCase()) return false;
+        return true;
     });
 
     const handleCourseClick = (course) => {
@@ -65,6 +129,72 @@ export default function CourseLibrary() {
 
     const closeDrawer = () => {
         setIsDrawerOpen(false);
+    };
+
+    const handleRegister = async (e, courseId) => {
+        e.stopPropagation();
+        try {
+            const response = await fetch(`http://localhost:5000/api/v1/seminars/${courseId}/register`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (response.ok) {
+                setMyRegistrations(prev => [...prev, courseId]);
+                showToast('Successfully registered for seminar!');
+            } else {
+                const data = await response.json();
+                showToast(data.message || 'Failed to register', 'error');
+            }
+        } catch (err) {
+            showToast('An error occurred during registration.', 'error');
+        }
+    };
+
+    const renderButton = (course) => {
+        const isHost = user && course.hostId === user.id;
+        const isRegistered = myRegistrations.includes(course.id);
+
+        if (isHost) {
+            return (
+                <button onClick={(e) => { e.stopPropagation(); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-[#006e73] text-white hover:bg-[#00c2cb]">
+                    <span className="material-symbols-outlined text-[14px] sm:text-[16px]">podcasts</span>
+                    Start Broadcast
+                </button>
+            );
+        }
+
+        if (course.status === 'LIVE' || course.status === 'LIVE NOW') {
+            return (
+                <button onClick={(e) => { e.stopPropagation(); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-[#61f4fd] text-[#002022] hover:bg-[#6bf6ff]">
+                    Join Broadcast
+                </button>
+            );
+        }
+
+        if (course.status === 'RECORDED') {
+            return (
+                <button onClick={(e) => { e.stopPropagation(); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-[#f1f3fc] text-[#222777] border border-[#c7c5d3] hover:bg-[#e0e2eb]">
+                    <span className="material-symbols-outlined text-[14px] sm:text-[16px]">play_arrow</span> Resume
+                </button>
+            );
+        }
+
+        if (isRegistered) {
+            return (
+                <button onClick={(e) => { e.stopPropagation(); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-white text-[#006e73] border border-[#00c2cb] cursor-default">
+                    <span className="material-symbols-outlined text-[14px] sm:text-[16px]">check_circle</span> Registered
+                </button>
+            );
+        }
+
+        return (
+            <button onClick={(e) => handleRegister(e, course.id)} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-[#222777] text-white hover:bg-[#3a3f8f]">
+                Register
+            </button>
+        );
     };
 
     return (
@@ -86,12 +216,20 @@ export default function CourseLibrary() {
                         <h1 className="text-[24px] sm:text-[28px] md:text-[32px] font-bold text-[#222777] leading-tight tracking-tight">Course Library</h1>
                         <p className="text-[13px] sm:text-[14px] md:text-[15px] text-[#464651] mt-1">Discover live seminars, recorded lectures, and interactive modules.</p>
                     </div>
-                    <button
-                        onClick={() => navigate('/app/courses/my-learning')}
-                        className="w-full sm:w-auto bg-[#f1f3fc] text-[#222777] border border-[#c7c5d3] px-4 py-2.5 sm:py-2 rounded-lg font-bold text-[13px] hover:bg-[#e0e2eb] transition-colors flex items-center justify-center gap-2 shadow-sm shrink-0"
-                    >
-                        <span className="material-symbols-outlined text-[18px]">bookmark</span> My Learning List
-                    </button>
+                    <div className="flex gap-2 sm:gap-3 w-full sm:w-auto overflow-x-auto hide-scrollbar shrink-0">
+                        <button
+                            onClick={() => navigate('/app/courses/seminars')}
+                            className="bg-[#e6fbfc] text-[#006e73] border border-[#6bf6ff]/50 px-4 py-2.5 sm:py-2 rounded-lg font-bold text-[13px] hover:bg-[#6bf6ff]/20 transition-colors flex items-center justify-center gap-2 shadow-sm shrink-0 whitespace-nowrap"
+                        >
+                            <span className="material-symbols-outlined text-[18px]">location_on</span> Nearby Seminars
+                        </button>
+                        <button
+                            onClick={() => navigate('/app/courses/my-learning')}
+                            className="bg-[#f1f3fc] text-[#222777] border border-[#c7c5d3] px-4 py-2.5 sm:py-2 rounded-lg font-bold text-[13px] hover:bg-[#e0e2eb] transition-colors flex items-center justify-center gap-2 shadow-sm shrink-0 whitespace-nowrap"
+                        >
+                            <span className="material-symbols-outlined text-[18px]">bookmark</span> My Learning List
+                        </button>
+                    </div>
                 </div>
 
                 {/* Hero Banner: Featured Live Session */}
@@ -138,15 +276,14 @@ export default function CourseLibrary() {
                 {/* Filters Row */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 sm:mb-6 gap-3 sm:gap-4">
                     <div className="flex items-center w-full min-w-0">
-                        <div className="flex overflow-x-auto hide-scrollbar flex-1 -mx-4 px-4 sm:mx-0 sm:px-0 gap-2 items-center pb-1 sm:pb-0">
-                            {['All', 'Live', 'Upcoming', 'Recorded'].map(filter => (
+                        <div className="flex gap-2 sm:gap-4 overflow-x-auto hide-scrollbar">
+                            {['All', 'Live', 'Upcoming', 'Recorded', 'Draft'].map(tab => (
                                 <button
-                                    key={filter}
-                                    onClick={() => setActiveFilter(filter)}
-                                    className={`px-3 sm:px-4 py-1.5 rounded-full text-[12px] sm:text-[13px] font-bold border transition-colors shrink-0 whitespace-nowrap
-                                        ${activeFilter === filter ? 'bg-[#3a3f8f] text-white border-[#3a3f8f]' : 'bg-white text-[#464651] border-[#c7c5d3] hover:bg-[#f1f3fc]'}`}
+                                    key={tab}
+                                    onClick={() => setActiveFilter(tab)}
+                                    className={`px-4 sm:px-5 py-1.5 rounded-full text-[12px] sm:text-[13px] font-bold whitespace-nowrap transition-colors ${activeFilter === tab ? 'bg-[#222777] text-white shadow-sm' : 'bg-transparent text-[#464651] border border-[#c7c5d3] hover:border-[#222777] hover:text-[#222777]'}`}
                                 >
-                                    {filter}
+                                    {tab === 'Draft' ? 'Drafts' : tab}
                                 </button>
                             ))}
                         </div>
@@ -191,16 +328,13 @@ export default function CourseLibrary() {
                                 </div>
                                 <h4 className="text-[16px] sm:text-[18px] font-bold text-[#181c22] mb-1.5 sm:mb-2 group-hover:text-[#222777] transition-colors leading-snug">{course.title}</h4>
                                 <p className="text-[13px] sm:text-[14px] text-[#464651] line-clamp-2 mb-4 flex-1">{course.desc}</p>
-                                <div className="flex flex-wrap sm:flex-nowrap items-center justify-between mt-auto pt-3 sm:pt-4 border-t border-[#e0e2eb] gap-3 sm:gap-0">
-                                    <div className="flex items-center gap-2">
-                                        <img src={course.host === 'Dr. E. Chen' ? 'https://i.pravatar.cc/150?u=chen' : course.host === 'Dr. K. Sato' ? 'https://i.pravatar.cc/150?u=sato' : 'https://i.pravatar.cc/150?u=rossi'} alt="Host" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-[#c7c5d3]" />
+                                <div className="p-4 sm:p-5 pt-0 mt-auto">
+                                    <div className="flex items-center gap-2 sm:gap-3">
+                                        <img src={course.hostImage || (course.host === 'Dr. E. Chen' ? 'https://i.pravatar.cc/150?u=chen' : course.host === 'Dr. K. Sato' ? 'https://i.pravatar.cc/150?u=sato' : course.host === 'Prof. M. Rossi' ? 'https://i.pravatar.cc/150?u=rossi' : 'https://i.pravatar.cc/150?u=default')} alt="Host" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-[#c7c5d3] object-cover" />
                                         <span className="font-bold text-[12px] sm:text-[13px] text-[#181c22]">{course.host}</span>
                                     </div>
-                                    <button className={`w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors ${course.status === 'LIVE' ? 'bg-[#61f4fd] text-[#002022] hover:bg-[#6bf6ff]' : course.status === 'UPCOMING' ? 'bg-[#222777] text-white hover:bg-[#3a3f8f]' : 'bg-[#f1f3fc] text-[#222777] border border-[#c7c5d3] hover:bg-[#e0e2eb]'}`}>
-                                        {course.status === 'RECORDED' && <span className="material-symbols-outlined text-[14px] sm:text-[16px]">play_arrow</span>}
-                                        {course.status === 'LIVE' ? 'Watch' : course.status === 'UPCOMING' ? 'Register' : 'Resume'}
-                                    </button>
                                 </div>
+                                {renderButton(course)}
                             </div>
                         </div>
                     ))}
@@ -250,7 +384,7 @@ export default function CourseLibrary() {
                     <hr className="border-[#e0e2eb]" />
 
                     <div className="flex items-center gap-3 sm:gap-4 py-4 sm:py-5">
-                        <img src={selectedCourse.host === 'Dr. E. Chen' ? 'https://i.pravatar.cc/150?u=chen' : selectedCourse.host === 'Dr. K. Sato' ? 'https://i.pravatar.cc/150?u=sato' : selectedCourse.host === 'Prof. M. Rossi' ? 'https://i.pravatar.cc/150?u=rossi' : 'https://i.pravatar.cc/150?u=varga'} alt="Host" className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-[#e0e2eb] object-cover shrink-0" />
+                        <img src={selectedCourse.hostImage || (selectedCourse.host === 'Dr. E. Chen' ? 'https://i.pravatar.cc/150?u=chen' : selectedCourse.host === 'Dr. K. Sato' ? 'https://i.pravatar.cc/150?u=sato' : selectedCourse.host === 'Prof. M. Rossi' ? 'https://i.pravatar.cc/150?u=rossi' : 'https://i.pravatar.cc/150?u=varga')} alt="Host" className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-[#e0e2eb] object-cover shrink-0" />
                         <div>
                             <p className="font-bold text-[#181c22] text-[14px] sm:text-[15px]">{selectedCourse.host}</p>
                             <p className="font-mono text-[11px] sm:text-[12px] text-[#464651] mt-0.5">{selectedCourse.hostTitle}</p>
@@ -288,12 +422,43 @@ export default function CourseLibrary() {
 
                 {/* EXACT Sticky Footer */}
                 <div className="p-4 sm:p-6 border-t border-[#e0e2eb] bg-white flex gap-2 sm:gap-3 shrink-0 items-center">
-                    <button className="flex-1 bg-[#61f4fd] text-[#002022] font-bold text-[13px] sm:text-[15px] py-2.5 sm:py-3 rounded-lg hover:bg-[#6bf6ff] transition-colors flex items-center justify-center gap-1 sm:gap-2 shadow-sm border border-[#00696e]">
-                        <span className="material-symbols-outlined text-[18px] sm:text-[20px]">
-                            {selectedCourse.status === 'LIVE' || selectedCourse.status === 'LIVE NOW' ? 'play_arrow' : selectedCourse.status === 'UPCOMING' ? 'event_available' : 'play_circle'}
-                        </span>
-                        {selectedCourse.status === 'LIVE' || selectedCourse.status === 'LIVE NOW' ? 'Join Broadcast' : selectedCourse.status === 'UPCOMING' ? 'Register' : 'Watch Recording'}
-                    </button>
+                    {(() => {
+                        const isHost = user && selectedCourse.hostId === user.id;
+                        const isRegistered = myRegistrations.includes(selectedCourse.id);
+
+                        let btnText = 'Watch Recording';
+                        let icon = 'play_circle';
+                        let btnStyle = 'bg-[#f1f3fc] text-[#222777] border-[#c7c5d3] hover:bg-[#e0e2eb]';
+                        let onClick = (e) => e.stopPropagation();
+
+                        if (isHost) {
+                            btnText = 'Start Broadcast';
+                            icon = 'podcasts';
+                            btnStyle = 'bg-[#006e73] text-white border-[#006e73] hover:bg-[#00c2cb]';
+                        } else if (selectedCourse.status === 'LIVE' || selectedCourse.status === 'LIVE NOW') {
+                            btnText = 'Join Broadcast';
+                            icon = 'play_arrow';
+                            btnStyle = 'bg-[#61f4fd] text-[#002022] border-[#00696e] hover:bg-[#6bf6ff]';
+                        } else if (selectedCourse.status === 'UPCOMING') {
+                            if (isRegistered) {
+                                btnText = 'Registered';
+                                icon = 'check_circle';
+                                btnStyle = 'bg-white text-[#006e73] border-[#00c2cb] cursor-default';
+                            } else {
+                                btnText = 'Register for Seminar';
+                                icon = 'event_available';
+                                btnStyle = 'bg-[#222777] text-white border-[#222777] hover:bg-[#3a3f8f]';
+                                onClick = (e) => handleRegister(e, selectedCourse.id);
+                            }
+                        }
+
+                        return (
+                            <button onClick={onClick} className={`flex-1 font-bold text-[13px] sm:text-[15px] py-2.5 sm:py-3 rounded-lg transition-colors flex items-center justify-center gap-1 sm:gap-2 shadow-sm border ${btnStyle}`}>
+                                <span className="material-symbols-outlined text-[18px] sm:text-[20px]">{icon}</span>
+                                {btnText}
+                            </button>
+                        );
+                    })()}
 
                     <button className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg border border-[#c7c5d3] text-[#464651] flex items-center justify-center hover:bg-[#f1f3fc] hover:text-[#222777] transition-colors shrink-0">
                         <span className="material-symbols-outlined text-[18px] sm:text-[20px]">bookmark_border</span>
@@ -304,6 +469,18 @@ export default function CourseLibrary() {
                     </button>
                 </div>
             </aside>
+
+            {/* Custom Toast Notification */}
+            {toast && (
+                <div className="fixed bottom-6 right-6 z-[60] animate-fade-in-up">
+                    <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border ${toast.type === 'error' ? 'bg-[#ba1a1a] text-white border-[#93000a]' : 'bg-[#222777] text-white border-[#070963]'}`}>
+                        <span className="material-symbols-outlined">
+                            {toast.type === 'error' ? 'error' : 'check_circle'}
+                        </span>
+                        <span className="font-bold text-sm">{toast.message}</span>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

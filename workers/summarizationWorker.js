@@ -67,7 +67,8 @@ const worker = new Worker('summarization', async (job) => {
             transcriptId, 
             summaryId: summary._id,
             summary: summary.summaryText,
-            tags: summary.tags
+            tags: summary.tags,
+            queries: summary.queries
         });
 
         console.log(`[Worker] Finished summarization for transcript ${transcriptId}`);

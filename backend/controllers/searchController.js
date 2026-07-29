@@ -12,19 +12,20 @@ exports.createSearchSession = async (req, res) => {
         const mongoose = require('mongoose');
         const sessionId = req.body.sessionId || new mongoose.Types.ObjectId();
         
+        console.log(`[searchController] Creating session ${sessionId} with queries:`, queries);
         const jobIds = [];
         for (const q of queries) {
-            // Frontend might send objects {text, ...} or strings
             const queryText = typeof q === 'string' ? q : q.text;
             if (!queryText) continue;
 
-            // Pre-create the search result so the frontend can immediately see the session
+            console.log(`[searchController] Pre-creating SearchResult for query: ${queryText}`);
             const searchResult = await SearchResult.create({
                 sessionId,
                 userId: req.user._id,
                 query: queryText,
                 results: []
             });
+            console.log(`[searchController] Created SearchResult ${searchResult._id}`);
 
             const job = await searchQueue.add('search', {
                 sessionId,
@@ -36,8 +37,10 @@ exports.createSearchSession = async (req, res) => {
             jobIds.push(job.id);
         }
 
+        console.log(`[searchController] Finished enqueuing, sending 202`);
         res.status(202).json({ sessionId, jobIds });
     } catch (error) {
+        console.error(`[searchController] Error in createSearchSession:`, error);
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };

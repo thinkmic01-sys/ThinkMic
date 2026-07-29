@@ -385,7 +385,7 @@ export default function SpeechWorkspace() {
             });
             
             // Navigate to Research module with session ID, or just navigate to main research page
-            navigate('/app/research');
+            navigate('/app/research/results');
         } catch (error) {
             showToast(error.response?.data?.message || "Failed to start research", "error");
         }
@@ -803,7 +803,7 @@ export default function SpeechWorkspace() {
                 </div>
                 <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                     <button
-                        onClick={() => navigate('/app/research/results')}
+                        onClick={handleRunResearch}
                         className="bg-[#222777] text-white text-[12px] sm:text-[14px] font-bold py-1.5 sm:py-2 px-3 sm:px-6 rounded-[6px] shadow-sm hover:bg-[#3a3f8f] hover:cursor-pointer transition-colors flex items-center gap-1 sm:gap-2"
                     >
                         Approve <span className="hidden sm:inline">& Generate Queries</span> <span className="material-symbols-outlined text-[16px] sm:text-[18px]">arrow_forward</span>

@@ -2,17 +2,24 @@ const User = require('../models/User');
 
 exports.listUsers = async (req, res) => {
     try {
-        const { role, status, page = 1 } = req.query;
+        const { role, status, page = 1, search } = req.query;
         const query = {};
         if (role) query.role = role;
         if (status) query.status = status;
+        if (search) {
+            query.$or = [
+                { fullName: new RegExp(search, 'i') },
+                { email: new RegExp(search, 'i') }
+            ];
+        }
 
         const users = await User.find(query)
             .sort({ createdAt: -1 })
             .limit(25)
             .skip((page - 1) * 25);
             
-        res.status(200).json({ users, total: users.length });
+        const total = await User.countDocuments(query);
+        res.status(200).json({ users, total });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }

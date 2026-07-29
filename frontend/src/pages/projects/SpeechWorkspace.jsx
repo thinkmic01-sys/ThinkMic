@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from "react-router-dom";
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { login, logout } from '../../store/slices/authSlice';
+import api from '../../services/api';
+import deepgramService from '../../services/deepgramService';
 import { io } from 'socket.io-client';
 
 export default function SpeechWorkspace() {
@@ -11,10 +14,22 @@ export default function SpeechWorkspace() {
     const [recordingState, setRecordingState] = useState('idle');
     const [timeElapsed, setTimeElapsed] = useState(0);
     const [transcripts, setTranscripts] = useState([]);
+    const [interimText, setInterimText] = useState('');
+    const [summaryText, setSummaryText] = useState('');
+    const [currentTranscriptId, setCurrentTranscriptId] = useState(null);
+    const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+    const [tagInputTopicId, setTagInputTopicId] = useState(null);
+    const [newTagValue, setNewTagValue] = useState('');
+    const [sttEngine, setSttEngine] = useState('Deepgram'); // Browser, Whisper, Deepgram
+    const [language, setLanguage] = useState('en-US'); // en-US, ur-PK
+    const recognitionRef = useRef(null);
+    const interimTextRef = useRef('');
+    const recordingStartTimeRef = useRef(null);
 
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
 
+    const dispatch = useDispatch();
     // Functionality States
     const [intentMode, setIntentMode] = useState('User-Defined');
     const [customPrompt, setCustomPrompt] = useState('');
@@ -23,6 +38,7 @@ export default function SpeechWorkspace() {
 
     const [expandedTopicId, setExpandedTopicId] = useState(null);
     const [topics, setTopics] = useState([]);
+    const [queries, setQueries] = useState([]);
 
     // Custom Toast State
     const [toast, setToast] = useState({ show: false, message: '', type: 'error' });
@@ -57,25 +73,36 @@ export default function SpeechWorkspace() {
         socket.on('job_progress', (data) => {
             if (data.status === 'processing') {
                 showToast(`AI is processing your ${data.type}...`, 'success');
+                setIsGeneratingSummary(true);
             } else if (data.status === 'error') {
                 showToast(`Error processing ${data.type}: ${data.error}`, 'error');
+                setIsGeneratingSummary(false);
             }
         });
 
         socket.on('transcription_complete', (data) => {
             showToast('Transcription complete!', 'success');
-            setTranscripts(prev => [...prev, { time: 0, text: data.text }]);
+            // If we already have live transcripts, we might not want to overwrite them with the whisper one, 
+            // but we absolutely need the transcriptId for summarization.
+            setCurrentTranscriptId(data.transcriptId);
         });
 
         socket.on('summarization_complete', (data) => {
+            setIsGeneratingSummary(false);
             showToast('Summary generation complete!', 'success');
-            if (data.tags) {
+            if (data.summary) {
+                setSummaryText(data.summary);
+            }
+            if (data.tags && Array.isArray(data.tags)) {
                 setTopics(data.tags.map((tag, i) => ({
                     id: Date.now() + i,
                     title: tag,
                     color: ['bg-blue-500', 'bg-green-500', 'bg-[#00c2cb]', 'bg-[#222777]'][i % 4],
                     tags: ['auto-generated']
                 })));
+            }
+            if (data.queries && Array.isArray(data.queries)) {
+                setQueries(data.queries);
             }
         });
 
@@ -85,36 +112,38 @@ export default function SpeechWorkspace() {
     }, [userId]);
 
     // --- UPLOAD LOGIC TO BACKEND ---
-    const uploadAudioToBackend = async (audioBlob, filename) => {
+    const uploadAudioToBackend = async (audioBlob, filename, rawText = null, isFileUpload = false) => {
         setIsUploading(true);
         setUploadProgress(50); // Show intermediate progress
 
         const formData = new FormData();
         formData.append('audio', audioBlob, filename);
         formData.append('title', filename || 'Live Workspace Recording');
+        
+        if (rawText !== null && rawText !== undefined) {
+            formData.append('rawText', rawText);
+        }
+        if (!isFileUpload) {
+            formData.append('sttEngine', sttEngine);
+        }
+        formData.append('language', language);
+        formData.append('length', summaryLength);
+        formData.append('style', summaryStyle);
 
         try {
-            const response = await fetch('http://localhost:5000/api/v1/recordings', {
-                method: 'POST',
+            const response = await api.post('/recordings', formData, {
                 headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                },
-                body: formData,
-                credentials: 'include'
+                    'Content-Type': 'multipart/form-data'
+                }
             });
 
-            const data = await response.json();
+            const data = response.data;
 
-            if (response.ok) {
-                setUploadProgress(100);
-                showToast('Audio saved successfully to the server!', 'success');
-                // Here you would typically fetch the newly created recording or start polling for transcripts
-            } else {
-                showToast(`Upload failed: ${data.message || 'Unknown error'}`, 'error');
-            }
+            setUploadProgress(100);
+            showToast('Audio saved successfully to the server!', 'success');
         } catch (error) {
             console.error("Upload error:", error);
-            showToast("An error occurred during upload. Please try again.", "error");
+            showToast(`Upload failed: ${error.response?.data?.message || 'Unknown error'}`, 'error');
         } finally {
             setIsUploading(false);
             setUploadProgress(0);
@@ -124,29 +153,148 @@ export default function SpeechWorkspace() {
     // --- AUDIO & RECORDING LOGIC ---
     const startRecording = async () => {
         try {
+            if (sttEngine === 'Deepgram') {
+                setRecordingState('connecting');
+                const connected = await deepgramService.connect(language);
+                if (!connected) {
+                    setRecordingState('idle');
+                    return;
+                }
+                
+                deepgramService.onTranscript = (transcript, isFinal) => {
+                    if (isFinal && transcript.trim()) {
+                        setTranscripts((prev) => {
+                            const latestTime = Math.floor((Date.now() - recordingStartTimeRef.current) / 1000);
+                            return [...prev, { time: latestTime, text: transcript.trim() }];
+                        });
+                        setInterimText('');
+                    } else if (!isFinal) {
+                        setInterimText(transcript);
+                        interimTextRef.current = transcript;
+                    }
+                };
+                
+                deepgramService.onError = (err) => {
+                    showToast(err.message || 'Deepgram error', 'error');
+                };
+            }
+
+            // If starting from idle (new session), clear everything out first
+            if (recordingState === 'idle') {
+                setTranscripts([]);
+                setInterimText('');
+                setSummaryText('');
+                setCurrentTranscriptId(null);
+                setTopics([]);
+            }
+
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             streamRef.current = stream;
-            const mediaRecorder = new MediaRecorder(stream);
+            
+            // For Deepgram, we need timeslice chunks. For others, we also need it for the final blob.
+            const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
             mediaRecorderRef.current = mediaRecorder;
             audioChunksRef.current = []; // Reset chunks
+            recordingStartTimeRef.current = Date.now();
 
             mediaRecorder.ondataavailable = (event) => {
                 if (event.data.size > 0) {
                     audioChunksRef.current.push(event.data);
+                    if (sttEngine === 'Deepgram') {
+                        deepgramService.sendAudio(event.data);
+                    }
                 }
             };
 
             mediaRecorder.onstop = () => {
                 // When recording stops, assemble the blob and upload
                 const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                uploadAudioToBackend(audioBlob, `live-recording-${Date.now()}.webm`);
+                
+                // If Browser or Deepgram, we have the full text. We pass it to bypass Whisper.
+                let rawText = null;
+                if (sttEngine === 'Browser' || sttEngine === 'Deepgram') {
+                    // Extract text from state (note: state might be slightly stale if accessed here directly, 
+                    // but transcripts updates synchronously enough for most cases. To be safe, we can use a ref, 
+                    // but for now we map what we have in DOM/state).
+                    // Actually, getting from setTranscripts might be safer, but let's use the UI text for simplicity.
+                }
+                
+                // For simplicity, we just pass the joined transcript text
+                setTranscripts((currentTranscripts) => {
+                    if (sttEngine === 'Browser' || sttEngine === 'Deepgram') {
+                        rawText = currentTranscripts.map(t => t.text).join(' ').trim();
+                        if (interimTextRef.current) {
+                            rawText = (rawText + ' ' + interimTextRef.current).trim();
+                        }
+                        uploadAudioToBackend(audioBlob, `live-recording-${Date.now()}.webm`, rawText);
+                    } else {
+                        // Whisper
+                        uploadAudioToBackend(audioBlob, `live-recording-${Date.now()}.webm`);
+                    }
+                    return currentTranscripts;
+                });
+                
+                if (sttEngine === 'Deepgram') {
+                    deepgramService.disconnect();
+                }
             };
 
-            mediaRecorder.start(1000); // Collect data in 1s chunks
+            mediaRecorder.start(250); // Collect data in 250ms chunks (Deepgram likes small chunks)
             setRecordingState('recording');
+
+            // --- WEB SPEECH API INTEGRATION (For Browser or Whisper mode) ---
+            if (sttEngine === 'Browser' || sttEngine === 'Whisper') {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (SpeechRecognition) {
+                    if (!recognitionRef.current) {
+                        const recognition = new SpeechRecognition();
+                        recognition.continuous = true;
+                        recognition.interimResults = true;
+                        recognition.lang = language;
+
+                        recognition.onstart = () => {};
+
+                        recognition.onresult = (event) => {
+                            let interim = '';
+                            let finalTranscript = '';
+
+                            for (let i = event.resultIndex; i < event.results.length; i++) {
+                                const transcript = event.results[i][0].transcript;
+                                if (event.results[i].isFinal) {
+                                    finalTranscript += transcript + ' ';
+                                } else {
+                                    interim += transcript;
+                                }
+                            }
+
+                            if (finalTranscript.trim()) {
+                                setTranscripts((prev) => {
+                                    const latestTime = Math.floor((Date.now() - recordingStartTimeRef.current) / 1000);
+                                    return [...prev, { time: latestTime, text: finalTranscript.trim() }];
+                                });
+                            }
+                            setInterimText(interim);
+                            interimTextRef.current = interim;
+                        };
+                        
+                        recognition.onend = () => {
+                            // Restart recognition if we are still recording
+                            if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                                try { recognition.start(); } catch(e) {}
+                            }
+                        };
+
+                        recognitionRef.current = recognition;
+                    }
+                    try { recognitionRef.current.start(); } catch(e) {}
+                } else if (sttEngine === 'Browser') {
+                    showToast("Your browser does not support the Web Speech API. Please use Chrome or select Deepgram/Whisper.", "error");
+                }
+            }
+
         } catch (err) {
-            console.error("Microphone access denied:", err);
-            showToast("Please allow microphone access in your browser to use the workspace.", "error");
+            console.error("Microphone access denied or error:", err);
+            showToast("Error starting recording. Ensure microphone access is allowed.", "error");
         }
     };
 
@@ -154,9 +302,11 @@ export default function SpeechWorkspace() {
         if (mediaRecorderRef.current && recordingState === 'recording') {
             mediaRecorderRef.current.pause();
             setRecordingState('paused');
+            try { recognitionRef.current?.stop(); } catch(e) {}
         } else if (mediaRecorderRef.current && recordingState === 'paused') {
             mediaRecorderRef.current.resume();
             setRecordingState('recording');
+            try { recognitionRef.current?.start(); } catch(e) {}
         }
     };
 
@@ -165,6 +315,7 @@ export default function SpeechWorkspace() {
             mediaRecorderRef.current.stop(); // This triggers the onstop event defined in startRecording
             streamRef.current.getTracks().forEach(track => track.stop());
         }
+        try { recognitionRef.current?.stop(); } catch(e) {}
         setRecordingState('idle');
         setTimeElapsed(0);
     };
@@ -175,16 +326,22 @@ export default function SpeechWorkspace() {
         const file = e.target.files[0];
         if (file) {
             if (file.size > 50 * 1024 * 1024) return showToast("File exceeds the 50MB limit.", "error");
-            uploadAudioToBackend(file, file.name);
+            uploadAudioToBackend(file, file.name, null, true);
         }
     };
 
     // --- INTERACTIVE FUNCTIONALITY HANDLERS ---
     const handleAddTopicTag = (topicId) => {
-        const newTag = window.prompt("Enter new tag:");
-        if (newTag && newTag.trim() !== '') {
-            setTopics(topics.map(t => t.id === topicId ? { ...t, tags: [...t.tags, newTag.trim()] } : t));
+        setTagInputTopicId(topicId);
+        setNewTagValue('');
+    };
+
+    const submitNewTag = (topicId) => {
+        if (newTagValue && newTagValue.trim() !== '') {
+            setTopics(topics.map(t => t.id === topicId ? { ...t, tags: [...t.tags, newTagValue.trim()] } : t));
         }
+        setTagInputTopicId(null);
+        setNewTagValue('');
     };
 
     const handleRemoveTopicTag = (topicId, tagToRemove) => {
@@ -195,23 +352,53 @@ export default function SpeechWorkspace() {
         setCustomPrompt(prev => prev ? `${prev}, ${tagText}` : tagText);
     };
 
-    const handleSummarize = () => {
-        showToast(`Generating new ${summaryLength.toLowerCase()} summary in ${summaryStyle.toLowerCase()} format...`, 'success');
+    const triggerAIProcessing = async (promptOverride = '') => {
+        if (!currentTranscriptId) {
+            return showToast("No transcript available to process yet. Wait for upload to finish.", "error");
+        }
+        showToast(`Requesting AI processing...`, 'success');
+        try {
+            const response = await api.post(`/summaries/transcript/${currentTranscriptId}/regenerate`, {
+                customPrompt: promptOverride || customPrompt,
+                length: summaryLength,
+                style: summaryStyle,
+                language: language
+            });
+            showToast("AI Job Queued! Waiting for results...", "success");
+        } catch (err) {
+            showToast(err.response?.data?.message || "Server error triggering AI.", "error");
+        }
+    };
+
+    const handleSummarize = () => triggerAIProcessing();
+
+    const handleRunResearch = async () => {
+        if (!queries || queries.length === 0) {
+            return showToast("No research queries generated yet.", "warning");
+        }
+        
+        try {
+            showToast("Initiating web research...", "success");
+            const response = await api.post('/search/sessions', {
+                queries: queries,
+                config: { gl: "us", hl: "en" }
+            });
+            
+            // Navigate to Research module with session ID, or just navigate to main research page
+            navigate('/app/research');
+        } catch (error) {
+            showToast(error.response?.data?.message || "Failed to start research", "error");
+        }
     };
 
     useEffect(() => {
         if (recordingState === 'recording') {
             timerIntervalRef.current = setInterval(() => setTimeElapsed((prev) => prev + 1), 1000);
-            mockTranscriptIntervalRef.current = setInterval(() => {
-                setTranscripts((prev) => [...prev, { time: prev.length > 0 ? prev[prev.length-1].time + 8 : 8, text: "This is a simulated incoming chunk mapped directly to the active session stream." }]);
-            }, 8000);
         } else {
             clearInterval(timerIntervalRef.current);
-            clearInterval(mockTranscriptIntervalRef.current);
         }
         return () => {
             clearInterval(timerIntervalRef.current);
-            clearInterval(mockTranscriptIntervalRef.current);
         };
     }, [recordingState]);
 
@@ -235,6 +422,11 @@ export default function SpeechWorkspace() {
                 }
                 .hide-scrollbar::-webkit-scrollbar { display: none; }
                 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #e0e2eb; border-radius: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #c7c5d3; }
                 .custom-tooltip { position: relative; }
                 .custom-tooltip::after {
                     content: attr(data-tooltip);
@@ -264,16 +456,26 @@ export default function SpeechWorkspace() {
             {/* --- TOP CONTROL BAR (RESPONSIVE) --- */}
             <div className="bg-white border-b border-[#e0e2eb] shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between p-4 md:px-8 md:h-20 gap-4 shrink-0 z-10">
 
-                {/* Left: Input Source */}
-                <div className="flex items-center gap-3 shrink-0">
+                {/* Left: Input Source & Engine Selector */}
+                <div className="flex items-center gap-3 shrink-0 flex-wrap">
                     <div className="w-8 h-8 md:w-10 md:h-10 rounded-md flex items-center justify-center text-white bg-[#3a3f8f] shadow-sm">
                         <span className="material-symbols-outlined text-[18px] md:text-[22px]">mic</span>
                     </div>
                     <div className="flex flex-col">
-                        <span className="hidden sm:block text-[10px] font-bold text-[#777682] uppercase tracking-wider mb-0.5">Input Source</span>
-                        <button className="flex items-center gap-1 text-[#222777] font-bold text-[13px] md:text-sm hover:text-[#3a3f8f] transition-colors">
-                            Configure Mic <span className="material-symbols-outlined text-[16px] md:text-[18px]">arrow_drop_down</span>
-                        </button>
+                        <span className="hidden sm:block text-[10px] font-bold text-[#777682] uppercase tracking-wider mb-0.5">STT Engine</span>
+                        <div className="relative">
+                            <select 
+                                value={sttEngine}
+                                onChange={(e) => setSttEngine(e.target.value)}
+                                disabled={recordingState !== 'idle'}
+                                className="appearance-none bg-transparent font-bold text-[13px] md:text-sm text-[#222777] hover:text-[#3a3f8f] outline-none cursor-pointer pr-5 transition-colors disabled:opacity-50"
+                            >
+                                <option value="Deepgram">Deepgram (Live Premium)</option>
+                                <option value="Whisper">Whisper (High Accuracy)</option>
+                                <option value="Browser">Browser API (Fast, Free)</option>
+                            </select>
+                            <span className="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 text-[16px] text-[#222777] pointer-events-none disabled:opacity-50">expand_more</span>
+                        </div>
                     </div>
                 </div>
 
@@ -281,8 +483,8 @@ export default function SpeechWorkspace() {
                 <div className="flex flex-col items-center gap-1 w-full md:w-auto shrink-0 order-first md:order-none">
                     <div className="bg-[#222777] text-white rounded-md px-4 sm:px-5 py-2 flex items-center justify-between gap-4 md:gap-6 shadow-sm w-full md:w-[340px] border border-[#3a3f8f]">
                         <div className="flex items-center gap-2 md:gap-3">
-                            <span className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${recordingState === 'recording' ? 'bg-[#ba1a1a] animate-pulse' : 'bg-[#777682]'}`}></span>
-                            <span className="text-[11px] md:text-xs font-bold tracking-widest text-[#bfc2ff]">REC</span>
+                            <span className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${recordingState === 'recording' ? 'bg-[#ba1a1a] animate-pulse' : (recordingState === 'connecting' ? 'bg-[#e3b505] animate-pulse' : 'bg-[#777682]')}`}></span>
+                            <span className="text-[11px] md:text-xs font-bold tracking-widest text-[#bfc2ff]">{recordingState === 'connecting' ? 'INIT' : 'REC'}</span>
                             <span className="font-mono font-bold text-[13px] md:text-sm tracking-wide text-white">{formatTime(timeElapsed)}</span>
                         </div>
                         <div className="flex items-center gap-[2px] md:gap-[3px] h-4 md:h-5">
@@ -302,12 +504,12 @@ export default function SpeechWorkspace() {
                             if (recordingState === 'idle') startRecording();
                             else pauseRecording();
                         }}
-                        disabled={isUploading}
-                        data-tooltip={recordingState === 'idle' ? 'Start' : (recordingState === 'paused' ? 'Resume' : 'Pause')}
-                        className={`custom-tooltip w-9 h-9 md:w-10 md:h-10 rounded-md border flex items-center justify-center transition-colors ${recordingState === 'idle' ? 'border-[#e0e2eb] text-[#00696e] bg-white hover:bg-[#eef0f9] shadow-sm' : (recordingState === 'paused' ? 'bg-[#e0e0ff] border-[#bfc2ff] text-[#222777]' : 'border-[#e0e2eb] text-[#222777] bg-white hover:bg-[#eef0f9] shadow-sm')}`}
+                        disabled={isUploading || recordingState === 'connecting'}
+                        data-tooltip={recordingState === 'idle' ? 'Start' : (recordingState === 'connecting' ? 'Connecting...' : (recordingState === 'paused' ? 'Resume' : 'Pause'))}
+                        className={`custom-tooltip w-9 h-9 md:w-10 md:h-10 rounded-md border flex items-center justify-center transition-colors ${recordingState === 'idle' ? 'border-[#e0e2eb] text-[#00696e] bg-white hover:bg-[#eef0f9] shadow-sm' : (recordingState === 'connecting' ? 'border-[#e0e2eb] text-[#777682] bg-[#f9f9ff] cursor-wait' : (recordingState === 'paused' ? 'bg-[#e0e0ff] border-[#bfc2ff] text-[#222777]' : 'border-[#e0e2eb] text-[#222777] bg-white hover:bg-[#eef0f9] shadow-sm'))}`}
                     >
-                        <span className="material-symbols-outlined text-[20px] md:text-[24px]">
-                            {recordingState === 'idle' ? 'play_arrow' : (recordingState === 'paused' ? 'play_arrow' : 'pause')}
+                        <span className={`material-symbols-outlined text-[20px] md:text-[24px] ${recordingState === 'connecting' ? 'animate-spin' : ''}`}>
+                            {recordingState === 'idle' ? 'play_arrow' : (recordingState === 'connecting' ? 'sync' : (recordingState === 'paused' ? 'play_arrow' : 'pause'))}
                         </span>
                     </button>
                     
@@ -349,15 +551,28 @@ export default function SpeechWorkspace() {
                             </div>
                             <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
                                 <div className="relative w-full sm:w-auto">
-                                    <select className="w-full sm:w-auto appearance-none bg-white border border-[#c7c5d3] rounded-md px-3 py-1.5 pr-8 text-[13px] sm:text-[14px] font-mono font-bold text-[#464651] outline-none cursor-pointer focus:border-[#222777]">
-                                        <option>English (US)</option>
-                                        <option>Spanish (ES)</option>
+                                    <select 
+                                        value={language}
+                                        onChange={(e) => setLanguage(e.target.value)}
+                                        className="bg-transparent text-[12px] sm:text-[14px] font-bold text-[#464651] outline-none appearance-none pr-6 cursor-pointer"
+                                    >
+                                        <option value="en-US">English (US)</option>
+                                        <option value="ur-PK">Urdu (PK)</option>
                                     </select>
-                                    <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[16px] text-[#777682] pointer-events-none">expand_more</span>
+                                    <span className="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 text-[16px] text-[#777682] pointer-events-none">expand_more</span>
                                 </div>
-                                <div className="flex items-center gap-3 text-[#777682] shrink-0">
-                                    <button className="hover:text-[#222777] transition-colors"><span className="material-symbols-outlined text-[18px]">content_copy</span></button>
-                                    <button className="hover:text-[#ba1a1a] transition-colors"><span className="material-symbols-outlined text-[18px]">delete</span></button>
+                                <div className="flex gap-2 sm:gap-3 ml-2 sm:ml-4 border-l border-[#e0e2eb] pl-2 sm:pl-4">
+                                    <button 
+                                        onClick={() => {
+                                            let text = transcripts.map(t => t.text).join(' ');
+                                            if (interimTextRef.current) text += ' ' + interimTextRef.current;
+                                            navigator.clipboard.writeText(text);
+                                            showToast("Copied to clipboard!", "success");
+                                        }}
+                                        className="text-[#777682] hover:text-[#222777] transition-colors"
+                                    >
+                                        <span className="material-symbols-outlined text-[18px] sm:text-[20px]">content_copy</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -373,6 +588,16 @@ export default function SpeechWorkspace() {
                                     </p>
                                 </div>
                             ))}
+                            {interimText && (
+                                <div className="flex gap-3 sm:gap-4">
+                                    <span className="font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 text-[#777682] opacity-50">
+                                        --:--:--
+                                    </span>
+                                    <p className="text-[#777682] italic leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px]">
+                                        {interimText}
+                                    </p>
+                                </div>
+                            )}
                             {recordingState === 'recording' && (
                                 <div className="flex gap-3 sm:gap-4">
                                     <span className="text-[#006e73] font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 opacity-50">
@@ -388,20 +613,6 @@ export default function SpeechWorkspace() {
                     <div className="bg-white rounded-lg shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-5 flex flex-col gap-4">
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                             <h3 className="font-mono text-[13px] sm:text-[14px] font-bold text-[#222777] tracking-widest uppercase">Processing Intent</h3>
-                            <div className="flex bg-[#f1f3fc] rounded-md p-1 border border-[#e0e2eb] w-full sm:w-auto">
-                                <button
-                                    onClick={() => setIntentMode('User-Defined')}
-                                    className={`flex-1 sm:flex-none px-3 py-1 text-[12px] sm:text-[13px] font-bold rounded transition-all ${intentMode === 'User-Defined' ? 'bg-white text-[#222777] shadow-sm border border-[#e0e2eb]' : 'text-[#777682] hover:text-[#464651]'}`}
-                                >
-                                    User-Defined
-                                </button>
-                                <button
-                                    onClick={() => setIntentMode('Data Fill')}
-                                    className={`flex-1 sm:flex-none px-3 py-1 text-[12px] sm:text-[13px] font-bold rounded transition-all ${intentMode === 'Data Fill' ? 'bg-white text-[#222777] shadow-sm border border-[#e0e2eb]' : 'text-[#777682] hover:text-[#464651]'}`}
-                                >
-                                    Data Fill
-                                </button>
-                            </div>
                         </div>
 
                         <div className="relative border border-[#c7c5d3] rounded-md bg-white overflow-hidden">
@@ -412,7 +623,7 @@ export default function SpeechWorkspace() {
                                 className="w-full h-20 sm:h-24 p-3 sm:p-4 text-[14px] sm:text-[16px] text-[#464651] outline-none resize-none bg-transparent placeholder:text-[#c7c5d3]"
                             />
                             <button
-                                onClick={() => showToast(`Running prompt: ${customPrompt || "Default"}`, 'success')}
+                                onClick={() => triggerAIProcessing()}
                                 className="absolute bottom-2 right-2 bg-[#61f4fd] text-[#004f53] text-[12px] sm:text-[14px] font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-[6px] hover:bg-[#3edae3] transition-colors flex items-center gap-1 shadow-sm">
                                 <span className="material-symbols-outlined text-[14px] sm:text-[16px]">magic_button</span> <span className="hidden sm:inline">Run Prompt</span>
                             </button>
@@ -436,15 +647,15 @@ export default function SpeechWorkspace() {
                 {/* RIGHT COLUMN: Intelligence & Summary */}
                 <div className="w-full lg:w-[400px] xl:w-[480px] flex flex-col gap-4 sm:gap-6 shrink-0">
 
-                    <div className="bg-white rounded-lg shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] flex flex-col flex-1">
+                    <div className="bg-white rounded-lg shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] flex flex-col flex-1 min-h-[300px]">
                         <div className="p-4 sm:p-5 border-b border-[#e0e2eb] flex justify-between items-center bg-[#f9f9ff] rounded-t-lg">
                             <h2 className="text-[20px] sm:text-2xl font-bold text-[#222777] tracking-tight">Intelligence Summary</h2>
-                            <button className="text-[#006e73] text-[12px] sm:text-[14px] font-bold flex items-center gap-1 hover:text-[#004f53] transition-colors shrink-0">
+                            <button onClick={handleSummarize} className="text-[#006e73] text-[12px] sm:text-[14px] font-bold flex items-center gap-1 hover:text-[#004f53] transition-colors shrink-0">
                                 <span className="material-symbols-outlined text-[16px]">refresh</span> <span className="hidden sm:inline">Regenerate</span>
                             </button>
                         </div>
-                        <div className="p-4 sm:p-6">
-                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-5 sm:mb-6">
+                        <div className="p-4 sm:p-6 flex-1 flex flex-col overflow-hidden">
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-5 sm:mb-6 shrink-0">
                                 <span className="text-[11px] sm:text-[12px] font-mono text-[#777682] font-bold">Length:</span>
                                 <div className="relative">
                                     <select
@@ -467,26 +678,39 @@ export default function SpeechWorkspace() {
                                     </select>
                                     <span className="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 text-[14px] text-[#777682] pointer-events-none">expand_more</span>
                                 </div>
-                                <button
-                                    onClick={handleSummarize}
-                                    className="ml-auto bg-[#3a3f8f] text-white text-[12px] sm:text-[14px] font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-[6px] shadow-sm hover:bg-[#222777] transition-colors mt-2 sm:mt-0 w-full sm:w-auto">
-                                    Summarize
-                                </button>
                             </div>
-
-                            <ul className="space-y-3 sm:space-y-4 text-[14px] sm:text-[16px] text-[#464651] marker:text-[#006e73] pl-4 list-disc leading-[1.6]">
-                                <li><strong className="text-[#181c22] font-bold">Model Correlation:</strong> Initial findings indicate strong feature correlation. Secondary dataset variance requires further investigation.</li>
-                                <li><strong className="text-[#181c22] font-bold">Edge Case Analysis:</strong> Focus shifting to edge cases due to unexpected clustering in the upper quartile.</li>
-                                <li><strong className="text-[#181c22] font-bold">Action Required:</strong> Flag upper quartile cluster findings for the review board meeting next week.</li>
-                            </ul>
+                            
+                            {/* Summary Text Render */}
+                            <div className="flex-1 mt-4 text-[#464651] text-[14px] sm:text-[15px] leading-relaxed overflow-y-auto pr-2 custom-scrollbar">
+                                {(isUploading || isGeneratingSummary) ? (
+                                    <div className="h-full flex flex-col space-y-4 animate-pulse pt-2">
+                                        <div className="h-4 bg-[#e0e2eb] rounded w-3/4"></div>
+                                        <div className="h-4 bg-[#e0e2eb] rounded w-full"></div>
+                                        <div className="h-4 bg-[#e0e2eb] rounded w-5/6"></div>
+                                        <div className="h-4 bg-[#e0e2eb] rounded w-full mt-4"></div>
+                                        <div className="h-4 bg-[#e0e2eb] rounded w-4/5"></div>
+                                    </div>
+                                ) : summaryText ? (
+                                    <div className="prose prose-sm prose-blue max-w-none">
+                                        {summaryText.split('\n').map((line, i) => (
+                                            <p key={i} className="mb-2">{line}</p>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center text-[#c7c5d3] italic p-6">
+                                        <span className="material-symbols-outlined text-[40px] mb-2 opacity-50">analytics</span>
+                                        <p className="text-center">Stop recording to automatically generate an AI summary.</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
                     {/* Discussed Topics Box */}
                     <div className="bg-white rounded-lg shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-5 flex flex-col">
-                        <h3 className="font-mono text-[13px] sm:text-[14px] font-bold text-[#222777] tracking-widest uppercase mb-3 sm:mb-4">Discussed Topics</h3>
+                        <h3 className="font-mono text-[13px] sm:text-[14px] font-bold text-[#222777] tracking-widest uppercase mb-3 sm:mb-4 shrink-0">Discussed Topics</h3>
 
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-2 overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
                             {topics.map(topic => {
                                 const isExpanded = expandedTopicId === topic.id;
                                 return (
@@ -517,18 +741,51 @@ export default function SpeechWorkspace() {
                                                         </span>
                                                     </span>
                                                 ))}
-                                                <button
-                                                    onClick={() => handleAddTopicTag(topic.id)}
-                                                    className="bg-transparent border border-dashed border-[#c7c5d3] text-[#777682] font-bold text-[11px] sm:text-[12px] px-2.5 py-1 rounded-full hover:bg-[#f9f9ff] transition-colors"
-                                                >
-                                                    + Add tag
-                                                </button>
+                                                {tagInputTopicId === topic.id ? (
+                                                    <div className="flex items-center gap-1">
+                                                        <input 
+                                                            autoFocus
+                                                            type="text" 
+                                                            value={newTagValue} 
+                                                            onChange={(e) => setNewTagValue(e.target.value)}
+                                                            onKeyDown={(e) => e.key === 'Enter' && submitNewTag(topic.id)}
+                                                            onBlur={() => submitNewTag(topic.id)}
+                                                            className="border border-[#c7c5d3] rounded px-2 py-0.5 text-[11px] sm:text-[12px] outline-none text-[#222777]"
+                                                            placeholder="Type tag..."
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handleAddTopicTag(topic.id)}
+                                                        className="bg-transparent border border-dashed border-[#c7c5d3] text-[#777682] font-bold text-[11px] sm:text-[12px] px-2.5 py-1 rounded-full hover:bg-[#f9f9ff] transition-colors"
+                                                    >
+                                                        + Add tag
+                                                    </button>
+                                                )}
                                             </div>
                                         )}
                                     </div>
                                 );
                             })}
                         </div>
+                        
+                        {queries && queries.length > 0 && (
+                            <div className="mt-6 border-t border-[#e0e2eb] pt-4 flex flex-col gap-3">
+                                <h4 className="font-mono text-[12px] text-[#777682] font-bold">Auto-Generated Queries:</h4>
+                                <ul className="list-disc pl-5 text-[13px] text-[#464651]">
+                                    {queries.map((q, idx) => (
+                                        <li key={idx}>{q}</li>
+                                    ))}
+                                </ul>
+                                <button
+                                    onClick={handleRunResearch}
+                                    className="mt-2 w-full bg-[#00c2cb] text-white text-[14px] font-bold py-3 rounded-md hover:bg-[#00a8b0] transition-colors flex justify-center items-center gap-2 shadow-sm"
+                                >
+                                    <span className="material-symbols-outlined text-[18px]">travel_explore</span>
+                                    Approve & Run Web Research
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                 </div>
@@ -537,17 +794,14 @@ export default function SpeechWorkspace() {
             {/* --- STICKY BOTTOM ACTION BAR (RESPONSIVE FULL WIDTH) --- */}
             <div className="absolute bottom-0 left-0 w-full bg-white border-t border-[#e0e2eb] px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center z-20 shadow-[0_-4px_16px_rgba(58,63,143,0.06)]">
                 <div className="flex items-center gap-1 sm:gap-2 text-[#777682] text-[12px] sm:text-[14px] font-bold shrink-0">
-                    <span className="material-symbols-outlined text-[16px] sm:text-[18px]">check_circle</span>
-                    <span className="hidden sm:inline">Saved 2 min ago</span>
-                    <span className="sm:hidden">Saved</span>
+                    {summaryText ? (
+                        <>
+                            <span className="material-symbols-outlined text-[16px] sm:text-[18px] text-[#006e73]">check_circle</span>
+                            <span className="hidden sm:inline text-[#006e73]">Saved</span>
+                        </>
+                    ) : null}
                 </div>
                 <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-                    <button
-                        onClick={() => showToast("Draft saved successfully.", "success")}
-                        className="bg-white border border-[#c7c5d3] text-[#181c22] text-[12px] sm:text-[14px] font-bold py-1.5 sm:py-2 px-3 sm:px-6 rounded-[6px] hover:bg-[#f9f9ff] transition-colors"
-                    >
-                        Save <span className="hidden sm:inline">Draft</span>
-                    </button>
                     <button
                         onClick={() => navigate('/app/research/results')}
                         className="bg-[#222777] text-white text-[12px] sm:text-[14px] font-bold py-1.5 sm:py-2 px-3 sm:px-6 rounded-[6px] shadow-sm hover:bg-[#3a3f8f] hover:cursor-pointer transition-colors flex items-center gap-1 sm:gap-2"

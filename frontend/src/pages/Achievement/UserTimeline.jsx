@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from "react-router-dom";
 import { useSelector } from 'react-redux';
+import api from '../../services/api';
 
 export default function UserTimeline() {
     const [activeFilter, setActiveFilter] = useState('All');
@@ -11,26 +12,16 @@ export default function UserTimeline() {
     useEffect(() => {
         const fetchEvents = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/v1/achievements/timeline', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    setTimelineEvents(data);
-                }
+                const response = await api.get('/achievements/timeline');
+                setTimelineEvents(response.data);
             } catch (error) {
                 console.error("Failed to fetch timeline events", error);
             }
         };
         const fetchStats = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/v1/achievements/stats', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    setStats(data);
-                }
+                const response = await api.get('/achievements/stats');
+                setStats(response.data);
             } catch (error) {
                 console.error("Failed to fetch stats", error);
             }

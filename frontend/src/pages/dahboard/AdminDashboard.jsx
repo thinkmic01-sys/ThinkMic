@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import api from '../../services/api';
 
 export default function AdminDashboard() {
     const accessToken = useSelector((state) => state.auth?.accessToken);
@@ -9,10 +10,8 @@ export default function AdminDashboard() {
         if (!accessToken) return;
         const fetchAnalytics = async () => {
             try {
-                const res = await fetch('http://localhost:5000/api/v1/analytics/usage', {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
-                const data = await res.json();
+                const res = await api.get('/analytics/usage');
+                const data = res.data;
                 if (data.kpis) setKpis(data.kpis);
             } catch (err) {
                 console.error("Failed to fetch analytics:", err);

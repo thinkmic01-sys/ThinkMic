@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 const NavLink = ({ to, icon, label, isManagement }) => {
     const location = useLocation();
@@ -13,7 +14,9 @@ const NavLink = ({ to, icon, label, isManagement }) => {
     }
     // Management active state grouping
     if (isManagement) {
-        isActive = location.pathname.startsWith('/app/admin');
+        isActive = location.pathname.startsWith('/app/admin') && 
+                   !location.pathname.startsWith('/app/admin/analytics') && 
+                   !location.pathname.startsWith('/app/admin/support');
     }
 
     return (
@@ -34,6 +37,8 @@ const NavLink = ({ to, icon, label, isManagement }) => {
 };
 
 export default function Sidebar({ isOpen, setIsOpen }) {
+    const role = useSelector((state) => state.auth?.user?.role);
+
     return (
         <aside className={`w-[280px] h-screen bg-[#222777] flex flex-col fixed left-0 top-0 text-white z-50 border-r border-[#181c22]/20 transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
 
@@ -60,7 +65,9 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 <NavLink to="/app/reports" icon="summarize" label="Reports" />
                 <NavLink to="/app/courses" icon="school" label="Courses" />
                 <NavLink to="/app/forms" icon="groups" label="Collaboration" />
-                <NavLink to="/app/admin/users" icon="admin_panel_settings" label="Management" isManagement />
+                {role === 'admin' && (
+                    <NavLink to="/app/admin/users" icon="admin_panel_settings" label="Management" isManagement />
+                )}
                 <NavLink to="/app/achievements" icon="military_tech" label="Achievements" />
             </nav>
 
@@ -74,7 +81,11 @@ export default function Sidebar({ isOpen, setIsOpen }) {
 
                 <nav className="flex flex-col gap-1">
                     <NavLink to="/app/settings" icon="settings" label="Settings" />
-                    <NavLink to="/app/support" icon="help_outline" label="Support" />
+                    {role === 'admin' || role === 'manager' ? (
+                        <NavLink to="/app/admin/support" icon="support_agent" label="Support Inbox" />
+                    ) : (
+                        <NavLink to="/app/support" icon="help_outline" label="Support" />
+                    )}
                 </nav>
             </div>
 

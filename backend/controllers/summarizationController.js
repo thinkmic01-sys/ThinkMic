@@ -19,12 +19,15 @@ exports.getSummary = async (req, res) => {
 exports.regenerateSummary = async (req, res) => {
     try {
         const { transcriptId } = req.params;
-        const { customPrompt } = req.body;
+        const { customPrompt, length, style, language } = req.body;
         
         const job = await summarizationQueue.add('summarize', {
             transcriptId,
             userId: req.user._id,
-            customPrompt
+            customPrompt,
+            length,
+            style,
+            language
         });
 
         res.status(202).json({ jobId: job.id, message: 'Summarization job queued' });

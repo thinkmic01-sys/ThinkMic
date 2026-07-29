@@ -6,8 +6,41 @@ exports.listSchemas = async (req, res) => {
         const query = {};
         if (status) query.status = status;
 
-        const schemas = await FieldSchema.find(query).sort({ createdAt: -1 });
+        // Use aggregation to join the count of submissions for each schema
+        const schemas = await FieldSchema.aggregate([
+            { $match: query },
+            { $sort: { createdAt: -1 } },
+            {
+                $lookup: {
+                    from: 'submissions', // The collection name for the Submission model
+                    localField: '_id',
+                    foreignField: 'schemaId',
+                    as: 'submissionsList'
+                }
+            },
+            {
+                $addFields: {
+                    submissions: { $size: "$submissionsList" }
+                }
+            },
+            {
+                $project: {
+                    submissionsList: 0 // Remove the joined array, we only need the count
+                }
+            }
+        ]);
+        
         res.status(200).json({ schemas });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+exports.getSchema = async (req, res) => {
+    try {
+        const schema = await FieldSchema.findById(req.params.id);
+        if (!schema) return res.status(404).json({ message: 'Schema not found' });
+        res.status(200).json({ schema });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }

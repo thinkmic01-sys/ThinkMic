@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from "react-router-dom";
 import { useSelector } from 'react-redux';
+import api from '../../services/api';
 
 export default function UserManagement() {
     const accessToken = useSelector((state) => state.auth?.accessToken);
     // Application State
     const [users, setUsers] = useState([]);
+    const [totalUsers, setTotalUsers] = useState(0);
+    const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
@@ -13,30 +16,61 @@ export default function UserManagement() {
     // Selection State
     const [selectedUserIds, setSelectedUserIds] = useState([]);
 
+    // Custom Toast State
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast({ show: false, message: '', type }), 4000);
+    };
+
     // Modal State
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
     const [inviteEmails, setInviteEmails] = useState('');
     const [inviteRole, setInviteRole] = useState('user');
 
+    const timeAgo = (dateString) => {
+        if (!dateString) return 'Never';
+        const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
+        if (seconds < 60) return 'Just now';
+        const interval = Math.floor(seconds / 31536000);
+        if (interval > 1) return interval + ' years ago';
+        const months = Math.floor(seconds / 2592000);
+        if (months >= 1) return months + ' months ago';
+        const days = Math.floor(seconds / 86400);
+        if (days >= 1) return days + ' days ago';
+        const hours = Math.floor(seconds / 3600);
+        if (hours >= 1) return hours + ' hours ago';
+        const minutes = Math.floor(seconds / 60);
+        return minutes + ' minutes ago';
+    };
+
     // Fetch users
     const fetchUsers = async () => {
         if (!accessToken) return;
         try {
-            const res = await fetch('http://localhost:5000/api/v1/admin/users', {
-                headers: { 'Authorization': `Bearer ${accessToken}` }
+            const params = new URLSearchParams({
+                page: currentPage,
+                ...(roleFilter && { role: roleFilter }),
+                ...(statusFilter && { status: statusFilter }),
+                ...(searchQuery && { search: searchQuery })
             });
-            const data = await res.json();
+            const res = await api.get(`/admin/users?${params.toString()}`);
+            const data = res.data;
             if (data.users) {
-                const formatted = data.users.map(u => ({
-                    id: u._id,
-                    name: u.name || 'Pending Invite',
-                    initials: u.name ? u.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() : '?',
-                    email: u.email,
-                    role: u.role,
-                    status: u.status,
-                    lastActive: 'Recently'
-                }));
+                const formatted = data.users.map(u => {
+                    const extractedName = (u.fullName === 'Pending Invite' || !u.fullName) ? u.email.split('@')[0] : u.fullName;
+                    return {
+                        id: u._id,
+                        name: extractedName,
+                        initials: extractedName.substring(0, 2).toUpperCase(),
+                        email: u.email,
+                        role: u.role,
+                        status: u.status,
+                        lastActive: timeAgo(u.lastLoginAt || u.createdAt)
+                    };
+                });
                 setUsers(formatted);
+                setTotalUsers(data.total || 0);
             }
         } catch (err) {
             console.error(err);
@@ -45,9 +79,16 @@ export default function UserManagement() {
 
     useEffect(() => {
         fetchUsers();
-    }, [accessToken]);
+    }, [accessToken, currentPage, roleFilter, statusFilter, searchQuery]);
 
     // --- FRONTEND LOGIC --- //
+
+    const totalPages = Math.ceil(totalUsers / 25) || 1;
+
+    // 1. Pagination Reset on Filter Change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [roleFilter, statusFilter, searchQuery]);
 
     // 1. Filtering Logic
     const filteredUsers = users.filter((user) => {
@@ -61,38 +102,64 @@ export default function UserManagement() {
     // 2. Checkbox Logic
     const handleSelectAll = (e) => {
         if (e.target.checked) {
-            setSelectedUserIds(filteredUsers.map(u => u.id));
+            setSelectedUserIds(users.filter(u => u.role !== 'admin').map(u => u.id));
         } else {
             setSelectedUserIds([]);
         }
     };
 
-    const handleSelectUser = (id) => {
+    const handleSelectUser = (id, role) => {
+        if (role === 'admin') return; // Prevent selecting admins
         setSelectedUserIds(prev =>
             prev.includes(id) ? prev.filter(userId => userId !== id) : [...prev, id]
         );
     };
 
-    const isAllSelected = filteredUsers.length > 0 && selectedUserIds.length === filteredUsers.length;
+    const nonAdminUsers = users.filter(u => u.role !== 'admin');
+    const isAllSelected = nonAdminUsers.length > 0 && selectedUserIds.length === nonAdminUsers.length;
+
+    // Inline Action Logic
+    const handleUpdateStatus = async (id, newStatus) => {
+        if (!accessToken) return;
+        try {
+            const res = await api.patch(`/admin/users/${id}`, { status: newStatus });
+            if (res.status >= 200 && res.status < 300) {
+                showToast(`User ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully!`, "success");
+                await fetchUsers();
+            } else {
+                showToast(`Failed to update user status`, "error");
+            }
+        } catch (err) {
+            showToast(`Failed to update user status`, "error");
+        }
+    };
 
     // 3. Bulk Action Logic
+    const handleBulkRoleChange = async (newRole) => {
+        if (!accessToken || !newRole) return;
+        try {
+            for (const id of selectedUserIds) {
+                await api.patch(`/admin/users/${id}`, { role: newRole });
+            }
+            showToast("Roles updated successfully!", "success");
+            await fetchUsers();
+            setSelectedUserIds([]);
+        } catch (err) {
+            showToast("Failed to update roles", "error");
+        }
+    };
+
     const handleBulkDeactivate = async () => {
         if (!accessToken) return;
         try {
             for (const id of selectedUserIds) {
-                await fetch(`http://localhost:5000/api/v1/admin/users/${id}`, {
-                    method: 'PATCH',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${accessToken}` 
-                    },
-                    body: JSON.stringify({ status: 'inactive' })
-                });
+                await api.patch(`/admin/users/${id}`, { status: 'inactive' });
             }
+            showToast("Users deactivated successfully!", "success");
             await fetchUsers(); // Refresh list
             setSelectedUserIds([]); // Clear selection
         } catch (err) {
-            console.error("Failed to deactivate users", err);
+            showToast("Failed to deactivate users", "error");
         }
     };
 
@@ -177,9 +244,16 @@ export default function UserManagement() {
                         <div className="absolute top-0 left-0 w-full bg-[#e6fbfc] px-4 sm:px-6 py-2.5 sm:py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between z-20 border-b border-[#00c2cb]/30 backdrop-blur-sm animate-in fade-in slide-in-from-top-2 gap-3 sm:gap-0">
                             <span className="text-[13px] sm:text-sm font-bold text-[#006e73]">{selectedUserIds.length} users selected</span>
                             <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
-                                <button className="flex-1 sm:flex-none bg-white text-[#464651] border border-[#c7c5d3] text-[11px] sm:text-xs font-bold py-1.5 px-3 rounded hover:bg-[#f1f3fc] transition-colors text-center">
-                                    Change Role
-                                </button>
+                                <select
+                                    onChange={(e) => handleBulkRoleChange(e.target.value)}
+                                    className="flex-1 sm:flex-none bg-white text-[#464651] border border-[#c7c5d3] text-[11px] sm:text-xs font-bold py-1.5 px-3 rounded hover:bg-[#f1f3fc] transition-colors text-center cursor-pointer outline-none"
+                                    value=""
+                                >
+                                    <option value="" disabled>Change Role</option>
+                                    <option value="user">Make User</option>
+                                    <option value="manager">Make Manager</option>
+                                    {/* Exclude admin so they can't maliciously promote to admin easily, or include if desired */}
+                                </select>
                                 <button
                                     onClick={handleBulkDeactivate}
                                     className="flex-1 sm:flex-none bg-[#ffdad6] text-[#ba1a1a] border border-[#ffb4ab] text-[11px] sm:text-xs font-bold py-1.5 px-3 rounded hover:bg-[#ffdad6]/80 transition-colors flex items-center justify-center gap-1"
@@ -213,8 +287,8 @@ export default function UserManagement() {
                             </thead>
 
                             <tbody className="divide-y divide-[#e0e2eb] text-[13px] sm:text-sm">
-                            {filteredUsers.length > 0 ? (
-                                filteredUsers.map((user) => (
+                            {users.length > 0 ? (
+                                users.map((user) => (
                                     <tr
                                         key={user.id}
                                         className={`hover:bg-[#f1f3fc] transition-colors group ${user.status === 'inactive' ? 'opacity-60 bg-[#f9f9ff]' : ''}`}
@@ -222,9 +296,10 @@ export default function UserManagement() {
                                         <td className="py-3 px-4">
                                             <input
                                                 type="checkbox"
+                                                disabled={user.role === 'admin'}
                                                 checked={selectedUserIds.includes(user.id)}
-                                                onChange={() => handleSelectUser(user.id)}
-                                                className="rounded border-[#c7c5d3] text-[#222777] focus:ring-[#222777] cursor-pointer w-4 h-4"
+                                                onChange={() => handleSelectUser(user.id, user.role)}
+                                                className={`rounded border-[#c7c5d3] text-[#222777] focus:ring-[#222777] w-4 h-4 ${user.role === 'admin' ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
                                             />
                                         </td>
                                         <td className="py-3 px-4">
@@ -234,7 +309,7 @@ export default function UserManagement() {
                                                 >
                                                     {user.initials}
                                                 </div>
-                                                <span className={`font-semibold whitespace-nowrap ${user.status === 'invited' ? 'italic text-[#777682]' : 'text-[#181c22]'} ${user.status === 'inactive' ? 'line-through' : ''}`}>
+                                                <span className={`font-semibold whitespace-nowrap capitalize ${user.status === 'invited' ? 'italic text-[#777682]' : 'text-[#181c22]'} ${user.status === 'inactive' ? 'line-through' : ''}`}>
                                                         {user.name}
                                                     </span>
                                             </div>
@@ -270,8 +345,10 @@ export default function UserManagement() {
                                         </td>
                                         <td className="py-3 px-4 font-mono text-[11px] sm:text-xs text-[#777682] whitespace-nowrap">{user.lastActive}</td>
                                         <td className="py-3 px-4 text-right opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                            {user.status === 'inactive' ? (
-                                                <button className="text-[#c7c5d3] hover:text-[#222777] transition-colors p-1" title="Restore">
+                                            {user.role === 'admin' ? (
+                                                <span className="text-[10px] text-[#c7c5d3] font-bold uppercase tracking-wider">Protected</span>
+                                            ) : user.status === 'inactive' ? (
+                                                <button onClick={() => handleUpdateStatus(user.id, 'active')} className="text-[#c7c5d3] hover:text-[#222777] transition-colors p-1" title="Restore">
                                                     <span className="material-symbols-outlined text-[18px]">settings_backup_restore</span>
                                                 </button>
                                             ) : (
@@ -279,7 +356,7 @@ export default function UserManagement() {
                                                     <button className="text-[#c7c5d3] hover:text-[#222777] transition-colors p-1" title={user.status === 'invited' ? 'Resend' : 'Edit'}>
                                                         <span className="material-symbols-outlined text-[18px]">{user.status === 'invited' ? 'send' : 'edit'}</span>
                                                     </button>
-                                                    <button className="text-[#c7c5d3] hover:text-[#ba1a1a] transition-colors p-1" title={user.status === 'invited' ? 'Cancel' : 'Deactivate'}>
+                                                    <button onClick={() => handleUpdateStatus(user.id, 'inactive')} className="text-[#c7c5d3] hover:text-[#ba1a1a] transition-colors p-1" title={user.status === 'invited' ? 'Cancel' : 'Deactivate'}>
                                                         <span className="material-symbols-outlined text-[18px]">{user.status === 'invited' ? 'close' : 'block'}</span>
                                                     </button>
                                                 </div>
@@ -301,16 +378,38 @@ export default function UserManagement() {
                     </div>
 
                     {/* Pagination Footer */}
-                    <div className="border-t border-[#e0e2eb] p-3 sm:px-6 flex flex-col sm:flex-row items-center justify-between bg-[#f9f9ff] gap-3 sm:gap-0 mt-auto">
-                        <span className="text-[11px] sm:text-xs font-semibold text-[#777682]">Showing {filteredUsers.length} users</span>
-                        <div className="flex gap-1">
-                            <button className="w-7 h-7 sm:w-8 sm:h-8 rounded flex items-center justify-center text-[#c7c5d3] hover:bg-white transition-colors"><span className="material-symbols-outlined text-[18px] sm:text-[20px]">chevron_left</span></button>
-                            <button className="w-7 h-7 sm:w-8 sm:h-8 rounded bg-[#222777] text-white text-[12px] sm:text-sm font-bold flex items-center justify-center">1</button>
-                            <button className="w-7 h-7 sm:w-8 sm:h-8 rounded hover:bg-white text-[#464651] text-[12px] sm:text-sm font-bold flex items-center justify-center transition-colors">2</button>
-                            <button className="w-7 h-7 sm:w-8 sm:h-8 rounded hover:bg-white text-[#464651] text-[12px] sm:text-sm font-bold flex items-center justify-center transition-colors">3</button>
-                            <button className="w-7 h-7 sm:w-8 sm:h-8 rounded flex items-center justify-center text-[#777682] hover:bg-white transition-colors"><span className="material-symbols-outlined text-[18px] sm:text-[20px]">chevron_right</span></button>
+                    {totalPages > 1 && (
+                        <div className="border-t border-[#e0e2eb] p-3 sm:px-6 flex flex-col sm:flex-row items-center justify-between bg-[#f9f9ff] gap-3 sm:gap-0 mt-auto">
+                            <span className="text-[11px] sm:text-xs font-semibold text-[#777682]">Showing {users.length} of {totalUsers} users</span>
+                            <div className="flex gap-1">
+                                <button 
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    className="w-7 h-7 sm:w-8 sm:h-8 rounded flex items-center justify-center text-[#c7c5d3] hover:bg-white hover:text-[#222777] transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+                                >
+                                    <span className="material-symbols-outlined text-[18px] sm:text-[20px]">chevron_left</span>
+                                </button>
+                                
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                    <button 
+                                        key={page}
+                                        onClick={() => setCurrentPage(page)}
+                                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded text-[12px] sm:text-sm font-bold flex items-center justify-center transition-colors ${currentPage === page ? 'bg-[#222777] text-white' : 'text-[#464651] hover:bg-white'}`}
+                                    >
+                                        {page}
+                                    </button>
+                                ))}
+
+                                <button 
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="w-7 h-7 sm:w-8 sm:h-8 rounded flex items-center justify-center text-[#777682] hover:bg-white hover:text-[#222777] transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+                                >
+                                    <span className="material-symbols-outlined text-[18px] sm:text-[20px]">chevron_right</span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
 
@@ -370,26 +469,15 @@ export default function UserManagement() {
                                     if (!accessToken || !inviteEmails) return;
                                     try {
                                         const emails = inviteEmails.split(',').map(e => e.trim());
-                                        const res = await fetch('http://localhost:5000/api/v1/admin/users/invite', {
-                                            method: 'POST',
-                                            headers: {
-                                                'Content-Type': 'application/json',
-                                                'Authorization': `Bearer ${accessToken}`
-                                            },
-                                            body: JSON.stringify({ emails, role: inviteRole })
-                                        });
-                                        if (res.ok) {
-                                            alert("Invites sent successfully!");
-                                            setIsInviteModalOpen(false);
-                                            setInviteEmails('');
-                                            setInviteRole('user');
-                                            fetchUsers();
-                                        } else {
-                                            const data = await res.json();
-                                            alert(`Failed: ${data.message}`);
-                                        }
+                                        await api.post('/admin/users/invite', { emails, role: inviteRole });
+                                        showToast("Invites sent successfully!", "success");
+                                        setIsInviteModalOpen(false);
+                                        setInviteEmails('');
+                                        setInviteRole('user');
+                                        fetchUsers();
                                     } catch (err) {
-                                        alert("An error occurred");
+                                        const data = err.response?.data || {};
+                                        showToast(`Failed: ${data.message || 'An error occurred'}`, "error");
                                     }
                                 }}
                                 className="bg-[#222777] text-white px-5 sm:px-6 py-2 rounded-lg text-[13px] sm:text-sm font-bold hover:bg-[#3a3f8f] transition-colors flex items-center gap-2 shadow-sm"
@@ -401,6 +489,21 @@ export default function UserManagement() {
                     </div>
                 </div>
             )}
+            
+            {/* --- CUSTOM TOAST NOTIFICATION --- */}
+            <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#e6fbfc] border-[#00c2cb] text-[#006e73]'}`}>
+                    <span className="material-symbols-outlined text-[20px]">
+                        {toast.type === 'error' ? 'error' : 'check_circle'}
+                    </span>
+                    <span className="text-[13px] sm:text-[14px] font-bold">
+                        {toast.message}
+                    </span>
+                    <button onClick={() => setToast(prev => ({...prev, show: false}))} className="ml-2 hover:opacity-70">
+                        <span className="material-symbols-outlined text-[18px]">close</span>
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }

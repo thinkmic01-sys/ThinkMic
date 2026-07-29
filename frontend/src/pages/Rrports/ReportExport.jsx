@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import api from '../../services/api';
 
 export default function ReportExport() {
     const { id } = useParams();
@@ -22,10 +23,8 @@ export default function ReportExport() {
         if (!accessToken || !id) return;
         const fetchReport = async () => {
             try {
-                const res = await fetch(`http://localhost:5000/api/v1/reports/${id}`, {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
-                const data = await res.json();
+                const res = await api.get(`/reports/${id}`);
+                const data = res.data;
                 if (data.report) {
                     setTitle(data.report.title || "Untitled Document");
                     if (data.report.template) setTemplate(data.report.template);

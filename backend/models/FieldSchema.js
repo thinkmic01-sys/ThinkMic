@@ -4,7 +4,7 @@ const FieldDefSchema = new mongoose.Schema({
     id: { type: String, required: true },
     type: {
         type: String,
-        enum: ['text', 'textarea', 'voice', 'select', 'checkbox', 'rating', 'date', 'file'],
+        enum: ['text', 'textarea', 'voice', 'select', 'checkbox', 'rating', 'date', 'file', 'number'],
         required: true
     },
     label: { type: String, required: true },
@@ -15,7 +15,8 @@ const FieldDefSchema = new mongoose.Schema({
         min: Number,
         max: Number,
         regex: String
-    }
+    },
+    allowMultiple: { type: Boolean, default: true }
 }, { _id: false });
 
 const FieldSchemaSchema = new mongoose.Schema({

@@ -79,7 +79,12 @@ export default function Support() {
                                 </span>
                             </div>
                         </div>
-                        <button className="w-full py-2.5 sm:py-2 bg-primary text-white rounded-lg text-[13px] sm:text-sm font-bold mt-2 hover:bg-opacity-90 transition-colors">Start Chat</button>
+                        <button 
+                            onClick={() => window.dispatchEvent(new Event('open-support'))}
+                            className="w-full py-2.5 sm:py-2 bg-primary text-white rounded-lg text-[13px] sm:text-sm font-bold mt-2 hover:bg-opacity-90 transition-colors"
+                        >
+                            Start Chat
+                        </button>
                     </div>
                 </div>
 

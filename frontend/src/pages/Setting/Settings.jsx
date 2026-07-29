@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '../../store/slices/authSlice';
+import api from '../../services/api';
 
 export default function Settings() {
     const { user } = useSelector((state) => state.auth);
@@ -67,10 +68,7 @@ export default function Settings() {
 
     const handleLogout = async () => {
         try {
-            await fetch('http://localhost:5000/api/v1/auth/logout', { 
-                method: 'POST',
-                credentials: 'include'
-            });
+            await api.post('/auth/logout');
         } catch (error) {
             console.error("Logout failed:", error);
         }

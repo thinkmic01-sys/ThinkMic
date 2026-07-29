@@ -6,7 +6,13 @@ module.exports = {
         const { Server } = require('socket.io');
         io = new Server(httpServer, {
             cors: {
-                origin: process.env.CLIENT_URL || 'http://localhost:5174',
+                origin: function (origin, callback) {
+                    if (!origin || origin.startsWith('http://localhost:')) {
+                        callback(null, true);
+                    } else {
+                        callback(null, process.env.CLIENT_URL);
+                    }
+                },
                 methods: ["GET", "POST"],
                 credentials: true
             }

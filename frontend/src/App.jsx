@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { store } from './store/store';
 import { login, logout } from './store/slices/authSlice'; // Ensure this path is correct
+import api from './services/api';
 
 // Pages & Components
 import Layout from './components/Layout';
@@ -19,6 +20,7 @@ import Collaboration from "./pages/Collaboration/Collaboration.jsx";
 import ResearchResults from "./pages/projects/ResearchResults.jsx";
 import SchemaBuilder from "./pages/Management/SchemaBuilder.jsx";
 import SchemaLibrary from "./pages/Management/SchemaLibrary.jsx";
+import SupportInbox from "./pages/Management/SupportInbox.jsx";
 import AdminDashboard from "./pages/dahboard/AdminDashboard.jsx";
 import ProjectNotes from "./pages/projects/ProjectNotes.jsx";
 import UserTimeline from "./pages/Achievement/UserTimeline.jsx";
@@ -41,6 +43,7 @@ function AppRoutes() {
 
     // Safely check if user is authenticated via Redux
     const isAuthenticated = useSelector((state) => state.auth?.isAuthenticated);
+    const role = useSelector((state) => state.auth?.user?.role);
 
     // State to block rendering until the backend confirms the cookie
     const [isAuthReady, setIsAuthReady] = useState(false);
@@ -49,14 +52,11 @@ function AppRoutes() {
         const attemptSilentLogin = async () => {
             try {
                 // Silently request a new access token using our HttpOnly cookie
-                const response = await fetch('http://localhost:5000/api/v1/auth/refresh', {
-                    method: 'POST',
-                    credentials: 'include' // CRITICAL: sends the cookie
-                });
+                const response = await api.post('/auth/refresh');
 
-                const data = await response.json();
+                const data = response.data;
 
-                if (response.ok) {
+                if (data.accessToken) {
                     // Success! Put the user back into Redux
                     dispatch(login({
                         id: data.user.id,
@@ -109,7 +109,7 @@ function AppRoutes() {
                     <Layout>
                         <Routes>
                             {/* Live Modules we have built */}
-                            <Route path="dashboard" element={<Dashboard />} />
+                            <Route path="dashboard" element={role === 'admin' ? <AdminDashboard /> : <Dashboard />} />
 
                             {/* The Research Pipeline (Step 1 & 2) */}
                             <Route path="research" element={<SpeechWorkspace />} />
@@ -139,11 +139,13 @@ function AppRoutes() {
 
                             {/* ADMIN ZONE (Nested Routes) */}
                             <Route path="admin">
-                                <Route index element={<Navigate to="dashboard" replace />} />
-                                <Route path="dashboard" element={<AdminDashboard />} />
+                                <Route index element={<Navigate to="users" replace />} />
                                 <Route path="users" element={<UserManagement />} />
                                 <Route path="schemas" element={<SchemaLibrary />} />
                                 <Route path="schemas/new" element={<SchemaBuilder />} />
+                                <Route path="schemas/edit/:id" element={<SchemaBuilder />} />
+                                <Route path="support" element={<SupportInbox />} />
+                                <Route path="analytics" element={<Dashboard />} />
                             </Route>
                         </Routes>
                     </Layout>

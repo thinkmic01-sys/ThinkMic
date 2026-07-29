@@ -1,0 +1,54 @@
+import axios from 'axios';
+import { store } from '../store/store';
+import { login, logout } from '../store/slices/authSlice';
+
+const api = axios.create({
+    baseURL: 'http://localhost:5000/api/v1',
+    withCredentials: true // Ensures HttpOnly cookies (like refreshToken) are sent
+});
+
+// Request Interceptor: Attach access token to headers
+api.interceptors.request.use((config) => {
+    const state = store.getState();
+    const token = state.auth?.accessToken;
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+}, (error) => Promise.reject(error));
+
+// Response Interceptor: Handle 401 and auto-refresh
+api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const originalRequest = error.config;
+        
+        // If 401 Unauthorized and we haven't already retried this request, and it's NOT the refresh endpoint itself
+        if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('/auth/refresh')) {
+            originalRequest._retry = true;
+            try {
+                // Attempt silent refresh
+                const refreshRes = await axios.post('http://localhost:5000/api/v1/auth/refresh', {}, {
+                    withCredentials: true // Must explicitly send cookie
+                });
+                
+                const { accessToken, user } = refreshRes.data;
+                
+                // Update global Redux state with new token
+                store.dispatch(login({ accessToken, ...user }));
+                
+                // Update the original request's authorization header and retry
+                originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+                return api(originalRequest);
+            } catch (err) {
+                // Refresh token also failed/expired. Force logout.
+                store.dispatch(logout());
+                window.location.href = '/auth'; // Redirect to login
+                return Promise.reject(err);
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
+export default api;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
+import api from '../../services/api';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -79,14 +80,8 @@ export default function NearbySeminars() {
     useEffect(() => {
         const fetchSeminars = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/v1/seminars', {
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    credentials: 'include'
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    setSeminars(data);
-                }
+                const response = await api.get('/seminars');
+                setSeminars(response.data);
             } catch (error) {
                 console.error("Failed to fetch seminars", error);
             }

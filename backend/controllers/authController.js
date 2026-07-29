@@ -5,7 +5,7 @@ const crypto = require('crypto');
 
 // Helper to generate access token
 const generateAccessToken = (id, role) => {
-    return jwt.sign({ sub: id, role }, process.env.JWT_PRIVATE_KEY, { expiresIn: '15m' }); // 15-min expiry[cite: 1]
+    return jwt.sign({ sub: id, role }, process.env.JWT_PRIVATE_KEY, { expiresIn: '7d' }); // 7-day expiry
 };
 
 // @desc    Register new user
@@ -15,17 +15,30 @@ exports.register = async (req, res) => {
     try {
         const { email, password, fullName, referralCode } = req.body;
 
-        const userExists = await User.findOne({ email });
-        if (userExists) return res.status(400).json({ message: 'User already exists' });
-
         const newReferralCode = crypto.randomBytes(4).toString('hex');
 
-        const user = await User.create({
-            email,
-            passwordHash: password,
-            fullName,
-            referralCode: newReferralCode
-        });
+        let user = await User.findOne({ email });
+
+        if (user) {
+            if (user.status === 'invited') {
+                // Update the invited user record
+                user.passwordHash = password;
+                user.fullName = fullName;
+                user.referralCode = newReferralCode;
+                user.status = 'active'; // Or 'pending_verification'
+                await user.save();
+            } else {
+                return res.status(400).json({ message: 'User already exists' });
+            }
+        } else {
+            // Create brand new user
+            user = await User.create({
+                email,
+                passwordHash: password,
+                fullName,
+                referralCode: newReferralCode
+            });
+        }
 
         if (referralCode) {
             const referrer = await User.findOne({ referralCode });

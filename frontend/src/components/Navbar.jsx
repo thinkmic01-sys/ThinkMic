@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
+import api from '../services/api';
 
 export default function Navbar({ onMenuClick }) {
     const { user, isAuthenticated, accessToken } = useSelector((state) => state.auth);
@@ -13,13 +14,8 @@ export default function Navbar({ onMenuClick }) {
         if (!isAuthenticated || !accessToken) return;
         const fetchNotifs = async () => {
             try {
-                const res = await fetch('http://localhost:5000/api/v1/notifications', {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    setNotifications(data);
-                }
+                const res = await api.get('/notifications');
+                setNotifications(res.data);
             } catch (err) {}
         };
         fetchNotifs();
@@ -30,10 +26,7 @@ export default function Navbar({ onMenuClick }) {
         const hasUnread = notifications.some(n => !n.isRead);
         if (!isNotifOpen && hasUnread && accessToken) {
             try {
-                await fetch('http://localhost:5000/api/v1/notifications/read', {
-                    method: 'PUT',
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
+                await api.put('/notifications/read');
                 setNotifications(notifications.map(n => ({ ...n, isRead: true })));
             } catch (err) {}
         }
@@ -75,12 +68,9 @@ export default function Navbar({ onMenuClick }) {
         }
 
         // If inside Management workflow
-        if (location.pathname.includes('/app/admin')) {
+        if (location.pathname.startsWith('/app/admin/users') || location.pathname.startsWith('/app/admin/schemas')) {
             return (
                 <div className="flex space-x-4 sm:space-x-6 h-full items-center overflow-x-auto hide-scrollbar">
-                    <Link to="/app/admin/dashboard" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/admin/dashboard') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
-                        Analytics
-                    </Link>
                     <Link to="/app/admin/users" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/admin/users') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
                         Users
                     </Link>

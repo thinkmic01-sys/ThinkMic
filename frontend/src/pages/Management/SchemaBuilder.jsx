@@ -1,17 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import VoiceRecorder from '../../components/VoiceRecorder';
+import api from '../../services/api';
 
 export default function SchemaBuilder() {
     const accessToken = useSelector((state) => state.auth?.accessToken);
-    const [schemaName, setSchemaName] = useState('New Dynamic Form');
+    const [schemaName, setSchemaName] = useState(`New Form ${Math.floor(Math.random() * 10000)}`);
+    const [schemaId, setSchemaId] = useState(null);
+    const [targetRole, setTargetRole] = useState('user');
+    const { id } = useParams();
+    
     // --- STATE MANAGEMENT ---
     const [fields, setFields] = useState([]);
-
     const activeField = fields.find(f => f.active);
 
+    useEffect(() => {
+        if (id && accessToken) {
+            setSchemaId(id);
+            api.get(`/schemas/${id}`)
+            .then(res => {
+                const data = res.data;
+                if (data.schema) {
+                    setSchemaName(data.schema.name);
+                    setTargetRole(data.schema.targetRole);
+                    const mapTypeFromDB = (dbType) => {
+                        const t = dbType.toLowerCase();
+                        if (t === 'select') return 'Dropdown';
+                        if (t === 'textarea') return 'Long Text';
+                        return t.charAt(0).toUpperCase() + t.slice(1);
+                    };
+                    const loadedFields = data.schema.fields.map((f, i) => ({
+                        id: f.id,
+                        type: mapTypeFromDB(f.type),
+                        label: f.label,
+                        required: f.required,
+                        allowMultiple: f.allowMultiple,
+                        options: f.options,
+                        prompt: f.voicePrompt,
+                        active: i === 0
+                    }));
+                    setFields(loadedFields);
+                }
+            })
+            .catch(console.error);
+        }
+    }, [id, accessToken]);
+
     // Responsive Pane Toggles
-    const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+    const [isPaletteOpen, setIsPaletteOpen] = useState(true);
     const [isPropertiesOpen, setIsPropertiesOpen] = useState(false);
+    
+    // Preview Modal State
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [previewAnswers, setPreviewAnswers] = useState({});
+    const [isRecording, setIsRecording] = useState(false);
+
+    const handlePreviewAnswerChange = (id, value) => {
+        setPreviewAnswers(prev => ({ ...prev, [id]: value }));
+    };
+
+    // Custom Toast State
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast({ show: false, message: '', type }), 4000);
+    };
 
     // --- FUNCTIONAL HANDLERS ---
 
@@ -32,6 +86,7 @@ export default function SchemaBuilder() {
             active: true,
             icon: icon,
             prompt: type === 'Voice' ? 'Please record your answer after the beep.' : undefined,
+            allowMultiple: type === 'Checkbox' ? true : undefined,
             options: (type === 'Dropdown' || type === 'Checkbox') ? ['Option 1', 'Option 2'] : undefined
         };
         setFields(fields.map(f => ({ ...f, active: false })).concat(newField));
@@ -70,39 +125,71 @@ export default function SchemaBuilder() {
 
     // --- ACTION BUTTON HANDLERS ---
     const saveSchema = async (isActive) => {
-        if (!accessToken) return alert("Not authenticated");
-        if (fields.length === 0) return alert("You must add at least one field.");
+        if (!accessToken) return showToast("Not authenticated", "error");
+        if (fields.length === 0) return showToast("You must add at least one field.", "error");
         
         try {
-            const res = await fetch('http://localhost:5000/api/v1/schemas', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
-                },
-                body: JSON.stringify({
+            const mapTypeToDB = (uiType) => {
+                switch (uiType.toLowerCase()) {
+                    case 'text': return 'text';
+                    case 'dropdown': return 'select';
+                    case 'checkbox': return 'checkbox';
+                    case 'voice': return 'voice';
+                    case 'date': return 'date';
+                    case 'textarea': return 'textarea';
+                    case 'long text': return 'textarea';
+                    case 'rating': return 'rating';
+                    default: return 'text';
+                }
+            };
+
+            const endpoint = schemaId ? `/schemas/${schemaId}` : '/schemas';
+            const method = schemaId ? 'PUT' : 'POST';
+
+            const res = await api({
+                method: method,
+                url: endpoint,
+                data: {
                     name: schemaName,
                     description: "Custom built schema",
-                    isActive,
+                    targetRole: targetRole,
                     fields: fields.map(f => ({
+                        id: f.id || Math.random().toString(),
                         label: f.label,
-                        type: f.type,
+                        type: mapTypeToDB(f.type),
                         required: f.required,
+                        allowMultiple: f.allowMultiple !== undefined ? f.allowMultiple : true,
                         options: f.options,
-                        prompt: f.prompt
+                        voicePrompt: f.prompt || f.voicePrompt
                     }))
-                })
+                }
             });
-            if (res.ok) alert(isActive ? "Schema Published Successfully!" : "Draft saved!");
-            else alert("Failed to save schema");
+            
+            const data = res.data;
+            if (!schemaId) setSchemaId(data.schema._id);
+            
+            if (isActive) {
+                const pubRes = await api.post(`/schemas/${data.schema._id}/publish`);
+                if (pubRes.status === 200 || pubRes.status === 201) {
+                    showToast("Schema Published Successfully!", "success");
+                } else {
+                    showToast("Draft saved, but failed to publish", "error");
+                }
+            } else {
+                showToast("Draft saved!", "success");
+            }
         } catch (err) {
             console.error(err);
-            alert("Error saving schema");
+            const data = err.response?.data || {};
+            if (data.error && data.error.includes('duplicate key error')) {
+                return showToast("Failed: A form with this name already exists.", "error");
+            }
+            showToast("Error saving schema: " + (data.message || "Unknown error"), "error");
         }
     };
 
     const handleSaveDraft = () => saveSchema(false);
-    const handlePreview = () => alert("Launching Preview Mode...");
+    const handlePreview = () => setIsPreviewOpen(true);
     const handlePublish = () => saveSchema(true);
 
     return (
@@ -134,10 +221,14 @@ export default function SchemaBuilder() {
                 <div className="flex items-center gap-2 sm:gap-6">
                     <div className="hidden sm:flex items-center gap-2">
                         <span className="text-[12px] font-bold text-[#777682]">Target Role:</span>
-                        <select className="border border-[#c7c5d3] rounded-md py-1 px-2 bg-[#f9f9ff] text-[#181c22] focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none text-[12px] sm:text-sm font-semibold">
-                            <option>Nurse Practitioner</option>
-                            <option>Physician</option>
-                            <option>Admin</option>
+                        <select 
+                            value={targetRole}
+                            onChange={(e) => setTargetRole(e.target.value)}
+                            className="border border-[#c7c5d3] rounded-md py-1 px-2 bg-[#f9f9ff] text-[#181c22] focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none text-[12px] sm:text-sm font-semibold"
+                        >
+                            <option value="user">User</option>
+                            <option value="manager">Manager</option>
+                            <option value="all">All Roles</option>
                         </select>
                     </div>
                     <div className="px-2 sm:px-3 py-1 rounded-full bg-[#ffdad6] text-[#93000a] text-[10px] sm:text-[12px] font-bold flex items-center gap-1.5 shadow-sm border border-[#ffdad6] shrink-0">
@@ -350,6 +441,26 @@ export default function SchemaBuilder() {
                                                 <span className="material-symbols-outlined text-[16px] sm:text-[18px]">add</span> Add Option
                                             </button>
                                         </div>
+                                        {activeField.type === 'Checkbox' && (
+                                            <div className="mt-4 pt-4 border-t border-[#e0e2eb]">
+                                                <label className="flex items-center gap-3 cursor-pointer group">
+                                                    <div className="relative">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={activeField.allowMultiple !== false}
+                                                            onChange={(e) => updateActiveField({ allowMultiple: e.target.checked })}
+                                                            className="sr-only"
+                                                        />
+                                                        <div className={`w-10 h-5 rounded-full transition-colors ${activeField.allowMultiple !== false ? 'bg-[#222777]' : 'bg-[#c7c5d3]'}`}></div>
+                                                        <div className={`absolute left-1 top-1 w-3 h-3 bg-white rounded-full transition-transform ${activeField.allowMultiple !== false ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-[13px] sm:text-[14px] font-bold text-[#181c22]">Allow Multiple Selections</span>
+                                                        <p className="text-[10px] sm:text-[11px] font-mono text-[#777682] mt-0.5">If disabled, users can only select one option.</p>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
@@ -412,6 +523,141 @@ export default function SchemaBuilder() {
                     </button>
                 </div>
             </footer>
+            
+            {/* --- CUSTOM TOAST --- */}
+            {toast.show && (
+                <div className={`fixed bottom-6 right-6 px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3 animate-in slide-in-from-bottom-5 fade-in duration-300 font-sans border-l-4 ${
+                    toast.type === 'error' ? 'bg-[#ffdad6] text-[#ba1a1a] border-[#ba1a1a]' : 'bg-[#181c22] text-white border-[#00c2cb]'
+                }`}>
+                    <span className="material-symbols-outlined text-[24px]">
+                        {toast.type === 'error' ? 'error' : 'check_circle'}
+                    </span>
+                    <span className="font-bold text-[14px] sm:text-[15px]">{toast.message}</span>
+                </div>
+            )}
+
+            {/* --- PREVIEW OVERLAY --- */}
+            {isPreviewOpen && (
+                <div className="fixed inset-0 bg-[#181c22]/60 backdrop-blur-sm z-[99] flex items-center justify-center p-4 lg:p-8">
+                    <div className="bg-[#f9f9ff] w-full max-w-3xl h-full lg:h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+                        {/* Header */}
+                        <div className="bg-[#222777] text-white px-6 sm:px-8 py-5 sm:py-6 flex justify-between items-center shrink-0 shadow-md z-10 relative">
+                            <div>
+                                <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-1">{schemaName}</h2>
+                                <p className="text-[#c7c5d3] text-xs sm:text-sm font-semibold">Previewing as {targetRole}</p>
+                            </div>
+                            <button
+                                onClick={() => setIsPreviewOpen(false)}
+                                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors text-white"
+                            >
+                                <span className="material-symbols-outlined text-[24px]">close</span>
+                            </button>
+                        </div>
+                        
+                        {/* Scrollable Form Body */}
+                        <div className="flex-1 overflow-y-auto p-6 sm:p-8 custom-scrollbar relative">
+                            {fields.length === 0 ? (
+                                <div className="h-full flex flex-col items-center justify-center text-[#777682] opacity-50">
+                                    <span className="material-symbols-outlined text-[48px] mb-4">edit_note</span>
+                                    <p className="font-bold">No fields added to this schema yet.</p>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col gap-6 sm:gap-8 max-w-2xl mx-auto">
+                                    {fields.map(field => (
+                                        <div key={field.id} className="flex flex-col gap-2">
+                                            <label className="text-[14px] sm:text-[15px] font-bold text-[#181c22]">
+                                                {field.label} {field.required && <span className="text-[#ba1a1a]">*</span>}
+                                            </label>
+                                            
+                                            {field.type.toLowerCase() === 'voice' ? (
+                                                <VoiceRecorder
+                                                    value={previewAnswers[field.id] || ''}
+                                                    onChange={(val) => handlePreviewAnswerChange(field.id, val)}
+                                                    prompt={field.prompt}
+                                                />
+                                            ) : field.type.toLowerCase() === 'textarea' ? (
+                                                <textarea
+                                                    value={previewAnswers[field.id] || ''} onChange={(e) => handlePreviewAnswerChange(field.id, e.target.value)}
+                                                    placeholder={`Enter ${field.label.toLowerCase()}...`}
+                                                    className="w-full bg-white border border-[#c7c5d3] rounded-xl p-4 text-[14px] sm:text-[15px] focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none text-[#181c22] resize-none h-32 shadow-sm transition-shadow"
+                                                />
+                                            ) : field.type.toLowerCase() === 'dropdown' || field.type.toLowerCase() === 'select' ? (
+                                                <div className="relative">
+                                                    <select value={previewAnswers[field.id] || ''} onChange={(e) => handlePreviewAnswerChange(field.id, e.target.value)} className="w-full appearance-none bg-white border border-[#c7c5d3] rounded-xl py-3 sm:py-3.5 pl-4 pr-10 text-[14px] sm:text-[15px] font-semibold text-[#464651] focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none shadow-sm transition-shadow cursor-pointer">
+                                                        <option value="">Select an option</option>
+                                                        {field.options?.map((opt, i) => (
+                                                            <option key={i} value={opt}>{opt}</option>
+                                                        ))}
+                                                    </select>
+                                                    <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none text-[20px]">expand_more</span>
+                                                </div>
+                                            ) : field.type.toLowerCase() === 'checkbox' ? (
+                                                <div className="flex flex-col gap-3 mt-2">
+                                                    {field.options?.map((opt, i) => (
+                                                        <label key={i} className="flex items-center gap-3 group cursor-pointer">
+                                                            <input type={field.allowMultiple === false ? "radio" : "checkbox"} name={`preview_${field.id}`} checked={(previewAnswers[field.id] || []).includes(opt)} onChange={() => {
+                                                                if (field.allowMultiple === false) {
+                                                                    handlePreviewAnswerChange(field.id, [opt]);
+                                                                } else {
+                                                                    const current = previewAnswers[field.id] || [];
+                                                                    const next = current.includes(opt) ? current.filter(x => x !== opt) : [...current, opt];
+                                                                    handlePreviewAnswerChange(field.id, next);
+                                                                }
+                                                            }} className={`w-5 h-5 border-[#c7c5d3] text-[#222777] focus:ring-[#222777] cursor-pointer ${field.allowMultiple === false ? 'rounded-full' : 'rounded'}`} />
+                                                            <span className="text-[#464651] text-[14px] sm:text-[15px] font-semibold group-hover:text-[#181c22] transition-colors">{opt}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            ) : field.type.toLowerCase() === 'date' ? (
+                                                <div className="relative">
+                                                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#777682] text-[20px]">calendar_today</span>
+                                                    <input
+                                                        type="date"
+                                                        value={previewAnswers[field.id] || ''} onChange={(e) => handlePreviewAnswerChange(field.id, e.target.value)}
+                                                        className="w-full bg-white border border-[#c7c5d3] rounded-xl py-3 sm:py-3.5 pl-11 pr-4 text-[14px] sm:text-[15px] font-semibold text-[#464651] focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none shadow-sm transition-shadow"
+                                                    />
+                                                </div>
+                                            ) : field.type.toLowerCase() === 'number' ? (
+                                                <input
+                                                    type="number"
+                                                    value={previewAnswers[field.id] || ''} onChange={(e) => handlePreviewAnswerChange(field.id, e.target.value)}
+                                                    placeholder={`Enter ${field.label.toLowerCase()}...`}
+                                                    className="w-full bg-white border border-[#c7c5d3] rounded-xl px-4 py-3 sm:py-3.5 text-[14px] sm:text-[15px] focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none text-[#181c22] shadow-sm transition-shadow"
+                                                />
+                                            ) : field.type.toLowerCase() === 'rating' ? (
+                                                <div className="flex gap-2">
+                                                    {[1,2,3,4,5].map(star => (
+                                                        <button key={star} onClick={() => handlePreviewAnswerChange(field.id, star)} className={`material-symbols-outlined text-[28px] sm:text-[32px] hover:text-[#e06c43] transition-colors cursor-pointer ${(previewAnswers[field.id] >= star) ? 'text-[#e06c43]' : 'text-[#c7c5d3]'}`} style={{ fontVariationSettings: (previewAnswers[field.id] >= star) ? "'FILL' 1" : "'FILL' 0" }}>star</button>
+                                                    ))}
+                                                </div>
+                                            ) : field.type.toLowerCase() === 'file' ? (
+                                                <input type="file" className="text-[14px] file:mr-4 file:py-2.5 file:px-5 file:rounded-md file:border-0 file:text-[14px] file:font-semibold file:bg-[#f1f3fc] file:text-[#222777] hover:file:bg-[#e0e2eb] cursor-pointer" />
+                                            ) : (
+                                                <input
+                                                    type="text"
+                                                    value={previewAnswers[field.id] || ''} onChange={(e) => handlePreviewAnswerChange(field.id, e.target.value)}
+                                                    placeholder={`Enter ${field.label.toLowerCase()}...`}
+                                                    className="w-full bg-white border border-[#c7c5d3] rounded-xl px-4 py-3 sm:py-3.5 text-[14px] sm:text-[15px] focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none text-[#181c22] shadow-sm transition-shadow"
+                                                />
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        
+                        {/* Footer */}
+                        <div className="border-t border-[#e0e2eb] bg-white p-5 sm:p-6 shrink-0 flex justify-end">
+                            <button
+                                onClick={() => setIsPreviewOpen(false)}
+                                className="bg-[#222777] text-white font-bold text-[14px] sm:text-[15px] px-8 py-3 rounded-lg hover:bg-[#3a3f8f] transition-colors shadow-md"
+                            >
+                                Close Preview
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

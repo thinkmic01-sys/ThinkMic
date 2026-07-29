@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import api from '../../services/api';
 
 export default function Dashboard() {
     const accessToken = useSelector((state) => state.auth?.accessToken);
@@ -18,16 +19,12 @@ export default function Dashboard() {
         const fetchData = async () => {
             try {
                 // Fetch KPIs
-                const kpiRes = await fetch('http://localhost:5000/api/v1/analytics/usage', {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
-                const kpiData = await kpiRes.json();
+                const kpiRes = await api.get('/analytics/usage');
+                const kpiData = kpiRes.data;
 
                 // Fetch Recent Recordings
-                const recRes = await fetch('http://localhost:5000/api/v1/recordings', {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
-                const recData = await recRes.json();
+                const recRes = await api.get('/recordings');
+                const recData = recRes.data;
 
                 if (kpiData.kpis) {
                     setStats({

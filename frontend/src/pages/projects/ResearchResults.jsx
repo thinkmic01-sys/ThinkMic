@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { useSelector } from 'react-redux';
+import api from '../../services/api';
+import { io } from 'socket.io-client';
 
 export default function ResearchResults() {
     const navigate = useNavigate();
     const accessToken = useSelector((state) => state.auth?.accessToken);
+    const userId = useSelector((state) => state.auth?.user?.id);
     
     // --- STATE MANAGEMENT ---
     const [queries, setQueries] = useState([]);
     const [allResults, setAllResults] = useState([]);
     const [activeQueryId, setActiveQueryId] = useState(null);
+    const [activeSessionId, setActiveSessionId] = useState(null);
     const [activeSourceId, setActiveSourceId] = useState(null);
     const [selectedResultIds, setSelectedResultIds] = useState([]);
     
@@ -18,56 +22,94 @@ export default function ResearchResults() {
     const [isDetailOpen, setIsDetailOpen] = useState(false);
 
     // Fetch data
+    const fetchSessions = async () => {
+        try {
+            const res = await api.get('/search/sessions');
+            const data = res.data;
+            if (data.sessions && data.sessions.length > 0) {
+                const latestSession = data.sessions[0];
+                setActiveSessionId(latestSession.id);
+                setQueries(latestSession.queries);
+                if (latestSession.queries.length > 0) {
+                    setActiveQueryId(latestSession.queries[0].id);
+                }
+                
+                // Fetch results for this session
+                fetchResultsForSession(latestSession.id);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const fetchResultsForSession = async (sessionId) => {
+        try {
+            const res2 = await api.get(`/search/sessions/${sessionId}`);
+            const data2 = res2.data;
+            if (data2.results) {
+                const flattenedResults = [];
+                data2.results.forEach(searchDoc => {
+                    searchDoc.results.forEach((r, idx) => {
+                        flattenedResults.push({
+                            id: `${searchDoc._id}-${idx}`,
+                            queryId: searchDoc._id,
+                            domain: new URL(r.url || 'https://example.com').hostname,
+                            type: "Web",
+                            title: r.title,
+                            snippet: r.snippet,
+                            metrics: [],
+                            icon: "language",
+                            entities: [],
+                            metadata: { author: "Unknown", published: "N/A", reliability: "N/A" },
+                            region: "Global",
+                            language: "English",
+                            year: new Date().getFullYear()
+                        });
+                    });
+                });
+                setAllResults(flattenedResults);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
     useEffect(() => {
         if (!accessToken) return;
-        const fetchSessions = async () => {
-            try {
-                const res = await fetch('http://localhost:5000/api/v1/search/sessions', {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
-                const data = await res.json();
-                if (data.sessions && data.sessions.length > 0) {
-                    const latestSession = data.sessions[0];
-                    setQueries(latestSession.queries);
-                    if (latestSession.queries.length > 0) {
-                        setActiveQueryId(latestSession.queries[0].id);
-                    }
-                    
-                    // Fetch results for this session
-                    const res2 = await fetch(`http://localhost:5000/api/v1/search/sessions/${latestSession.id}`, {
-                        headers: { 'Authorization': `Bearer ${accessToken}` }
-                    });
-                    const data2 = await res2.json();
-                    if (data2.results) {
-                        const flattenedResults = [];
-                        data2.results.forEach(searchDoc => {
-                            searchDoc.results.forEach((r, idx) => {
-                                flattenedResults.push({
-                                    id: `${searchDoc._id}-${idx}`,
-                                    queryId: searchDoc._id,
-                                    domain: new URL(r.url || 'https://example.com').hostname,
-                                    type: "Web",
-                                    title: r.title,
-                                    snippet: r.snippet,
-                                    metrics: [],
-                                    icon: "language",
-                                    entities: [],
-                                    metadata: { author: "Unknown", published: "N/A", reliability: "N/A" },
-                                    region: "Global",
-                                    language: "English",
-                                    year: new Date().getFullYear()
-                                });
-                            });
-                        });
-                        setAllResults(flattenedResults);
-                    }
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        };
         fetchSessions();
     }, [accessToken]);
+
+    // SOCKET IO
+    useEffect(() => {
+        if (!userId) return;
+
+        const socket = io('http://localhost:5000', {
+            withCredentials: true
+        });
+
+        socket.on('connect', () => {
+            socket.emit('join', userId);
+        });
+
+        socket.on('job_progress', (data) => {
+            if (data.type === 'search') {
+                setQueries(prev => prev.map(q => q.text === data.query ? { ...q, status: data.status === 'processing' ? 'running' : 'error' } : q));
+            }
+        });
+
+        socket.on('search_complete', (data) => {
+            setQueries(prev => prev.map(q => q.text === data.query ? { ...q, status: 'done', results: data.resultsCount } : q));
+            if (activeSessionId) {
+                fetchResultsForSession(activeSessionId);
+            } else {
+                fetchSessions();
+            }
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, [userId, activeSessionId]);
 
     // Filter States
     const [languageFilter, setLanguageFilter] = useState('English (US)');
@@ -75,16 +117,27 @@ export default function ResearchResults() {
     const [dateFilter, setDateFilter] = useState('Past 5 Years');
 
     // --- HANDLERS ---
-    const handleAddQuery = () => {
+    const handleAddQuery = async () => {
         const newQueryText = window.prompt("Enter your new research query:");
         if (newQueryText && newQueryText.trim() !== "") {
-            const newId = Date.now();
+            const tempId = Date.now();
             setQueries(prev => [
                 ...prev,
-                { id: newId, text: newQueryText, status: "running", results: 0 }
+                { id: tempId, text: newQueryText, status: "running", results: 0 }
             ]);
-            setActiveQueryId(newId);
+            setActiveQueryId(tempId);
             if (window.innerWidth < 768) setIsQueriesOpen(false); // Close drawer on mobile
+
+            try {
+                await api.post('/search/sessions', {
+                    queries: [newQueryText],
+                    sessionId: activeSessionId,
+                    config: { gl: "us", hl: "en" }
+                });
+            } catch (err) {
+                console.error("Failed to run query", err);
+                setQueries(prev => prev.map(q => q.id === tempId ? { ...q, status: 'error' } : q));
+            }
         }
     };
 

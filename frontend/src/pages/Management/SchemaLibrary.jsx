@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import api from '../../services/api';
 
 export default function SchemaLibrary() {
     const accessToken = useSelector((state) => state.auth?.accessToken);
@@ -10,16 +11,14 @@ export default function SchemaLibrary() {
         if (!accessToken) return;
         const fetchSchemas = async () => {
             try {
-                const res = await fetch('http://localhost:5000/api/v1/schemas', {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
-                const data = await res.json();
+                const res = await api.get('/schemas');
+                const data = res.data;
                 if (data.schemas) {
                     setSchemas(data.schemas.map(s => ({
                         id: s._id,
                         name: s.name,
-                        submissions: 0, // Not implemented in backend schema count yet
-                        status: s.isActive ? 'Active' : 'Archived',
+                        submissions: s.submissions || 0,
+                        status: s.status ? s.status.charAt(0).toUpperCase() + s.status.slice(1) : 'Unknown',
                         lastUpdated: new Date(s.updatedAt).toLocaleDateString()
                     })));
                 }
@@ -86,9 +85,15 @@ export default function SchemaLibrary() {
                                 </td>
                                 <td className="p-3 sm:p-4 text-[#777682] font-semibold whitespace-nowrap">{schema.lastUpdated}</td>
                                 <td className="p-3 sm:p-4 text-right pr-4 sm:pr-6">
-                                    <button className="text-[#3a3f8f] hover:text-[#222777] transition-colors p-1.5 rounded-md hover:bg-[#e0e2eb] flex items-center justify-center ml-auto">
-                                        <span className="material-symbols-outlined text-[18px] sm:text-[20px]">edit</span>
-                                    </button>
+                                    {schema.status === 'Draft' ? (
+                                        <Link to={`/app/admin/schemas/edit/${schema.id}`} className="text-[#3a3f8f] hover:text-[#222777] transition-colors p-1.5 rounded-md hover:bg-[#e0e2eb] inline-flex items-center justify-center ml-auto">
+                                            <span className="material-symbols-outlined text-[18px] sm:text-[20px]">edit</span>
+                                        </Link>
+                                    ) : (
+                                        <button disabled title="Active schemas cannot be edited" className="text-[#c7c5d3] p-1.5 rounded-md inline-flex items-center justify-center ml-auto cursor-not-allowed">
+                                            <span className="material-symbols-outlined text-[18px] sm:text-[20px]">edit</span>
+                                        </button>
+                                    )}
                                 </td>
                             </tr>
                         ))}

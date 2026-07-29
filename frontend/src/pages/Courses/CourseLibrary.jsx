@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import api from '../../services/api';
 
 // --- MOCK DATA ---
 const featuredCourse = {
@@ -67,24 +68,18 @@ export default function CourseLibrary() {
     React.useEffect(() => {
         const fetchSeminars = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/v1/seminars', {
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    credentials: 'include'
-                });
+                const response = await api.get('/seminars');
                 
                 let combinedCourses = [...mockCourses]; // Start with dummy data for visual aesthetics
 
-                if (response.ok) {
-                    const seminarsData = await response.json();
-                    
-                    // Also fetch registrations
-                    const regResponse = await fetch('http://localhost:5000/api/v1/seminars/registrations', {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    if (regResponse.ok) {
-                        const regData = await regResponse.json();
-                        setMyRegistrations(regData.map(r => r.seminarId));
-                    }
+                const seminarsData = response.data;
+                
+                // Also fetch registrations
+                try {
+                    const regResponse = await api.get('/seminars/registrations');
+                    const regData = regResponse.data;
+                    setMyRegistrations(regData.map(r => r.seminarId));
+                } catch (e) {}
                     
                     // Map seminars to match the Course card format
                     const mappedSeminars = seminarsData.map(s => ({
@@ -105,7 +100,6 @@ export default function CourseLibrary() {
                     }));
 
                     combinedCourses = [...mappedSeminars, ...combinedCourses]; // Put new seminars first
-                }
                 
                 setCourses(combinedCourses);
             } catch (error) {
@@ -134,22 +128,12 @@ export default function CourseLibrary() {
     const handleRegister = async (e, courseId) => {
         e.stopPropagation();
         try {
-            const response = await fetch(`http://localhost:5000/api/v1/seminars/${courseId}/register`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            if (response.ok) {
-                setMyRegistrations(prev => [...prev, courseId]);
-                showToast('Successfully registered for seminar!');
-            } else {
-                const data = await response.json();
-                showToast(data.message || 'Failed to register', 'error');
-            }
+            const response = await api.post(`/seminars/${courseId}/register`);
+            setMyRegistrations(prev => [...prev, courseId]);
+            showToast('Successfully registered for seminar!');
         } catch (err) {
-            showToast('An error occurred during registration.', 'error');
+            const data = err.response?.data || {};
+            showToast(data.message || 'An error occurred during registration.', 'error');
         }
     };
 

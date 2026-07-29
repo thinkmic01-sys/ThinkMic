@@ -1,5 +1,6 @@
+const Transcript = require('../models/Transcript');
 const Recording = require('../models/Recording');
-const { transcriptionQueue } = require('../queues');
+const { transcriptionQueue, summarizationQueue } = require('../queues');
 // const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 // const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 // const { v4: uuidv4 } = require('uuid');
@@ -70,12 +71,43 @@ exports.uploadAudioLocal = async (req, res) => {
             status: 'uploaded'
         });
 
-        // Enqueue transcription job
-        await transcriptionQueue.add('transcribe', {
-            recordingId: recording._id,
-            s3Key: req.file.filename,
-            userId: req.user._id
-        });
+        if (req.body.sttEngine === 'Browser' || req.body.sttEngine === 'Deepgram' || req.body.rawText !== undefined) {
+            // Bypass Whisper: Create transcript directly and enqueue summarization
+            const transcript = await Transcript.create({
+                recordingId: recording._id,
+                userId: req.user._id,
+                text: req.body.rawText || '(No audio detected or transcription empty)',
+                whisperModel: `skipped-via-${req.body.sttEngine || 'live-stt'}`
+            });
+
+            await summarizationQueue.add('summarize', {
+                transcriptId: transcript._id,
+                userId: req.user._id,
+                customPrompt: req.body.customPrompt,
+                language: req.body.language,
+                length: req.body.length,
+                style: req.body.style
+            });
+            
+            // Notify frontend that transcription is already complete
+            const socket = require('../utils/socket');
+            socket.getIO().to(req.user._id.toString()).emit('transcription_complete', {
+                recordingId: recording._id,
+                transcriptId: transcript._id,
+                text: req.body.rawText
+            });
+
+        } else {
+            // Enqueue transcription job
+            await transcriptionQueue.add('transcribe', {
+                recordingId: recording._id,
+                s3Key: req.file.filename,
+                userId: req.user._id,
+                language: req.body.language,
+                length: req.body.length,
+                style: req.body.style
+            });
+        }
 
         res.status(201).json({
             message: 'Audio uploaded successfully',

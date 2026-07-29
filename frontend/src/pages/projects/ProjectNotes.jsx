@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import api from '../../services/api';
 
 export default function ProjectNotes() {
     const navigate = useNavigate();
@@ -17,15 +18,10 @@ export default function ProjectNotes() {
     React.useEffect(() => {
         const fetchNotes = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/v1/notes', {
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    credentials: 'include'
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    setNotes(data);
-                    if (data.length > 0) setActiveNoteId(data[0]._id);
-                }
+                const response = await api.get('/notes');
+                const data = response.data;
+                setNotes(data);
+                if (data.length > 0) setActiveNoteId(data[0]._id);
             } catch (error) {
                 console.error("Failed to fetch notes", error);
             }
@@ -38,28 +34,18 @@ export default function ProjectNotes() {
     // --- FUNCTIONAL HANDLERS ---
     const handleAddNote = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/v1/notes', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    title: "Untitled Note",
-                    content: "<p>Start typing your research notes here...</p>",
-                    preview: "Start typing...",
-                    tags: ["#draft"],
-                    outline: ["New Section"],
-                    links: []
-                })
+            const response = await api.post('/notes', {
+                title: "Untitled Note",
+                content: "<p>Start typing your research notes here...</p>",
+                preview: "Start typing...",
+                tags: ["#draft"],
+                outline: ["New Section"],
+                links: []
             });
-            if (response.ok) {
-                const newNote = await response.json();
-                setNotes([newNote, ...notes]);
-                setActiveNoteId(newNote._id);
-                if (window.innerWidth < 768) setIsLeftPaneOpen(false);
-            }
+            const newNote = response.data;
+            setNotes([newNote, ...notes]);
+            setActiveNoteId(newNote._id);
+            if (window.innerWidth < 768) setIsLeftPaneOpen(false);
         } catch (error) {
             console.error("Failed to create note", error);
         }
@@ -70,15 +56,7 @@ export default function ProjectNotes() {
         setNotes(notes.map(n => n._id === activeNoteId ? { ...n, title: newTitle } : n));
         
         try {
-            await fetch(`http://localhost:5000/api/v1/notes/${activeNoteId}`, {
-                method: 'PUT',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                credentials: 'include',
-                body: JSON.stringify({ title: newTitle })
-            });
+            await api.put(`/notes/${activeNoteId}`, { title: newTitle });
         } catch (error) {
             console.error("Failed to update note title", error);
         }
@@ -221,15 +199,7 @@ export default function ProjectNotes() {
                             dangerouslySetInnerHTML={{ __html: activeNote.content }}
                             onBlur={async (e) => {
                                 try {
-                                    await fetch(`http://localhost:5000/api/v1/notes/${activeNoteId}`, {
-                                        method: 'PUT',
-                                        headers: { 
-                                            'Content-Type': 'application/json',
-                                            'Authorization': `Bearer ${token}`
-                                        },
-                                        credentials: 'include',
-                                        body: JSON.stringify({ content: e.target.innerHTML })
-                                    });
+                                    await api.put(`/notes/${activeNoteId}`, { content: e.target.innerHTML });
                                 } catch (err) {}
                             }}
                         ></div>

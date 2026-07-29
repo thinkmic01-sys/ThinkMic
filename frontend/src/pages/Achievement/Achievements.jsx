@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from "react-router-dom";
+import api from '../../services/api';
 
 export default function Achievements() {
     // Pull the live coin balance and auth token from our Redux store
@@ -24,40 +25,24 @@ export default function Achievements() {
     React.useEffect(() => {
         const fetchTransactions = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/v1/achievements/transactions', {
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    credentials: 'include'
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    setTransactions(data);
-                }
+                const response = await api.get('/achievements/transactions');
+                setTransactions(response.data);
             } catch (error) {
                 console.error("Failed to fetch transactions", error);
             }
         };
         const fetchLeaderboard = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/v1/achievements/leaderboard', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    setLeaderboard(data);
-                }
+                const response = await api.get('/achievements/leaderboard');
+                setLeaderboard(response.data);
             } catch (error) {
                 console.error("Failed to fetch leaderboard", error);
             }
         };
         const fetchStats = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/v1/achievements/stats', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    setStats(data);
-                }
+                const response = await api.get('/achievements/stats');
+                setStats(response.data);
             } catch (error) {
                 console.error("Failed to fetch stats", error);
             }

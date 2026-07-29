@@ -10,15 +10,28 @@ exports.createSearchSession = async (req, res) => {
         // As per PDF: POST /search/sessions -> returns { sessionId, jobIds[] }
         
         const mongoose = require('mongoose');
-        const sessionId = new mongoose.Types.ObjectId();
+        const sessionId = req.body.sessionId || new mongoose.Types.ObjectId();
         
         const jobIds = [];
-        for (const query of queries) {
+        for (const q of queries) {
+            // Frontend might send objects {text, ...} or strings
+            const queryText = typeof q === 'string' ? q : q.text;
+            if (!queryText) continue;
+
+            // Pre-create the search result so the frontend can immediately see the session
+            const searchResult = await SearchResult.create({
+                sessionId,
+                userId: req.user._id,
+                query: queryText,
+                results: []
+            });
+
             const job = await searchQueue.add('search', {
                 sessionId,
                 userId: req.user._id,
-                query,
-                config
+                query: queryText,
+                config,
+                resultId: searchResult._id
             });
             jobIds.push(job.id);
         }
@@ -31,9 +44,10 @@ exports.createSearchSession = async (req, res) => {
 
 exports.getUserSearchSessions = async (req, res) => {
     try {
+        const mongoose = require('mongoose');
         // Group SearchResults by sessionId to recreate the sessions
         const sessions = await SearchResult.aggregate([
-            { $match: { userId: req.user._id } },
+            { $match: { userId: new mongoose.Types.ObjectId(req.user._id) } },
             { $group: {
                 _id: "$sessionId",
                 queries: { $push: { id: "$_id", text: "$query", resultsCount: { $size: { $ifNull: ["$results", []] } } } },

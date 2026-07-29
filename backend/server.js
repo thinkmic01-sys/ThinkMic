@@ -58,6 +58,8 @@ app.use('/api/v1/collaboration', require('./routes/collaborationRoutes'));
 app.use('/api/v1/achievements', require('./routes/achievementsRoutes'));
 app.use('/api/v1/upload', require('./routes/uploadRoutes'));
 app.use('/api/v1/notifications', require('./routes/notificationsRoutes'));
+app.use('/api/v1/support', require('./routes/supportRoutes'));
+app.use('/api/v1/deepgram', require('./routes/deepgramRoutes'));
 
 // Initialize Background Jobs
 require('./jobs/reminderCron');

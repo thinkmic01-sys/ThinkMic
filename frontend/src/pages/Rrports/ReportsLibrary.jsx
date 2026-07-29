@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import api from '../../services/api';
 
 export default function ReportsLibrary() {
     const navigate = useNavigate();
@@ -12,10 +13,8 @@ export default function ReportsLibrary() {
         if (!accessToken) return;
         const fetchReports = async () => {
             try {
-                const res = await fetch('http://localhost:5000/api/v1/reports', {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
-                const data = await res.json();
+                const res = await api.get('/reports');
+                const data = res.data;
                 if (data.reports) {
                     setReports(data.reports.map(r => ({
                         id: r._id,

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import api from '../../services/api';
 import { MapContainer, TileLayer, Marker, useMapEvents, ZoomControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -171,19 +172,11 @@ export default function CreateSeminar() {
         formData.append('image', file);
 
         try {
-            const response = await fetch('http://localhost:5000/api/v1/upload', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
-                body: formData
-            });
-            if (response.ok) {
-                const data = await response.json();
-                if (isHost) setHostImageUrl(data.url);
-                else setImageUrl(data.url);
-                showToast('Image uploaded successfully!', 'success');
-            } else {
-                showToast('Failed to upload image.', 'error');
-            }
+            const response = await api.post('/upload', formData);
+            const data = response.data;
+            if (isHost) setHostImageUrl(data.url);
+            else setImageUrl(data.url);
+            showToast('Image uploaded successfully!', 'success');
         } catch (error) {
             showToast('An error occurred during upload.', 'error');
         } finally {
@@ -202,41 +195,27 @@ export default function CreateSeminar() {
         if (!title) return alert("Please enter a seminar title.");
         
         try {
-            const response = await fetch('http://localhost:5000/api/v1/seminars', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    title,
-                    abstract,
-                    category,
-                    tags,
-                    imageUrl,
-                    date,
-                    startTime,
-                    endTime,
-                    format,
-                    location: locationInput,
-                    hostName,
-                    hostImageUrl,
-                    status: statusToSave
-                })
+            await api.post('/seminars', {
+                title,
+                abstract,
+                category,
+                tags,
+                imageUrl,
+                date,
+                startTime,
+                endTime,
+                format,
+                location: locationInput,
+                hostName,
+                hostImageUrl,
+                status: statusToSave
             });
-
-            if (response.ok) {
-                showToast(`Seminar "${title}" ${statusToSave === 'scheduled' ? 'scheduled' : 'saved as draft'} successfully!`, 'success');
-                setTimeout(() => navigate('/app/projects'), 2000);
-            } else {
-                const errData = await response.json().catch(() => ({}));
-                showToast(`Failed to save seminar: ${errData.message || response.statusText}`, 'error');
-                console.error("Save error:", errData);
-            }
+            showToast(`Seminar "${title}" ${statusToSave === 'scheduled' ? 'scheduled' : 'saved as draft'} successfully!`, 'success');
+            setTimeout(() => navigate('/app/projects'), 2000);
         } catch (error) {
             console.error(error);
-            showToast('An error occurred while saving.', 'error');
+            const errData = error.response?.data || {};
+            showToast(`Failed to save seminar: ${errData.message || error.message || 'An error occurred while saving.'}`, 'error');
         }
     };
 

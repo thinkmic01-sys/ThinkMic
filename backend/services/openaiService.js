@@ -1,14 +1,14 @@
 // backend/services/openaiService.js
 const fs = require('fs');
+const { OpenAI } = require('openai');
 
-/**
- * Service Abstraction for OpenAI (Whisper & GPT-4o)
- * Incorporates the "Tomorrow" Constraint with a 1-second delay for MOCK testing.
- */
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+});
 
 const isMock = !process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'MOCK';
 
-exports.transcribeAudio = async (filePath) => {
+exports.transcribeAudio = async (filePath, language = 'en-US') => {
     if (isMock) {
         console.log(`[MOCK] Transcribing audio file: ${filePath}`);
         return new Promise((resolve) => {
@@ -25,15 +25,40 @@ exports.transcribeAudio = async (filePath) => {
         });
     }
 
-    // Production OpenAI Whisper logic goes here
-    // const formData = new FormData();
-    // formData.append('file', fs.createReadStream(filePath));
-    // formData.append('model', 'whisper-1');
-    // const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', formData, { ... });
-    // return response.data;
+    try {
+        console.log(`[OpenAI] Sending file ${filePath} to Whisper API...`);
+        const whisperLang = language === 'ur-PK' ? 'ur' : 'en';
+        const transcription = await openai.audio.transcriptions.create({
+            file: fs.createReadStream(filePath),
+            model: 'whisper-1',
+            response_format: 'verbose_json', // Gets segments and duration
+            language: whisperLang
+        });
+
+        return {
+            text: transcription.text,
+            language: transcription.language,
+            duration: transcription.duration,
+            segments: transcription.segments
+        };
+    } catch (error) {
+        console.error('[OpenAI Whisper Error]:', error);
+        throw error;
+    }
 };
 
-exports.generateSummary = async (transcriptText, customPrompt = null) => {
+exports.generateSummary = async (transcriptText, customPrompt = null, length = null, style = null, language = null) => {
+    // 1. Throw error if empty
+    if (!transcriptText || transcriptText.trim().length === 0) {
+        throw new Error("No audio or transcription data is available to generate a summary.");
+    }
+
+    // 2. Format language for the prompt
+    let langInstruction = "Detect the language of the transcript provided and generate the summary, tags, and queries in that same language (e.g., if the transcript is in Urdu, write the summary in Urdu). If the language is ambiguous or too short to detect accurately, DEFAULT to English.";
+    if (language) {
+        langInstruction = `You MUST write the summary, tags, and queries entirely in ${language}. Ignore the source language of the transcript and TRANSLATE your response into ${language} if necessary.`;
+    }
+
     if (isMock) {
         console.log(`[MOCK] Generating summary for transcript length: ${transcriptText.length}`);
         return new Promise((resolve) => {
@@ -47,5 +72,47 @@ exports.generateSummary = async (transcriptText, customPrompt = null) => {
         });
     }
 
-    // Production GPT-4o logic goes here
+    try {
+        console.log(`[OpenAI] Sending transcript to GPT for summarization...`);
+        
+        let systemPrompt = `You are a highly skilled AI assistant that analyzes meeting transcripts and audio logs.
+Your job is to provide a comprehensive summary and extract key topics/tags and suggested follow-up questions/queries.
+Return your response STRICTLY as a JSON object with the following schema:
+{
+  "summary": "String containing the formatted summary",
+  "tags": ["Array", "of", "strings", "representing", "topics"],
+  "queries": ["Array", "of", "strings", "representing", "follow-up questions"]
+}
+
+CRITICAL INSTRUCTION: ${langInstruction}`;
+
+        if (length) {
+            systemPrompt += `\n\nLENGTH REQUIREMENT: Make the summary length "${length}".`;
+        }
+        if (style) {
+            systemPrompt += `\n\nSTYLE REQUIREMENT: Format the summary as "${style}".`;
+        }
+        if (customPrompt) {
+            systemPrompt += `\n\nUSER CUSTOM INTENT/PROMPT: The user has specifically requested you to focus on the following when summarizing: "${customPrompt}"`;
+        }
+
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini', // Using cost-effective model, can be upgraded to gpt-4o
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: `Transcript:\n\n${transcriptText}` }
+            ],
+            response_format: { type: "json_object" }
+        });
+
+        const result = JSON.parse(response.choices[0].message.content);
+        return {
+            summary: result.summary,
+            tags: result.tags || [],
+            queries: result.queries || []
+        };
+    } catch (error) {
+        console.error('[OpenAI GPT Error]:', error);
+        throw error;
+    }
 };

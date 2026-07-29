@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { login } from '../store/slices/authSlice';
+import api from '../services/api';
 
 export default function Auth() {
     const dispatch = useDispatch();
@@ -36,26 +37,16 @@ export default function Auth() {
         setError('');
         setSuccessMsg('');
 
-        const endpoint = isLoginView ? '/api/v1/auth/login' : '/api/v1/auth/register';
-        const url = `http://localhost:5000${endpoint}`;
+        const endpoint = isLoginView ? '/auth/login' : '/auth/register';
 
         try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(
-                    isLoginView
-                        ? { email: formData.email, password: formData.password }
-                        : { fullName: formData.fullName, email: formData.email, password: formData.password, referralCode }
-                ),
-                credentials: 'include'
-            });
+            const response = await api.post(endpoint, 
+                isLoginView
+                    ? { email: formData.email, password: formData.password }
+                    : { fullName: formData.fullName, email: formData.email, password: formData.password, referralCode }
+            );
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Authentication failed. Please try again.');
-            }
+            const data = response.data;
 
             if (isLoginView) {
                 // SUCCESSFUL LOGIN
@@ -76,36 +67,26 @@ export default function Auth() {
                 setSuccessMsg(data.message);
 
                 // Behind the scenes, instantly log them in using the credentials they just created
-                const loginRes = await fetch('http://localhost:5000/api/v1/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: formData.email, password: formData.password }),
-                    credentials: 'include'
-                });
+                const loginRes = await api.post('/auth/login', { email: formData.email, password: formData.password });
 
-                const loginData = await loginRes.json();
+                const loginData = loginRes.data;
 
-                if (loginRes.ok) {
-                    dispatch(login({
-                        id: loginData.user.id,
-                        name: loginData.user.fullName,
-                        email: loginData.user.email,
-                        role: loginData.user.role,
-                        accessToken: loginData.accessToken,
-                        coins: loginData.user.coins || 0,
-                        referralCode: loginData.user.referralCode,
-                        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(loginData.user.fullName)}&background=222777&color=fff`
-                    }));
-                    navigate('/app/dashboard');
-                } else {
-                    // Fallback just in case auto-login fails
-                    setIsLoginView(true);
-                    setFormData({ ...formData, password: '' });
-                }
+                dispatch(login({
+                    id: loginData.user.id,
+                    name: loginData.user.fullName,
+                    email: loginData.user.email,
+                    role: loginData.user.role,
+                    accessToken: loginData.accessToken,
+                    coins: loginData.user.coins || 0,
+                    referralCode: loginData.user.referralCode,
+                    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(loginData.user.fullName)}&background=222777&color=fff`
+                }));
+                navigate('/app/dashboard');
             }
 
         } catch (err) {
-            setError(err.message);
+            console.error("Auth error:", err);
+            setError(err.response?.data?.message || err.message || 'Network error occurred. Is the server running?');
         } finally {
             setIsLoading(false);
         }

@@ -1,7 +1,7 @@
 const User = require('../models/User');
-const Referral = require('../models/Referral');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const referralService = require('../services/referralService');
 
 // Helper to generate access token
 const generateAccessToken = (id, role) => {
@@ -41,20 +41,8 @@ exports.register = async (req, res) => {
         }
 
         if (referralCode) {
-            const referrer = await User.findOne({ referralCode });
-            if (referrer) {
-                referrer.coins += 150;
-                referrer.lifetimeCoins += 150;
-                await referrer.save();
-
-                await Referral.create({
-                    referrerId: referrer._id,
-                    referredName: fullName,
-                    referredEmail: email,
-                    status: 'Active',
-                    rewards: 150
-                });
-            }
+            await referralService.attachReferrer(user, referralCode);
+            await referralService.createPendingRewardsForNewUser(user);
         }
 
         res.status(201).json({ userId: user._id, message: 'User registered successfully. Please verify your email.' }); // 201 per spec[cite: 1]

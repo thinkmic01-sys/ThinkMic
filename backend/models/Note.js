@@ -7,6 +7,11 @@ const noteSchema = new mongoose.Schema({
         required: true,
         index: true
     },
+    projectId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Project',
+        index: true
+    },
     title: {
         type: String,
         required: true,

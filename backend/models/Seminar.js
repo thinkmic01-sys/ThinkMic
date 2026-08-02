@@ -55,6 +55,30 @@ const seminarSchema = new mongoose.Schema({
         type: String,
         enum: ['draft', 'scheduled', 'live', 'completed', 'cancelled'],
         default: 'scheduled'
+    },
+    rewardEnabled: {
+        type: Boolean,
+        default: false
+    },
+    rewardPerUser: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+    rewardMaxRecipients: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+    rewardRecipientsCount: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+    rewardHeldAmount: {
+        type: Number,
+        default: 0,
+        min: 0
     }
 }, { timestamps: true });
 

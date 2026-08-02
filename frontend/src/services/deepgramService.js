@@ -21,7 +21,7 @@ class DeepgramService {
 
             return new Promise((resolve, reject) => {
                 const deepgramLang = language === 'ur-PK' ? 'ur' : 'en-US';
-                const modelParam = language === 'ur-PK' ? '' : '&model=nova-2';
+                const modelParam = language === 'ur-PK' ? '&model=nova-3' : '&model=nova-2';
                 // Connect to Deepgram WebSocket using the token as a subprotocol
                 this.socket = new WebSocket(`wss://api.deepgram.com/v1/listen?punctuate=true&interim_results=true&language=${deepgramLang}${modelParam}`, ['token', token]);
                 

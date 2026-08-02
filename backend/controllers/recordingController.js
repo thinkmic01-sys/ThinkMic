@@ -62,14 +62,20 @@ exports.uploadAudioLocal = async (req, res) => {
         }
 
         // Create the recording document in the database
-        const recording = await Recording.create({
+        const recordingData = {
             userId: req.user._id,
             title: req.body.title || 'Untitled Research Audio',
             mimeType: req.file.mimetype,
             fileSizeBytes: req.file.size,
             s3Key: req.file.filename, // We temporarily store the local filename here
             status: 'uploaded'
-        });
+        };
+        
+        if (req.body.projectId) {
+            recordingData.projectId = req.body.projectId;
+        }
+
+        const recording = await Recording.create(recordingData);
 
         if (req.body.sttEngine === 'Browser' || req.body.sttEngine === 'Deepgram' || req.body.rawText !== undefined) {
             // Bypass Whisper: Create transcript directly and enqueue summarization

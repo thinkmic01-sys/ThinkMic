@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/earlyaccess/notonastaliqurdudraft.css');
 @import "tailwindcss";
 
 @theme {
@@ -25,4 +26,11 @@
 body {
   background-color: var(--color-background);
   color: #181c22;
+}
+
+@layer utilities {
+  .font-urdu {
+    font-family: 'Jameel Noori Nastaleeq', 'Jameel Noori Kasheeda', 'Noto Nastaliq Urdu Draft', serif;
+    line-height: 2.2; /* Nastaleeq fonts require larger line height to avoid clipping */
+  }
 }

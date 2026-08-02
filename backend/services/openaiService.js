@@ -116,3 +116,87 @@ CRITICAL INSTRUCTION: ${langInstruction}`;
         throw error;
     }
 };
+
+exports.generateReport = async (summaryText, transcriptText, templateType, sections = {}) => {
+    try {
+        console.log(`[OpenAI] Generating ${templateType} report...`);
+        let systemPrompt = `You are a highly skilled AI assistant that writes professional reports based on meeting transcripts and summaries.
+Your job is to generate a well-structured HTML report. DO NOT return markdown or JSON. Return raw HTML suitable for injecting into a div. Use <h1>, <h2>, <p>, <ul>, <li> tags.
+Do NOT include \`\`\`html or \`\`\` blocks in your response, just the raw HTML elements.`;
+
+        let userContent = `Here is the data for the report:\n\nSummary:\n${summaryText}\n\nTranscripts:\n${transcriptText}\n\nTemplate Type: ${templateType}\n\n`;
+        
+        let requestedSections = [];
+        if (sections.summary) requestedSections.push("Executive Summary");
+        if (sections.research) requestedSections.push("Research Findings / Main Body");
+        if (sections.transcript) requestedSections.push("Transcripts & Quotes");
+        if (sections.sources) requestedSections.push("Sources & Citations");
+        
+        if (requestedSections.length > 0) {
+            userContent += `Please ensure the following sections are included in the HTML report: ${requestedSections.join(', ')}.`;
+        }
+
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userContent }
+            ]
+        });
+
+        let content = response.choices[0].message.content;
+        // Strip markdown backticks if OpenAI mistakenly includes them
+        content = content.replace(/^```html/, '').replace(/^```/, '').replace(/```$/, '').trim();
+        return { reportContent: content };
+    } catch (error) {
+        console.error('[OpenAI Report Error]:', error);
+        throw error;
+    }
+};
+
+exports.generateNoteInsights = async (noteContent) => {
+    if (!noteContent || noteContent.trim().length === 0) {
+        throw new Error("Note content is empty.");
+    }
+
+    if (isMock) {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve({
+                    outline: ["Introduction", "Main Key Points", "Action Items", "Conclusion"],
+                    tags: ["AI", "Insights", "Productivity"]
+                });
+            }, 1000);
+        });
+    }
+
+    try {
+        console.log(`[OpenAI] Generating insights for note...`);
+        let systemPrompt = `You are a highly skilled AI assistant that analyzes meeting notes and documents.
+Your job is to provide a brief logical outline and extract key topics/tags for the given note content.
+Return your response STRICTLY as a JSON object with the following schema:
+{
+  "outline": ["Array", "of", "strings", "representing", "the outline or structure of the document"],
+  "tags": ["Array", "of", "strings", "representing", "short tags/topics"]
+}
+Keep the outline concise (3-5 items maximum, representing the high-level sections). Keep the tags concise (3-6 tags). If the note is very short, adapt accordingly.`;
+
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: `Note Content:\n\n${noteContent}` }
+            ],
+            response_format: { type: "json_object" }
+        });
+
+        const result = JSON.parse(response.choices[0].message.content);
+        return {
+            outline: result.outline || [],
+            tags: result.tags || []
+        };
+    } catch (error) {
+        console.error('[OpenAI Note Insights Error]:', error);
+        throw error;
+    }
+};

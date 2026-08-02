@@ -21,8 +21,10 @@ import ResearchResults from "./pages/projects/ResearchResults.jsx";
 import SchemaBuilder from "./pages/Management/SchemaBuilder.jsx";
 import SchemaLibrary from "./pages/Management/SchemaLibrary.jsx";
 import SupportInbox from "./pages/Management/SupportInbox.jsx";
+import ReferralCoinManagement from "./pages/Management/ReferralCoinManagement.jsx";
 import AdminDashboard from "./pages/dahboard/AdminDashboard.jsx";
-import ProjectNotes from "./pages/projects/ProjectNotes.jsx";
+import ProjectsList from "./pages/projects/ProjectsList.jsx";
+import ProjectDashboard from "./pages/projects/ProjectDashboard.jsx";
 import UserTimeline from "./pages/Achievement/UserTimeline.jsx";
 import CreateSeminar from "./pages/projects/CreateSeminar.jsx";
 import ReportsLibrary from "./pages/Rrports/ReportsLibrary.jsx";
@@ -116,7 +118,8 @@ function AppRoutes() {
                             <Route path="research/results" element={<ResearchResults />} />
 
                             {/* The Projects Hub */}
-                            <Route path="projects" element={<ProjectNotes />} />
+                            <Route path="projects" element={<ProjectsList />} />
+                            <Route path="projects/:id" element={<ProjectDashboard />} />
                             <Route path="projects/create-seminar" element={<CreateSeminar />} />
 
                             {/* Reports Module */}
@@ -145,6 +148,7 @@ function AppRoutes() {
                                 <Route path="schemas/new" element={<SchemaBuilder />} />
                                 <Route path="schemas/edit/:id" element={<SchemaBuilder />} />
                                 <Route path="support" element={<SupportInbox />} />
+                                <Route path="rewards" element={<ReferralCoinManagement />} />
                                 <Route path="analytics" element={<Dashboard />} />
                             </Route>
                         </Routes>

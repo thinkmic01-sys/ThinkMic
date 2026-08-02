@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const Seminar = require('../models/Seminar');
 const Registration = require('../models/Registration');
 const Notification = require('../models/Notification');
+const { _internal: seminarInternals } = require('../controllers/seminarsController');
 
 // Helper to calculate hours between two dates
 const getHoursBetween = (d1, d2) => Math.abs(d1 - d2) / 36e5;
@@ -48,5 +49,33 @@ cron.schedule('0 0 * * *', async () => {
         }
     } catch (err) {
         console.error('[CRON] Error running daily reminder job:', err);
+    }
+});
+
+// Run every day at 12:05 AM - auto-complete past-due seminars and refund any unused
+// escrowed reward coins back to the host.
+cron.schedule('5 0 * * *', async () => {
+    console.log('[CRON] Sweeping past-due seminars for auto-completion and reward refunds...');
+    try {
+        const pastDueSeminars = await Seminar.find({ status: { $in: ['scheduled', 'live'] } });
+        let completedCount = 0;
+
+        for (const seminar of pastDueSeminars) {
+            if (!seminar.date) continue;
+
+            const seminarEndDateTime = new Date(`${seminar.date.toISOString().split('T')[0]}T${seminar.endTime || '23:59'}:00`);
+            if (isNaN(seminarEndDateTime.getTime()) || seminarEndDateTime > new Date()) continue;
+
+            seminar.status = 'completed';
+            await seminarInternals.refundUnusedHold(seminar, seminar.hostId, 'system');
+            await seminar.save();
+            completedCount++;
+        }
+
+        if (completedCount > 0) {
+            console.log(`[CRON] Auto-completed ${completedCount} past-due seminar(s) and refunded unused reward funds.`);
+        }
+    } catch (err) {
+        console.error('[CRON] Error running seminar completion sweep:', err);
     }
 });

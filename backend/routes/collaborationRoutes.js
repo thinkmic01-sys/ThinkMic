@@ -8,6 +8,9 @@ router.use(protect);
 router.route('/referrals')
     .get(collaborationController.getReferralDashboard);
 
+router.route('/referrals/network')
+    .get(collaborationController.getReferralNetwork);
+
 router.route('/submissions')
     .get(collaborationController.getSubmissions)
     .post(collaborationController.createSubmission);

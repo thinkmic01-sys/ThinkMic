@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from 'react-redux';
 import { login, logout } from '../../store/slices/authSlice';
 import api from '../../services/api';
@@ -9,6 +9,10 @@ import { io } from 'socket.io-client';
 export default function SpeechWorkspace() {
     // --- STATE MANAGEMENT ---
     const navigate = useNavigate();
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const projectId = queryParams.get('projectId');
+    
     const accessToken = useSelector((state) => state.auth?.accessToken);
     const userId = useSelector((state) => state.auth?.user?.id);
     const [recordingState, setRecordingState] = useState('idle');
@@ -32,7 +36,7 @@ export default function SpeechWorkspace() {
     const dispatch = useDispatch();
     // Functionality States
     const [intentMode, setIntentMode] = useState('User-Defined');
-    const [customPrompt, setCustomPrompt] = useState('');
+    const [customPrompts, setCustomPrompts] = useState([{ id: Date.now(), text: '' }]);
     const [summaryLength, setSummaryLength] = useState('Detailed');
     const [summaryStyle, setSummaryStyle] = useState('Bullets');
 
@@ -129,6 +133,9 @@ export default function SpeechWorkspace() {
         formData.append('language', language);
         formData.append('length', summaryLength);
         formData.append('style', summaryStyle);
+        if (projectId) {
+            formData.append('projectId', projectId);
+        }
 
         try {
             const response = await api.post('/recordings', formData, {
@@ -153,6 +160,10 @@ export default function SpeechWorkspace() {
     // --- AUDIO & RECORDING LOGIC ---
     const startRecording = async () => {
         try {
+            // MUST GET MEDIA STREAM FIRST to avoid browser blocking due to async delay from click
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            streamRef.current = stream;
+
             if (sttEngine === 'Deepgram') {
                 setRecordingState('connecting');
                 const connected = await deepgramService.connect(language);
@@ -187,9 +198,6 @@ export default function SpeechWorkspace() {
                 setCurrentTranscriptId(null);
                 setTopics([]);
             }
-
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            streamRef.current = stream;
             
             // For Deepgram, we need timeslice chunks. For others, we also need it for the final blob.
             const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
@@ -349,7 +357,13 @@ export default function SpeechWorkspace() {
     };
 
     const handleIntentTagClick = (tagText) => {
-        setCustomPrompt(prev => prev ? `${prev}, ${tagText}` : tagText);
+        setCustomPrompts(prev => {
+            const newPrompts = [...prev];
+            const lastIdx = newPrompts.length - 1;
+            const currentText = newPrompts[lastIdx].text;
+            newPrompts[lastIdx].text = currentText ? `${currentText}, ${tagText}` : tagText;
+            return newPrompts;
+        });
     };
 
     const triggerAIProcessing = async (promptOverride = '') => {
@@ -359,7 +373,7 @@ export default function SpeechWorkspace() {
         showToast(`Requesting AI processing...`, 'success');
         try {
             const response = await api.post(`/summaries/transcript/${currentTranscriptId}/regenerate`, {
-                customPrompt: promptOverride || customPrompt,
+                customPrompt: promptOverride || customPrompts[0].text,
                 length: summaryLength,
                 style: summaryStyle,
                 language: language
@@ -384,8 +398,8 @@ export default function SpeechWorkspace() {
                 config: { gl: "us", hl: "en" }
             });
             
-            // Navigate to Research module with session ID, or just navigate to main research page
-            navigate('/app/research/results');
+            // Navigate to Research module
+            navigate('/app/research/results' + (projectId ? `?projectId=${projectId}` : ''));
         } catch (error) {
             showToast(error.response?.data?.message || "Failed to start research", "error");
         }
@@ -583,17 +597,17 @@ export default function SpeechWorkspace() {
                                     <span className={`font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 ${recordingState === 'recording' ? 'text-[#006e73]' : 'text-[#777682]'}`}>
                                         {formatTime(t.time)}
                                     </span>
-                                    <p className="text-[#181c22] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px]">
+                                    <p className={`text-[#181c22] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] ${language === 'ur-PK' ? 'font-urdu' : ''}`} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
                                         {t.text}
                                     </p>
                                 </div>
                             ))}
                             {interimText && (
                                 <div className="flex gap-3 sm:gap-4">
-                                    <span className="font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 text-[#777682] opacity-50">
-                                        --:--:--
+                                    <span className="font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 text-[#006e73]">
+                                        {formatTime(Math.floor((Date.now() - recordingStartTimeRef.current) / 1000))}
                                     </span>
-                                    <p className="text-[#777682] italic leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px]">
+                                    <p className={`text-[#3a3f8f] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] italic ${language === 'ur-PK' ? 'font-urdu' : ''}`} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
                                         {interimText}
                                     </p>
                                 </div>
@@ -613,20 +627,43 @@ export default function SpeechWorkspace() {
                     <div className="bg-white rounded-lg shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-5 flex flex-col gap-4">
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                             <h3 className="font-mono text-[13px] sm:text-[14px] font-bold text-[#222777] tracking-widest uppercase">Processing Intent</h3>
+                            <button 
+                                onClick={() => setCustomPrompts([...customPrompts, { id: Date.now(), text: '' }])}
+                                className="text-[#222777] text-[12px] sm:text-[13px] font-bold flex items-center gap-1 hover:text-[#3a3f8f] transition-colors"
+                            >
+                                <span className="material-symbols-outlined text-[16px] sm:text-[18px]">add</span> Add Section
+                            </button>
                         </div>
 
-                        <div className="relative border border-[#c7c5d3] rounded-md bg-white overflow-hidden">
-                            <textarea
-                                value={customPrompt}
-                                onChange={(e) => setCustomPrompt(e.target.value)}
-                                placeholder="Enter custom prompt or select a saved template..."
-                                className="w-full h-20 sm:h-24 p-3 sm:p-4 text-[14px] sm:text-[16px] text-[#464651] outline-none resize-none bg-transparent placeholder:text-[#c7c5d3]"
-                            />
-                            <button
-                                onClick={() => triggerAIProcessing()}
-                                className="absolute bottom-2 right-2 bg-[#61f4fd] text-[#004f53] text-[12px] sm:text-[14px] font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-[6px] hover:bg-[#3edae3] transition-colors flex items-center gap-1 shadow-sm">
-                                <span className="material-symbols-outlined text-[14px] sm:text-[16px]">magic_button</span> <span className="hidden sm:inline">Run Prompt</span>
-                            </button>
+                        <div className="flex flex-col gap-3 overflow-y-auto max-h-[105px] sm:max-h-[120px] custom-scrollbar pr-1">
+                            {customPrompts.map((promptObj, index) => (
+                                <div key={promptObj.id} className="relative border border-[#c7c5d3] rounded-md bg-white overflow-hidden shrink-0">
+                                    {customPrompts.length > 1 && (
+                                        <button 
+                                            onClick={() => setCustomPrompts(customPrompts.filter((_, i) => i !== index))}
+                                            className="absolute top-2 right-2 text-[#c7c5d3] hover:text-[#ba1a1a] transition-colors z-10"
+                                            title="Remove section"
+                                        >
+                                            <span className="material-symbols-outlined text-[16px]">close</span>
+                                        </button>
+                                    )}
+                                    <textarea
+                                        value={promptObj.text}
+                                        onChange={(e) => {
+                                            const newPrompts = [...customPrompts];
+                                            newPrompts[index].text = e.target.value;
+                                            setCustomPrompts(newPrompts);
+                                        }}
+                                        placeholder="Enter custom prompt or select a saved template..."
+                                        className="w-full h-20 sm:h-24 p-3 sm:p-4 text-[14px] sm:text-[16px] text-[#464651] outline-none resize-none bg-transparent placeholder:text-[#c7c5d3]"
+                                    />
+                                    <button
+                                        onClick={() => triggerAIProcessing(promptObj.text)}
+                                        className="absolute bottom-2 right-2 bg-[#61f4fd] text-[#004f53] text-[12px] sm:text-[14px] font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-[6px] hover:bg-[#3edae3] transition-colors flex items-center gap-1 shadow-sm">
+                                        <span className="material-symbols-outlined text-[14px] sm:text-[16px]">magic_button</span> <span className="hidden sm:inline">Run Prompt</span>
+                                    </button>
+                                </div>
+                            ))}
                         </div>
 
                         <div className="flex flex-wrap gap-2">
@@ -691,7 +728,7 @@ export default function SpeechWorkspace() {
                                         <div className="h-4 bg-[#e0e2eb] rounded w-4/5"></div>
                                     </div>
                                 ) : summaryText ? (
-                                    <div className="prose prose-sm prose-blue max-w-none">
+                                    <div className={`prose prose-sm prose-blue max-w-none ${language === 'ur-PK' ? 'font-urdu' : ''}`} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
                                         {summaryText.split('\n').map((line, i) => (
                                             <p key={i} className="mb-2">{line}</p>
                                         ))}
@@ -768,24 +805,6 @@ export default function SpeechWorkspace() {
                                 );
                             })}
                         </div>
-                        
-                        {queries && queries.length > 0 && (
-                            <div className="mt-6 border-t border-[#e0e2eb] pt-4 flex flex-col gap-3">
-                                <h4 className="font-mono text-[12px] text-[#777682] font-bold">Auto-Generated Queries:</h4>
-                                <ul className="list-disc pl-5 text-[13px] text-[#464651]">
-                                    {queries.map((q, idx) => (
-                                        <li key={idx}>{q}</li>
-                                    ))}
-                                </ul>
-                                <button
-                                    onClick={handleRunResearch}
-                                    className="mt-2 w-full bg-[#00c2cb] text-white text-[14px] font-bold py-3 rounded-md hover:bg-[#00a8b0] transition-colors flex justify-center items-center gap-2 shadow-sm"
-                                >
-                                    <span className="material-symbols-outlined text-[18px]">travel_explore</span>
-                                    Approve & Run Web Research
-                                </button>
-                            </div>
-                        )}
                     </div>
 
                 </div>

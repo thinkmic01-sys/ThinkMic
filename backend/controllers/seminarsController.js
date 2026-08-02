@@ -1,5 +1,57 @@
+const mongoose = require('mongoose');
 const Seminar = require('../models/Seminar');
 const Registration = require('../models/Registration');
+const Notification = require('../models/Notification');
+const coinWalletService = require('../services/coinWalletService');
+
+// Reserves `totalRequired` coins from the host into escrow for a seminar's reward campaign.
+// Mutates `seminar.rewardHeldAmount` and notifies the host. Throws InsufficientBalanceError
+// if the host doesn't have enough available coins.
+async function holdForSeminar(seminar, totalRequired, hostId, hostRole) {
+    if (totalRequired <= 0) return;
+
+    await coinWalletService.holdCoins(hostId, totalRequired, {
+        type: 'seminar_reward_reserved',
+        action: `Reserved for "${seminar.title}"`,
+        relatedEntityType: 'Seminar',
+        relatedEntityId: seminar._id,
+        actorId: hostId,
+        actorRole: hostRole,
+        auditAction: 'seminar_coins_reserved'
+    });
+    seminar.rewardHeldAmount += totalRequired;
+
+    await Notification.create({
+        userId: hostId,
+        type: 'seminar_coins_reserved',
+        message: `${totalRequired} coins reserved for "${seminar.title}"'s reward campaign.`,
+        link: '/app/courses/seminars'
+    });
+}
+
+// Refunds whatever is left in `seminar.rewardHeldAmount` back to the host's spendable balance.
+async function refundUnusedHold(seminar, actorId, actorRole) {
+    if (!seminar.rewardHeldAmount || seminar.rewardHeldAmount <= 0) return;
+    const amount = seminar.rewardHeldAmount;
+
+    await coinWalletService.refundHeldCoins(seminar.hostId, amount, {
+        type: 'seminar_reward_refunded',
+        action: `Unused reward funds refunded for "${seminar.title}"`,
+        relatedEntityType: 'Seminar',
+        relatedEntityId: seminar._id,
+        actorId: actorId || seminar.hostId,
+        actorRole: actorRole || 'system',
+        auditAction: 'seminar_coins_refunded'
+    });
+    seminar.rewardHeldAmount = 0;
+
+    await Notification.create({
+        userId: seminar.hostId,
+        type: 'seminar_coins_refunded',
+        message: `${amount} unused coins refunded from "${seminar.title}"'s reward campaign.`,
+        link: '/app/courses/seminars'
+    });
+}
 
 exports.getSeminars = async (req, res) => {
     try {
@@ -19,6 +71,11 @@ exports.getSeminars = async (req, res) => {
 
 exports.createSeminar = async (req, res) => {
     try {
+        const rewardEnabled = !!req.body.rewardEnabled;
+        const rewardPerUser = Math.max(0, Number(req.body.rewardPerUser) || 0);
+        const rewardMaxRecipients = Math.max(0, Number(req.body.rewardMaxRecipients) || 0);
+        const status = req.body.status || 'scheduled';
+
         const newSeminar = new Seminar({
             hostId: req.user.id,
             hostName: req.body.hostName,
@@ -33,8 +90,30 @@ exports.createSeminar = async (req, res) => {
             startTime: req.body.startTime,
             endTime: req.body.endTime,
             format: req.body.format,
-            status: req.body.status || 'scheduled'
+            status,
+            rewardEnabled,
+            rewardPerUser,
+            rewardMaxRecipients
         });
+
+        await newSeminar.validate();
+
+        if (rewardEnabled && status !== 'draft') {
+            const totalRequired = rewardPerUser * rewardMaxRecipients;
+            try {
+                await holdForSeminar(newSeminar, totalRequired, req.user.id, req.user.role);
+            } catch (err) {
+                if (err instanceof coinWalletService.InsufficientBalanceError) {
+                    return res.status(400).json({
+                        message: 'Insufficient available coins to fund this reward campaign.',
+                        required: totalRequired,
+                        available: req.user.coins
+                    });
+                }
+                throw err;
+            }
+        }
+
         const savedSeminar = await newSeminar.save();
         res.status(201).json(savedSeminar);
     } catch (err) {
@@ -45,14 +124,61 @@ exports.createSeminar = async (req, res) => {
 
 exports.updateSeminar = async (req, res) => {
     try {
-        const updatedSeminar = await Seminar.findOneAndUpdate(
-            { _id: req.params.id, hostId: req.user.id },
-            { $set: req.body },
-            { new: true }
-        );
-        if (!updatedSeminar) {
+        const seminar = await Seminar.findOne({ _id: req.params.id, hostId: req.user.id });
+        if (!seminar) {
             return res.status(404).json({ message: 'Seminar not found or unauthorized' });
         }
+
+        const wasDraft = seminar.status === 'draft';
+        const wasTerminal = ['completed', 'cancelled'].includes(seminar.status);
+        // Locked once a campaign has ever reserved or distributed funds - not just while a
+        // balance remains held, so terms can't be edited after full distribution either.
+        const hadActiveHold = seminar.rewardEnabled && (seminar.rewardHeldAmount > 0 || seminar.rewardRecipientsCount > 0);
+
+        // Once coins are reserved for a campaign, its terms are locked - the seminar
+        // must be completed/cancelled (which refunds the unused hold) before it can change.
+        const rewardFieldsChanged = ['rewardEnabled', 'rewardPerUser', 'rewardMaxRecipients'].some(
+            f => req.body[f] !== undefined && req.body[f] !== seminar[f]
+        );
+        if (hadActiveHold && rewardFieldsChanged) {
+            return res.status(400).json({ message: 'Reward campaign terms cannot be changed once coins are reserved. Cancel or complete this seminar first.' });
+        }
+
+        const fields = ['title', 'abstract', 'category', 'imageUrl', 'location', 'date', 'startTime', 'endTime', 'format', 'hostName', 'hostImageUrl', 'status'];
+        fields.forEach(f => {
+            if (req.body[f] !== undefined) seminar[f] = req.body[f];
+        });
+        if (req.body.tags !== undefined) {
+            seminar.tags = String(req.body.tags).split(',').map(t => t.trim()).filter(Boolean);
+        }
+        if (!hadActiveHold) {
+            if (req.body.rewardEnabled !== undefined) seminar.rewardEnabled = !!req.body.rewardEnabled;
+            if (req.body.rewardPerUser !== undefined) seminar.rewardPerUser = Math.max(0, Number(req.body.rewardPerUser) || 0);
+            if (req.body.rewardMaxRecipients !== undefined) seminar.rewardMaxRecipients = Math.max(0, Number(req.body.rewardMaxRecipients) || 0);
+        }
+
+        const nowTerminal = ['completed', 'cancelled'].includes(seminar.status);
+        const nowDraft = seminar.status === 'draft';
+
+        if (nowTerminal && !wasTerminal) {
+            await refundUnusedHold(seminar, req.user.id, req.user.role);
+        } else if (wasDraft && !nowDraft && seminar.rewardEnabled && seminar.rewardHeldAmount === 0) {
+            const totalRequired = seminar.rewardPerUser * seminar.rewardMaxRecipients;
+            try {
+                await holdForSeminar(seminar, totalRequired, req.user.id, req.user.role);
+            } catch (err) {
+                if (err instanceof coinWalletService.InsufficientBalanceError) {
+                    return res.status(400).json({
+                        message: 'Insufficient available coins to fund this reward campaign.',
+                        required: totalRequired,
+                        available: req.user.coins
+                    });
+                }
+                throw err;
+            }
+        }
+
+        const updatedSeminar = await seminar.save();
         res.status(200).json(updatedSeminar);
     } catch (err) {
         console.error(err);
@@ -62,10 +188,13 @@ exports.updateSeminar = async (req, res) => {
 
 exports.deleteSeminar = async (req, res) => {
     try {
-        const seminar = await Seminar.findOneAndDelete({ _id: req.params.id, hostId: req.user.id });
+        const seminar = await Seminar.findOne({ _id: req.params.id, hostId: req.user.id });
         if (!seminar) {
             return res.status(404).json({ message: 'Seminar not found or unauthorized' });
         }
+
+        await refundUnusedHold(seminar, req.user.id, req.user.role);
+        await seminar.deleteOne();
         res.status(204).send();
     } catch (err) {
         console.error(err);
@@ -84,7 +213,59 @@ exports.registerForSeminar = async (req, res) => {
         const existing = await Registration.findOne({ userId, seminarId });
         if (existing) return res.status(400).json({ message: 'Already registered' });
 
+        // Registration always succeeds if not a duplicate - reward distribution below is
+        // a best-effort atomic sub-step that never blocks the join itself.
         const registration = await Registration.create({ userId, seminarId });
+
+        if (seminar.rewardEnabled && seminar.rewardPerUser > 0) {
+            const session = await mongoose.startSession();
+            try {
+                await session.withTransaction(async () => {
+                    const claimedSeminar = await Seminar.findOneAndUpdate(
+                        { _id: seminarId, rewardRecipientsCount: { $lt: seminar.rewardMaxRecipients } },
+                        { $inc: { rewardRecipientsCount: 1, rewardHeldAmount: -seminar.rewardPerUser } },
+                        { new: true, session }
+                    );
+                    if (!claimedSeminar) return; // slots full - no reward, registration still stands
+
+                    await coinWalletService.spendHeldCoins(seminar.hostId, seminar.rewardPerUser, {
+                        actorId: userId,
+                        actorRole: req.user.role,
+                        auditAction: 'seminar_reward_spent',
+                        relatedEntityType: 'Seminar',
+                        relatedEntityId: seminar._id,
+                        auditMetadata: { relatedUserId: userId }
+                    }, session);
+
+                    await coinWalletService.creditCoins(userId, seminar.rewardPerUser, {
+                        type: 'seminar_reward_received',
+                        action: `Reward for joining "${seminar.title}"`,
+                        relatedUserId: seminar.hostId,
+                        relatedEntityType: 'Seminar',
+                        relatedEntityId: seminar._id,
+                        actorId: userId,
+                        actorRole: req.user.role,
+                        auditAction: 'seminar_reward_received'
+                    }, session);
+
+                    registration.rewardClaimed = true;
+                    registration.rewardAmount = seminar.rewardPerUser;
+                    await registration.save({ session });
+
+                    await Notification.create([{
+                        userId,
+                        type: 'seminar_reward_received',
+                        message: `You earned ${seminar.rewardPerUser} coins for joining "${seminar.title}"!`,
+                        link: '/app/courses/seminars'
+                    }], { session });
+                });
+            } catch (err) {
+                console.error('Seminar reward distribution failed (registration still stands):', err);
+            } finally {
+                session.endSession();
+            }
+        }
+
         res.status(201).json(registration);
     } catch (err) {
         console.error(err);
@@ -101,3 +282,5 @@ exports.getRegistrations = async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 };
+
+exports._internal = { holdForSeminar, refundUnusedHold };

@@ -46,6 +46,7 @@ app.use('/api/v1/transcriptions', require('./routes/transcriptionRoutes'));
 app.use('/api/v1/summaries', require('./routes/summarizationRoutes'));
 app.use('/api/v1/search', require('./routes/searchRoutes'));
 app.use('/api/v1/reports', require('./routes/reportsRoutes'));
+app.use('/api/v1/projects', require('./routes/projectsRoutes'));
 app.use('/api/v1/schemas', require('./routes/schemasRoutes'));
 app.use('/api/v1/submissions', require('./routes/submissionsRoutes'));
 app.use('/api/v1/analytics', require('./routes/analyticsRoutes'));

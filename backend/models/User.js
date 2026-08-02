@@ -47,6 +47,17 @@ const UserSchema = new mongoose.Schema({
         type: String,
         unique: true,
         sparse: true
+    },
+    referredBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
+        index: true
+    },
+    heldCoins: {
+        type: Number,
+        default: 0,
+        min: 0
     }
 }, {
     timestamps: true,

@@ -18,6 +18,8 @@ export default function ReportExport() {
         sources: true,
     });
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+    const [report, setReport] = useState(null);
+    const userId = useSelector((state) => state.auth?.user?._id || state.auth?.user?.id);
 
     useEffect(() => {
         if (!accessToken || !id) return;
@@ -26,6 +28,7 @@ export default function ReportExport() {
                 const res = await api.get(`/reports/${id}`);
                 const data = res.data;
                 if (data.report) {
+                    setReport(data.report);
                     setTitle(data.report.title || "Untitled Document");
                     if (data.report.template) setTemplate(data.report.template);
                 }
@@ -36,8 +39,60 @@ export default function ReportExport() {
         fetchReport();
     }, [id, accessToken]);
 
+    // Socket.IO for real-time report generation updates
+    useEffect(() => {
+        if (!userId) return;
+        import('socket.io-client').then(({ io }) => {
+            const socket = io('http://localhost:5000', { withCredentials: true });
+            socket.on('connect', () => socket.emit('join', userId));
+            socket.on('job_progress', (data) => {
+                if (data.type === 'report' && data.reportId === id) {
+                    setReport(prev => prev ? { ...prev, status: data.status } : prev);
+                }
+            });
+            socket.on('report_complete', (data) => {
+                if (data.reportId === id) {
+                    setReport(prev => prev ? { ...prev, status: 'completed' } : prev);
+                    // Fetch the updated report to get the content and URLs
+                    api.get(`/reports/${id}`).then(res => {
+                        if (res.data.report) setReport(res.data.report);
+                    });
+                }
+            });
+            return () => socket.disconnect();
+        });
+    }, [userId, id]);
+
     const toggleSection = (section) => {
         setSections((prev) => ({ ...prev, [section]: !prev[section] }));
+    };
+
+    const handleRegenerate = async () => {
+        try {
+            setReport(prev => ({ ...prev, status: 'generating' }));
+            await api.put(`/reports/${id}/regenerate`, {
+                title,
+                template,
+                sections
+            });
+        } catch (error) {
+            console.error("Failed to regenerate report", error);
+            // Revert state if error
+            setReport(prev => ({ ...prev, status: 'completed' }));
+        }
+    };
+
+    const handleDownload = async (type) => {
+        try {
+            const res = await api.get(`/reports/${id}/export`, {
+                params: { type, title, subtitle }
+            });
+            if (res.data.url) {
+                window.open(`http://localhost:5000${res.data.url}`, '_blank');
+            }
+        } catch (error) {
+            console.error("Failed to download", error);
+        }
     };
 
     return (
@@ -98,27 +153,19 @@ export default function ReportExport() {
                                 <div className="font-mono text-[11px] sm:text-[12px] font-bold text-[#c7c5d3] mt-2 sm:mt-3">October 24, 2026</div>
                             </div>
 
-                            {/* Conditional Sections based on State */}
-                            {sections.execSummary && (
+                            {report && report.status === 'completed' && report.content ? (
                                 <div className="mb-8 sm:mb-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                    <h3 className="text-[18px] sm:text-[22px] font-bold text-[#222777] border-b-2 border-[#e0e2eb] pb-2 mb-3 sm:mb-4">Executive Summary</h3>
-                                    <p className="text-[14px] sm:text-[15px] text-[#464651] leading-[1.7] sm:leading-[1.8] mb-4 sm:mb-5">This report synthesizes findings from 45 enterprise interviews regarding their Q4 AI adoption strategies. The data reveals a significant shift from exploratory pilot programs to operational integration, particularly in customer service and internal knowledge management workflows.</p>
-                                    <div className="bg-[#e6fbfc] rounded-lg p-4 sm:p-5 border-l-[4px] border-[#00c2cb]">
-                                        <span className="text-[10px] sm:text-[11px] text-[#006e73] font-bold uppercase tracking-wider block mb-1.5 sm:mb-2">Key Insight</span>
-                                        <p className="text-[13px] sm:text-[14px] text-[#181c22] italic leading-relaxed">"Enterprises are prioritizing data privacy and security compliance over raw capability in their latest vendor selection cycles."</p>
+                                    <div className="prose prose-sm sm:prose-base prose-slate max-w-none text-[#464651]">
+                                        <div dangerouslySetInnerHTML={{ __html: report.content.replace(/\n/g, '<br/>') }} />
                                     </div>
                                 </div>
-                            )}
-
-                            {sections.findings && (
-                                <div className="mb-8 sm:mb-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                    <h3 className="text-[18px] sm:text-[22px] font-bold text-[#222777] border-b-2 border-[#e0e2eb] pb-2 mb-3 sm:mb-4">Research Findings</h3>
-                                    <p className="text-[14px] sm:text-[15px] text-[#464651] leading-[1.7] sm:leading-[1.8] mb-3 sm:mb-4">Analysis of the transcribed data indicates three primary vectors of adoption:</p>
-                                    <ul className="list-disc pl-5 sm:pl-6 text-[14px] sm:text-[15px] text-[#464651] space-y-2 sm:space-y-3 mb-4 marker:text-[#00c2cb]">
-                                        <li><strong className="text-[#181c22]">Workflow Automation:</strong> 68% of respondents cite this as their immediate ROI driver.</li>
-                                        <li><strong className="text-[#181c22]">Predictive Analytics:</strong> A growing interest (up 22% quarter-over-quarter) in leveraging historical data.</li>
-                                        <li><strong className="text-[#181c22]">Creative Augmentation:</strong> Slower adoption, primarily localized to marketing departments.</li>
-                                    </ul>
+                            ) : (
+                                <div className="mb-8 sm:mb-10 animate-pulse space-y-4">
+                                    <div className="h-6 bg-gray-200 rounded w-1/3 mb-6"></div>
+                                    <div className="h-4 bg-gray-200 rounded w-full"></div>
+                                    <div className="h-4 bg-gray-200 rounded w-full"></div>
+                                    <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                                    <div className="h-4 bg-gray-200 rounded w-4/6 mt-6"></div>
                                 </div>
                             )}
 
@@ -203,15 +250,33 @@ export default function ReportExport() {
                                     </div>
                                 ))}
                             </div>
+                            <button
+                                onClick={handleRegenerate}
+                                disabled={report?.status !== 'completed'}
+                                className={`mt-6 w-full text-white text-[13px] sm:text-[14px] font-bold py-2 sm:py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-sm transition-colors ${report?.status === 'completed' ? 'bg-[#00c2cb] hover:bg-[#00a8b0]' : 'bg-[#e0e2eb] text-[#c7c5d3] cursor-wait'}`}
+                            >
+                                <span className={`material-symbols-outlined text-[18px] sm:text-[20px] ${report?.status !== 'completed' ? 'animate-spin' : ''}`}>
+                                    {report?.status === 'completed' ? 'refresh' : 'sync'}
+                                </span>
+                                {report?.status === 'completed' ? 'Apply & Regenerate' : 'Generating...'}
+                            </button>
                         </div>
 
                         {/* Export Actions */}
                         <div className="mt-auto flex flex-col gap-3 pb-6 lg:pb-0">
-                            <button className="w-full bg-[#222777] text-white text-[13px] sm:text-[14px] font-bold py-2.5 sm:py-3 px-6 rounded-lg shadow-sm hover:bg-[#3a3f8f] transition-colors flex items-center justify-center gap-2">
+                            <button 
+                                onClick={() => handleDownload('pdf')}
+                                disabled={!report?.pdfLocalPath}
+                                className={`w-full text-white text-[13px] sm:text-[14px] font-bold py-2.5 sm:py-3 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-colors
+                                    ${report?.pdfLocalPath ? 'bg-[#222777] hover:bg-[#3a3f8f]' : 'bg-gray-400 cursor-not-allowed'}`}>
                                 <span className="material-symbols-outlined text-[18px] sm:text-[20px]">picture_as_pdf</span>
                                 Download PDF
                             </button>
-                            <button className="w-full bg-white border border-[#222777] text-[#222777] text-[13px] sm:text-[14px] font-bold py-2.5 sm:py-3 px-6 rounded-lg hover:bg-[#f1f3fc] transition-colors flex items-center justify-center gap-2 shadow-sm">
+                            <button 
+                                onClick={() => handleDownload('docx')}
+                                disabled={!report?.docxLocalPath}
+                                className={`w-full border text-[13px] sm:text-[14px] font-bold py-2.5 sm:py-3 px-6 rounded-lg flex items-center justify-center gap-2 shadow-sm transition-colors
+                                    ${report?.docxLocalPath ? 'bg-white border-[#222777] text-[#222777] hover:bg-[#f1f3fc]' : 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'}`}>
                                 <span className="material-symbols-outlined text-[18px] sm:text-[20px]">description</span>
                                 Download Word
                             </button>

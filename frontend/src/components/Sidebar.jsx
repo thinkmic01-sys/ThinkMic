@@ -9,7 +9,7 @@ const NavLink = ({ to, icon, label, isManagement }) => {
     let isActive = location.pathname === to || location.pathname.startsWith(to + '/');
 
     // Projects/Research active state grouping
-    if (to === '/app/projects') {
+    if (to === '/app/research') {
         isActive = location.pathname.startsWith('/app/projects') || location.pathname.startsWith('/app/research');
     }
     // Management active state grouping
@@ -61,7 +61,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             {/* Main Nav Links */}
             <nav className="flex flex-col gap-1 overflow-y-auto custom-scrollbar">
                 <NavLink to="/app/dashboard" icon="dashboard" label="Dashboard" />
-                <NavLink to="/app/projects" icon="workspaces" label="Projects" />
+                <NavLink to="/app/research" icon="workspaces" label="Projects" />
                 <NavLink to="/app/reports" icon="summarize" label="Reports" />
                 <NavLink to="/app/courses" icon="school" label="Courses" />
                 <NavLink to="/app/forms" icon="groups" label="Collaboration" />

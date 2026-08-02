@@ -3,6 +3,53 @@ import { useSelector } from 'react-redux';
 import VoiceRecorder from '../../components/VoiceRecorder';
 import api from '../../services/api';
 
+const NETWORK_STATUS_CLASSES = {
+    approved: 'bg-[#e6fbfc] text-[#006e73]',
+    rejected: 'bg-[#ffdad6] text-[#ba1a1a]',
+    pending: '!border-[#c7c5d3] text-[#777682] bg-white'
+};
+
+function NetworkNode({ node }) {
+    const [expanded, setExpanded] = useState(true);
+    const hasChildren = node.children && node.children.length > 0;
+    const initials = (node.user.fullName || '?').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    const status = node.reward?.approvalStatus || 'pending';
+
+    return (
+        <div className="border border-[#e0e2eb] rounded-lg">
+            <div className="flex items-center justify-between p-3 sm:p-4">
+                <div className="flex items-center gap-3">
+                    {hasChildren ? (
+                        <button onClick={() => setExpanded(e => !e)} className="text-[#777682] hover:text-[#222777] transition-colors">
+                            <span className="material-symbols-outlined text-[20px]">{expanded ? 'expand_more' : 'chevron_right'}</span>
+                        </button>
+                    ) : (
+                        <span className="w-5" />
+                    )}
+                    <div className="w-8 h-8 rounded-full bg-[#e0e0ff] text-[#222777] flex items-center justify-center text-[11px] font-bold shrink-0">{initials}</div>
+                    <div>
+                        <p className="font-bold text-[#181c22] text-[13px] sm:text-[14px]">{node.user.fullName}</p>
+                        <p className="text-[11px] text-[#777682] font-mono">L{node.level} • {new Date(node.user.createdAt).toLocaleDateString()}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    {node.reward && (
+                        <span className="font-mono text-[12px] font-bold text-[#00c2cb]">{node.reward.coinAmount} coins</span>
+                    )}
+                    <span className={`inline-flex items-center text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wider border border-transparent ${NETWORK_STATUS_CLASSES[status]}`}>
+                        {status}
+                    </span>
+                </div>
+            </div>
+            {hasChildren && expanded && (
+                <div className="pl-6 sm:pl-8 pb-3 sm:pb-4 pr-3 sm:pr-4 space-y-2">
+                    {node.children.map(child => <NetworkNode key={child.user._id} node={child} />)}
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function Collaboration() {
     const token = useSelector(state => state.auth?.accessToken);
     const user = useSelector(state => state.auth?.user || {});
@@ -11,9 +58,15 @@ export default function Collaboration() {
     const [isCopied, setIsCopied] = useState(false);
     const referralCode = user.referralCode || 'welcome';
     const referralLink = typeof window !== 'undefined' ? `${window.location.origin}/join?ref=${referralCode}` : `https://thinkmic.com/join?ref=${referralCode}`;
-    const [stats, setStats] = useState({ total: 0, pending: 0, earned: 0, conversion: 0 });
+    const [stats, setStats] = useState({
+        totalReferrals: 0, l1Count: 0, l2Count: 0, l3Count: 0,
+        pendingCoins: 0, approvedCoins: 0, rejectedCoins: 0,
+        lifetimeReferralCoins: 0, conversionRate: 0
+    });
     const [recentReferrals, setRecentReferrals] = useState([]);
-    
+    const [pendingRewards, setPendingRewards] = useState([]);
+    const [network, setNetwork] = useState([]);
+
     // Custom Toast State
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
     const showToast = (message, type = 'success') => {
@@ -30,7 +83,8 @@ export default function Collaboration() {
                 const data = res.data;
                 if (data.stats) {
                     setStats(data.stats);
-                    setRecentReferrals(data.recent);
+                    setRecentReferrals(data.recentReferrals || []);
+                    setPendingRewards(data.pendingRewards || []);
                 }
             } catch (err) {
                 console.error("Failed to fetch referrals", err);
@@ -38,6 +92,31 @@ export default function Collaboration() {
         };
         fetchReferrals();
     }, [token]);
+
+    // Fetch Referral Network (up to L3)
+    useEffect(() => {
+        if (!token) return;
+        const fetchNetwork = async () => {
+            try {
+                const res = await api.get('/collaboration/referrals/network');
+                setNetwork(res.data.network || []);
+            } catch (err) {
+                console.error("Failed to fetch referral network", err);
+            }
+        };
+        fetchNetwork();
+    }, [token]);
+
+    const statusBadgeClasses = (status) => {
+        if (status === 'approved') return 'bg-[#e6fbfc] text-[#006e73]';
+        if (status === 'rejected') return 'bg-[#ffdad6] text-[#ba1a1a]';
+        return '!border-[#c7c5d3] text-[#777682] bg-white'; // pending
+    };
+    const statusIcon = (status) => {
+        if (status === 'approved') return 'check_circle';
+        if (status === 'rejected') return 'cancel';
+        return 'hourglass_empty';
+    };
 
     // --- STATE: DYNAMIC FORM ---
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -51,11 +130,11 @@ export default function Collaboration() {
         if (!token) return;
         const fetchSchemas = async () => {
             try {
-                const res = await api.get('/schemas?status=Active');
+                const res = await api.get('/schemas/forms');
                 const data = res.data;
-                if (data.schemas) {
-                    setSchemas(data.schemas);
-                    if (data.schemas.length > 0) setSelectedSchema(data.schemas[0]);
+                if (data.forms) {
+                    setSchemas(data.forms);
+                    if (data.forms.length > 0) setSelectedSchema(data.forms[0]);
                 }
             } catch (err) {
                 console.error("Failed to fetch schemas", err);
@@ -87,7 +166,7 @@ export default function Collaboration() {
         if (!selectedSchema) return;
         let count = 0;
         selectedSchema.fields.forEach(field => {
-            const answer = answers[field._id];
+            const answer = answers[field.id];
             if (answer && (Array.isArray(answer) ? answer.length > 0 : answer.toString().trim() !== '')) {
                 count++;
             }
@@ -103,17 +182,11 @@ export default function Collaboration() {
         });
     };
 
-    const handleFileDrop = (e) => {
-        e.preventDefault();
-        const files = Array.from(e.dataTransfer?.files || e.target.files || []);
-        setUploadedFiles(prev => [...prev, ...files]);
-    };
-
     const handleFormSubmit = async () => {
         if (!selectedSchema) return;
 
         // Basic validation for required fields
-        const missingRequired = selectedSchema.fields.some(f => f.required && (!answers[f._id] || (Array.isArray(answers[f._id]) && answers[f._id].length === 0)));
+        const missingRequired = selectedSchema.fields.some(f => f.required && (!answers[f.id] || (Array.isArray(answers[f.id]) && answers[f.id].length === 0)));
         if (missingRequired) {
             return showToast("Please fill out all required fields.", "error");
         }
@@ -122,9 +195,9 @@ export default function Collaboration() {
             // Map answers to the format expected by backend (which expects { type, value })
             const formattedAnswers = {};
             selectedSchema.fields.forEach(f => {
-                formattedAnswers[f._id] = {
+                formattedAnswers[f.id] = {
                     type: f.type.toLowerCase() === 'voice' ? 'voice' : 'text',
-                    value: Array.isArray(answers[f._id]) ? answers[f._id].join(', ') : (answers[f._id] || '')
+                    value: Array.isArray(answers[f.id]) ? answers[f.id].join(', ') : (answers[f.id] || '')
                 };
             });
 
@@ -186,30 +259,99 @@ export default function Collaboration() {
                             <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">Total Referrals</span>
                             <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">person_add</span>
                         </div>
-                        <span className="text-[28px] sm:text-[32px] font-bold text-[#222777] leading-none">{stats.total}</span>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-[28px] sm:text-[32px] font-bold text-[#222777] leading-none">{stats.totalReferrals}</span>
+                            <span className="text-[11px] sm:text-[12px] font-bold text-[#777682]">{stats.conversionRate}% conversion</span>
+                        </div>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-6 flex flex-col justify-between h-auto sm:h-[120px] gap-2 sm:gap-0">
+                        <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center text-[#777682] gap-1 sm:gap-0">
+                            <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">L1 Referrals</span>
+                            <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">looks_one</span>
+                        </div>
+                        <span className="text-[28px] sm:text-[32px] font-bold text-[#222777] leading-none">{stats.l1Count}</span>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-6 flex flex-col justify-between h-auto sm:h-[120px] gap-2 sm:gap-0">
+                        <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center text-[#777682] gap-1 sm:gap-0">
+                            <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">L2 Referrals</span>
+                            <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">looks_two</span>
+                        </div>
+                        <span className="text-[28px] sm:text-[32px] font-bold text-[#222777] leading-none">{stats.l2Count}</span>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-6 flex flex-col justify-between h-auto sm:h-[120px] gap-2 sm:gap-0">
+                        <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center text-[#777682] gap-1 sm:gap-0">
+                            <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">L3 Referrals</span>
+                            <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">looks_3</span>
+                        </div>
+                        <span className="text-[28px] sm:text-[32px] font-bold text-[#222777] leading-none">{stats.l3Count}</span>
                     </div>
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-6 flex flex-col justify-between h-auto sm:h-[120px] gap-2 sm:gap-0">
                         <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center text-[#777682] gap-1 sm:gap-0">
                             <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">Pending Coins</span>
                             <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">hourglass_empty</span>
                         </div>
-                        <span className="text-[28px] sm:text-[32px] font-bold text-[#00c2cb] leading-none">{stats.pending}</span>
+                        <span className="text-[28px] sm:text-[32px] font-bold text-[#00c2cb] leading-none">{stats.pendingCoins.toLocaleString()}</span>
                     </div>
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-6 flex flex-col justify-between h-auto sm:h-[120px] gap-2 sm:gap-0">
                         <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center text-[#777682] gap-1 sm:gap-0">
-                            <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">Earned Coins</span>
+                            <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">Approved Coins</span>
                             <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">toll</span>
                         </div>
-                        <span className="text-[28px] sm:text-[32px] font-bold text-[#00c2cb] leading-none">{stats.earned.toLocaleString()}</span>
+                        <span className="text-[28px] sm:text-[32px] font-bold text-[#00c2cb] leading-none">{stats.approvedCoins.toLocaleString()}</span>
                     </div>
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-6 flex flex-col justify-between h-auto sm:h-[120px] gap-2 sm:gap-0">
                         <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center text-[#777682] gap-1 sm:gap-0">
-                            <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">Conversion</span>
-                            <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">trending_up</span>
+                            <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">Rejected Coins</span>
+                            <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">cancel</span>
                         </div>
-                        <span className="text-[28px] sm:text-[32px] font-bold text-[#222777] leading-none">{stats.conversion}%</span>
+                        <span className="text-[28px] sm:text-[32px] font-bold text-[#ba1a1a] leading-none">{stats.rejectedCoins.toLocaleString()}</span>
+                    </div>
+                    <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-6 flex flex-col justify-between h-auto sm:h-[120px] gap-2 sm:gap-0">
+                        <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center text-[#777682] gap-1 sm:gap-0">
+                            <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">Lifetime Referral Coins</span>
+                            <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">military_tech</span>
+                        </div>
+                        <span className="text-[28px] sm:text-[32px] font-bold text-[#222777] leading-none">{stats.lifetimeReferralCoins.toLocaleString()}</span>
                     </div>
                 </div>
+
+                {/* Pending Coins Panel */}
+                {pendingRewards.length > 0 && (
+                    <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] overflow-hidden w-full flex flex-col">
+                        <div className="p-4 sm:p-6 border-b border-[#e0e2eb]">
+                            <h3 className="text-[18px] sm:text-[20px] font-bold text-[#222777]">Pending Coins</h3>
+                        </div>
+                        <div className="overflow-x-auto w-full custom-scrollbar">
+                            <table className="w-full text-left border-collapse min-w-[600px]">
+                                <thead>
+                                <tr className="bg-[#f9f9ff] border-b border-[#e0e2eb] text-[11px] sm:text-[12px] font-bold text-[#777682] uppercase tracking-wider whitespace-nowrap">
+                                    <th className="py-3 px-4 sm:px-6">Referral</th>
+                                    <th className="py-3 px-4 sm:px-6">Level</th>
+                                    <th className="py-3 px-4 sm:px-6">Registered</th>
+                                    <th className="py-3 px-4 sm:px-6">Status</th>
+                                    <th className="py-3 px-4 sm:px-6 text-right">Coins</th>
+                                </tr>
+                                </thead>
+                                <tbody className="divide-y divide-[#e0e2eb] text-[13px] sm:text-[14px]">
+                                {pendingRewards.map((r) => (
+                                    <tr key={r._id} className="hover:bg-[#f9f9ff] transition-colors">
+                                        <td className="py-3 sm:py-4 px-4 sm:px-6 font-bold text-[#181c22] whitespace-nowrap">{r.referredName}</td>
+                                        <td className="py-3 sm:py-4 px-4 sm:px-6 font-mono text-[11px] sm:text-[12px] text-[#464651]">L{r.level}</td>
+                                        <td className="py-3 sm:py-4 px-4 sm:px-6 font-mono text-[11px] sm:text-[12px] text-[#464651] whitespace-nowrap">{new Date(r.createdAt).toLocaleDateString()}</td>
+                                        <td className="py-3 sm:py-4 px-4 sm:px-6 whitespace-nowrap">
+                                            <span className={`inline-flex items-center gap-1 text-[10px] sm:text-[11px] px-2.5 py-1 rounded font-bold uppercase tracking-wider border border-transparent ${statusBadgeClasses(r.approvalStatus)}`}>
+                                                <span className="material-symbols-outlined text-[12px] sm:text-[14px]">{statusIcon(r.approvalStatus)}</span>
+                                                {r.approvalStatus}
+                                            </span>
+                                        </td>
+                                        <td className="py-3 sm:py-4 px-4 sm:px-6 text-right font-mono font-bold text-[13px] sm:text-[14px] text-[#00c2cb] whitespace-nowrap">{r.coinAmount}</td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-5 sm:p-6 lg:p-8 lg:col-span-2 flex flex-col justify-center">
@@ -247,47 +389,60 @@ export default function Collaboration() {
                 <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] overflow-hidden w-full flex flex-col">
                     <div className="flex justify-between items-center p-4 sm:p-6 border-b border-[#e0e2eb]">
                         <h3 className="text-[18px] sm:text-[20px] font-bold text-[#222777]">Recent Referrals</h3>
-                        <button className="text-[13px] sm:text-[14px] font-bold text-[#222777] flex items-center gap-1 hover:text-[#00c2cb] transition-colors">
-                            View All <span className="material-symbols-outlined text-[16px] sm:text-[18px]">arrow_forward</span>
-                        </button>
                     </div>
                     <div className="overflow-x-auto w-full custom-scrollbar">
                         <table className="w-full text-left border-collapse min-w-[600px]">
                             <thead>
                             <tr className="bg-[#f9f9ff] border-b border-[#e0e2eb] text-[11px] sm:text-[12px] font-bold text-[#777682] uppercase tracking-wider whitespace-nowrap">
                                 <th className="py-3 px-4 sm:px-6">User</th>
-                                <th className="py-3 px-4 sm:px-6">Date Invited</th>
+                                <th className="py-3 px-4 sm:px-6">Level</th>
+                                <th className="py-3 px-4 sm:px-6">Date Registered</th>
                                 <th className="py-3 px-4 sm:px-6">Status</th>
-                                <th className="py-3 px-4 sm:px-6 text-right">Rewards Earned</th>
+                                <th className="py-3 px-4 sm:px-6 text-right">Rewards</th>
                             </tr>
                             </thead>
                             <tbody className="divide-y divide-[#e0e2eb] text-[13px] sm:text-[14px]">
-                            {recentReferrals.map((user) => (
-                                <tr key={user.id} className="hover:bg-[#f9f9ff] transition-colors">
-                                    <td className="py-3 sm:py-4 px-4 sm:px-6">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-8 h-8 rounded flex items-center justify-center text-[11px] sm:text-[12px] font-bold shrink-0 ${user.status === 'Invited' ? 'bg-[#f1f3fc] border border-[#c7c5d3] text-[#777682] border-dashed' : 'bg-[#e0e0ff] text-[#222777]'}`}>{user.initials}</div>
-                                            <span className="font-bold text-[#181c22] whitespace-nowrap">{user.name}</span>
-                                        </div>
-                                    </td>
-                                    <td className="py-3 sm:py-4 px-4 sm:px-6 font-mono text-[11px] sm:text-[12px] text-[#464651] whitespace-nowrap">{user.date}</td>
-                                    <td className="py-3 sm:py-4 px-4 sm:px-6 whitespace-nowrap">
-                                            <span className={`inline-flex items-center gap-1 text-[10px] sm:text-[11px] px-2.5 py-1 rounded font-bold uppercase tracking-wider border border-transparent
-                                                ${user.status === 'Premium' ? 'bg-[#e0e0ff] text-[#070963]' : ''}
-                                                ${user.status === 'Active' ? 'bg-[#e6fbfc] text-[#006e73]' : ''}
-                                                ${user.status === 'Invited' ? '!border-[#c7c5d3] text-[#777682] bg-white' : ''}`}
-                                            >
-                                                {user.status === 'Premium' && <span className="material-symbols-outlined text-[12px] sm:text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>workspace_premium</span>}
-                                                {user.status === 'Active' && <span className="material-symbols-outlined text-[12px] sm:text-[14px]">check_circle</span>}
-                                                {user.status === 'Invited' && <span className="material-symbols-outlined text-[12px] sm:text-[14px]">mail</span>}
-                                                {user.status}
+                            {recentReferrals.length === 0 ? (
+                                <tr><td colSpan={5} className="py-8 text-center text-[#777682] text-[13px]">No referrals yet.</td></tr>
+                            ) : recentReferrals.map((r) => {
+                                const initials = (r.referredName || '?').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                                return (
+                                    <tr key={r._id} className="hover:bg-[#f9f9ff] transition-colors">
+                                        <td className="py-3 sm:py-4 px-4 sm:px-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded flex items-center justify-center text-[11px] sm:text-[12px] font-bold shrink-0 bg-[#e0e0ff] text-[#222777]">{initials}</div>
+                                                <span className="font-bold text-[#181c22] whitespace-nowrap">{r.referredName}</span>
+                                            </div>
+                                        </td>
+                                        <td className="py-3 sm:py-4 px-4 sm:px-6 font-mono text-[11px] sm:text-[12px] text-[#464651]">L{r.level}</td>
+                                        <td className="py-3 sm:py-4 px-4 sm:px-6 font-mono text-[11px] sm:text-[12px] text-[#464651] whitespace-nowrap">{new Date(r.createdAt).toLocaleDateString()}</td>
+                                        <td className="py-3 sm:py-4 px-4 sm:px-6 whitespace-nowrap">
+                                            <span className={`inline-flex items-center gap-1 text-[10px] sm:text-[11px] px-2.5 py-1 rounded font-bold uppercase tracking-wider border border-transparent ${statusBadgeClasses(r.approvalStatus)}`}>
+                                                <span className="material-symbols-outlined text-[12px] sm:text-[14px]">{statusIcon(r.approvalStatus)}</span>
+                                                {r.approvalStatus}
                                             </span>
-                                    </td>
-                                    <td className={`py-3 sm:py-4 px-4 sm:px-6 text-right font-mono font-bold text-[13px] sm:text-[14px] whitespace-nowrap ${user.rewards === '-' ? 'text-[#777682]' : 'text-[#00c2cb]'}`}>{user.rewards}</td>
-                                </tr>
-                            ))}
+                                        </td>
+                                        <td className={`py-3 sm:py-4 px-4 sm:px-6 text-right font-mono font-bold text-[13px] sm:text-[14px] whitespace-nowrap ${r.approvalStatus === 'approved' ? 'text-[#00c2cb]' : 'text-[#777682]'}`}>{r.coinAmount}</td>
+                                    </tr>
+                                );
+                            })}
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                {/* Referral Network */}
+                <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] overflow-hidden w-full flex flex-col">
+                    <div className="p-4 sm:p-6 border-b border-[#e0e2eb]">
+                        <h3 className="text-[18px] sm:text-[20px] font-bold text-[#222777]">Referral Network</h3>
+                        <p className="text-[12px] sm:text-[13px] text-[#777682] mt-1">Your referral hierarchy, up to 3 levels deep.</p>
+                    </div>
+                    <div className="p-4 sm:p-6 space-y-2">
+                        {network.length === 0 ? (
+                            <div className="text-center py-6 text-[#777682] text-[13px]">No referral network yet.</div>
+                        ) : (
+                            network.map(node => <NetworkNode key={node.user._id} node={node} />)
+                        )}
                     </div>
                 </div>
             </div>
@@ -354,20 +509,20 @@ export default function Collaboration() {
 
                                 {/* Dynamic Fields Render */}
                                 {selectedSchema?.fields?.map((field) => (
-                                    <div key={field._id} className={`bg-white rounded-lg border border-[#e0e2eb] p-4 sm:p-6 shadow-sm ${field.type.toLowerCase() === 'voice' ? 'border-l-[3px] border-l-[#6bf6ff]' : ''}`}>
+                                    <div key={field.id} className={`bg-white rounded-lg border border-[#e0e2eb] p-4 sm:p-6 shadow-sm ${field.type.toLowerCase() === 'voice' ? 'border-l-[3px] border-l-[#6bf6ff]' : ''}`}>
                                         <label className="block font-mono text-[11px] font-bold text-[#181c22] mb-2 uppercase tracking-wider">
                                             {field.label} {field.required && <span className="text-[#ba1a1a] font-sans">*</span>}
                                         </label>
-                                        
+
                                         {/* Field Types Routing */}
                                         {field.type.toLowerCase() === 'text' && (
-                                            <input type="text" value={answers[field._id] || ''} onChange={(e) => handleAnswerChange(field._id, e.target.value)} className="w-full border border-[#c7c5d3] rounded p-2.5 text-[14px] outline-none focus:border-[#222777]" />
+                                            <input type="text" value={answers[field.id] || ''} onChange={(e) => handleAnswerChange(field.id, e.target.value)} className="w-full border border-[#c7c5d3] rounded p-2.5 text-[14px] outline-none focus:border-[#222777]" />
                                         )}
                                         {field.type.toLowerCase() === 'textarea' && (
-                                            <textarea value={answers[field._id] || ''} onChange={(e) => handleAnswerChange(field._id, e.target.value)} className="w-full border border-[#c7c5d3] rounded p-2.5 text-[14px] outline-none focus:border-[#222777] h-24 resize-none" />
+                                            <textarea value={answers[field.id] || ''} onChange={(e) => handleAnswerChange(field.id, e.target.value)} className="w-full border border-[#c7c5d3] rounded p-2.5 text-[14px] outline-none focus:border-[#222777] h-24 resize-none" />
                                         )}
                                         {field.type.toLowerCase() === 'select' && (
-                                            <select value={answers[field._id] || ''} onChange={(e) => handleAnswerChange(field._id, e.target.value)} className="w-full border border-[#c7c5d3] rounded p-2.5 text-[14px] outline-none focus:border-[#222777] cursor-pointer bg-white">
+                                            <select value={answers[field.id] || ''} onChange={(e) => handleAnswerChange(field.id, e.target.value)} className="w-full border border-[#c7c5d3] rounded p-2.5 text-[14px] outline-none focus:border-[#222777] cursor-pointer bg-white">
                                                 <option value="">Select an option</option>
                                                 {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                                             </select>
@@ -376,11 +531,11 @@ export default function Collaboration() {
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                                                 {field.options?.map(opt => (
                                                     <label key={opt} className="flex items-center gap-2 cursor-pointer">
-                                                        <input type={field.allowMultiple === false ? "radio" : "checkbox"} name={`field_${field._id}`} checked={(answers[field._id] || []).includes(opt)} onChange={() => {
+                                                        <input type={field.allowMultiple === false ? "radio" : "checkbox"} name={`field_${field.id}`} checked={(answers[field.id] || []).includes(opt)} onChange={() => {
                                                             if (field.allowMultiple === false) {
-                                                                handleAnswerChange(field._id, [opt]);
+                                                                handleAnswerChange(field.id, [opt]);
                                                             } else {
-                                                                handleCheckboxChange(field._id, opt);
+                                                                handleCheckboxChange(field.id, opt);
                                                             }
                                                         }} className={`w-4 h-4 text-[#222777] ${field.allowMultiple === false ? 'rounded-full' : ''}`} />
                                                         <span className="text-[14px] text-[#181c22]">{opt}</span>
@@ -390,21 +545,21 @@ export default function Collaboration() {
                                         )}
                                         {field.type.toLowerCase() === 'voice' && (
                                             <VoiceRecorder
-                                                value={answers[field._id] || ''}
-                                                onChange={(val) => handleAnswerChange(field._id, val)}
+                                                value={answers[field.id] || ''}
+                                                onChange={(val) => handleAnswerChange(field.id, val)}
                                                 prompt={field.prompt}
                                             />
                                         )}
                                         {field.type.toLowerCase() === 'date' && (
-                                            <input type="date" value={answers[field._id] || ''} onChange={(e) => handleAnswerChange(field._id, e.target.value)} className="border border-[#c7c5d3] rounded p-2 text-[14px] outline-none focus:border-[#222777]" />
+                                            <input type="date" value={answers[field.id] || ''} onChange={(e) => handleAnswerChange(field.id, e.target.value)} className="border border-[#c7c5d3] rounded p-2 text-[14px] outline-none focus:border-[#222777]" />
                                         )}
                                         {field.type.toLowerCase() === 'number' && (
-                                            <input type="number" value={answers[field._id] || ''} onChange={(e) => handleAnswerChange(field._id, e.target.value)} className="w-full border border-[#c7c5d3] rounded p-2.5 text-[14px] outline-none focus:border-[#222777]" />
+                                            <input type="number" value={answers[field.id] || ''} onChange={(e) => handleAnswerChange(field.id, e.target.value)} className="w-full border border-[#c7c5d3] rounded p-2.5 text-[14px] outline-none focus:border-[#222777]" />
                                         )}
                                         {field.type.toLowerCase() === 'rating' && (
                                             <div className="flex gap-2">
                                                 {[1,2,3,4,5].map(star => (
-                                                    <button key={star} onClick={() => handleAnswerChange(field._id, star)} className={`material-symbols-outlined text-[28px] ${(answers[field._id] >= star) ? 'text-[#e06c43]' : 'text-[#c7c5d3]'}`} style={{ fontVariationSettings: (answers[field._id] >= star) ? "'FILL' 1" : "'FILL' 0" }}>star</button>
+                                                    <button key={star} onClick={() => handleAnswerChange(field.id, star)} className={`material-symbols-outlined text-[28px] ${(answers[field.id] >= star) ? 'text-[#e06c43]' : 'text-[#c7c5d3]'}`} style={{ fontVariationSettings: (answers[field.id] >= star) ? "'FILL' 1" : "'FILL' 0" }}>star</button>
                                                 ))}
                                             </div>
                                         )}

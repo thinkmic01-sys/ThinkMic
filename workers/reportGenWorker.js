@@ -26,14 +26,24 @@ const worker = new Worker('report-generation', async (job) => {
         let summaryText = '';
         let transcriptText = '';
 
-        if (report.summaryIds && report.summaryIds.length > 0) {
-            const summaries = await Summary.find({ _id: { $in: report.summaryIds } });
-            summaryText = summaries.map(s => s.summaryText).join('\n\n---\n\n');
+        if (report.summaryId) {
+            const summary = await Summary.findById(report.summaryId);
+            if (summary) {
+                summaryText = summary.summaryText;
+            }
         }
 
-        if (report.transcriptIds && report.transcriptIds.length > 0) {
-            const transcripts = await Transcript.find({ _id: { $in: report.transcriptIds } });
-            transcriptText = transcripts.map(t => t.text).join('\n\n---\n\n');
+        if (report.searchSessionIds && report.searchSessionIds.length > 0) {
+            const SearchResult = require('../backend/models/SearchResult');
+            const searchResults = await SearchResult.find({ _id: { $in: report.searchSessionIds } });
+            
+            transcriptText = searchResults.map(sr => {
+                let context = `Query: ${sr.query}\n`;
+                sr.results.forEach(res => {
+                    context += `- ${res.title}: ${res.snippet}\n`;
+                });
+                return context;
+            }).join('\n\n---\n\n');
         }
 
         // 3. Generate report content — Try ChatGPT first, fallback to Claude
@@ -44,21 +54,31 @@ const worker = new Worker('report-generation', async (job) => {
             console.log(`[Worker] Report generated via Anthropic (Claude)`);
         } catch (claudeError) {
             console.warn(`[Worker] Anthropic failed, falling back to OpenAI:`, claudeError.message);
-            const result = await openaiService.generateSummary(
-                `Generate a ${templateType || 'comprehensive'} report from the following:\n\nSummaries:\n${summaryText}\n\nTranscripts:\n${transcriptText}`
+            const result = await openaiService.generateReport(
+                summaryText,
+                transcriptText,
+                templateType || 'comprehensive',
+                report.sections
             );
-            reportContent = result.summary;
+            reportContent = result.reportContent;
             console.log(`[Worker] Report generated via OpenAI fallback`);
         }
 
-        // 4. Update report in DB
+        // 4. Generate PDF and DOCX
+        const { generatePDF, generateDOCX } = require('./utils/documentGenerator');
+        const pdfLocalPath = await generatePDF(reportId, report.title, reportContent);
+        const docxLocalPath = await generateDOCX(reportId, report.title, reportContent);
+
+        // 5. Update report in DB
         await Report.findByIdAndUpdate(reportId, {
             content: reportContent,
+            pdfLocalPath,
+            docxLocalPath,
             status: 'completed',
             completedAt: new Date()
         });
 
-        // 5. Emit success to user
+        // 6. Emit success to user
         io.to(userId).emit('report_complete', { reportId, status: 'completed' });
 
         console.log(`[Worker] Finished report generation for report ${reportId}`);

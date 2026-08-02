@@ -10,6 +10,14 @@ const registrationSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Seminar',
         required: true
+    },
+    rewardClaimed: {
+        type: Boolean,
+        default: false
+    },
+    rewardAmount: {
+        type: Number,
+        default: 0
     }
 }, {
     timestamps: true

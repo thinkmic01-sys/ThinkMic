@@ -13,4 +13,10 @@ router.route('/:id')
     .put(notesController.updateNote)
     .delete(notesController.deleteNote);
 
+router.route('/:id/insights')
+    .post(notesController.generateInsights);
+
+router.route('/:id/export')
+    .get(notesController.exportNote);
+
 module.exports = router;

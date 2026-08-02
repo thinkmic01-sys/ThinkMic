@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from 'react-redux';
 import api from '../../services/api';
 import { io } from 'socket.io-client';
 
 export default function ResearchResults() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const projectId = queryParams.get('projectId');
+    
     const accessToken = useSelector((state) => state.auth?.accessToken);
     const userId = useSelector((state) => state.auth?.user?.id);
     
@@ -159,6 +163,27 @@ export default function ResearchResults() {
     const handleSelectQuery = (id) => {
         setActiveQueryId(id);
         if (window.innerWidth < 768) setIsQueriesOpen(false); // Close drawer on mobile
+    };
+
+    const handleProceedToReport = async () => {
+        if (selectedResultIds.length === 0) return;
+        try {
+            const payload = {
+                title: "Research Report",
+                sessionIds: [activeSessionId],
+                template: "academic",
+                sections: { summary: true, transcript: false, research: true, sources: true }
+            };
+            if (projectId) {
+                payload.projectId = projectId;
+            }
+            const res = await api.post('/reports', payload);
+            if (res.data.reportId) {
+                navigate(`/app/reports/${res.data.reportId}`);
+            }
+        } catch (err) {
+            console.error("Failed to generate report", err);
+        }
     };
 
     const handleSelectSource = (id) => {
@@ -424,7 +449,7 @@ export default function ResearchResults() {
                         </div>
                     </div>
                     <button
-                        onClick={() => navigate('/app/reports/preview')}
+                        onClick={handleProceedToReport}
                         disabled={selectedResultIds.length === 0}
                         className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-[12px] sm:text-sm font-bold shadow-sm transition-colors flex items-center gap-1 sm:gap-2
                             ${selectedResultIds.length > 0 ? 'bg-primary text-white hover:bg-[#3a3f8f] cursor-pointer' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}

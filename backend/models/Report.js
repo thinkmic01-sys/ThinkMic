@@ -7,6 +7,11 @@ const ReportSchema = new mongoose.Schema({
         required: true,
         index: true
     },
+    projectId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Project',
+        index: true
+    },
     title: {
         type: String,
         required: true
@@ -39,9 +44,12 @@ const ReportSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'generating', 'ready', 'failed'],
+        enum: ['pending', 'generating', 'ready', 'failed', 'completed'],
         required: true,
         index: true
+    },
+    content: {
+        type: String
     },
     pdfLocalPath: { // Adapted from pdfS3Key
         type: String

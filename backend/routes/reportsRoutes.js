@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
-const { listUserReports, createAndGenerateReport, getReport, getReportStatus } = require('../controllers/reportsController');
+const { listUserReports, createAndGenerateReport, getReport, getReportStatus, regenerateReport, exportReport, deleteReport } = require('../controllers/reportsController');
 
 router.use(protect);
 
@@ -9,5 +9,8 @@ router.get('/', listUserReports);
 router.post('/', createAndGenerateReport);
 router.get('/:id', getReport);
 router.get('/:id/status', getReportStatus);
+router.put('/:id/regenerate', regenerateReport);
+router.get('/:id/export', exportReport);
+router.delete('/:id', deleteReport);
 
 module.exports = router;

@@ -76,6 +76,13 @@ export default function NearbySeminars() {
     const navigate = useNavigate();
     const token = useSelector(state => state.auth?.accessToken);
     const [seminars, setSeminars] = useState([]);
+    const [registeredIds, setRegisteredIds] = useState(new Set());
+    const [registeringId, setRegisteringId] = useState(null);
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast(prev => ({ ...prev, show: false })), 4000);
+    };
 
     useEffect(() => {
         const fetchSeminars = async () => {
@@ -86,8 +93,35 @@ export default function NearbySeminars() {
                 console.error("Failed to fetch seminars", error);
             }
         };
+        const fetchRegistrations = async () => {
+            try {
+                const response = await api.get('/seminars/registrations');
+                setRegisteredIds(new Set(response.data.map(r => r.seminarId)));
+            } catch (error) {
+                console.error("Failed to fetch registrations", error);
+            }
+        };
         fetchSeminars();
+        fetchRegistrations();
     }, [token]);
+
+    const handleRegister = async (seminar) => {
+        if (registeredIds.has(seminar._id) || registeringId) return;
+        setRegisteringId(seminar._id);
+        try {
+            const res = await api.post(`/seminars/${seminar._id}/register`);
+            setRegisteredIds(prev => new Set(prev).add(seminar._id));
+            if (res.data?.rewardClaimed) {
+                showToast(`You joined and earned +${res.data.rewardAmount} coins!`, 'success');
+            } else {
+                showToast('You are now registered for this seminar!', 'success');
+            }
+        } catch (error) {
+            showToast(error.response?.data?.message || 'Failed to register for this seminar.', 'error');
+        } finally {
+            setRegisteringId(null);
+        }
+    };
 
     return (
         <div className="flex flex-col h-[calc(100vh-64px)] w-full bg-[#f9f9ff] font-sans">
@@ -163,8 +197,16 @@ export default function NearbySeminars() {
                                     <div className="flex items-center gap-1.5 font-mono text-[10px] sm:text-[11px] font-semibold text-[#777682]">
                                         <span className="material-symbols-outlined text-[14px]">calendar_today</span> {new Date(seminar.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • {seminar.startTime} - {seminar.endTime}
                                     </div>
-                                    <button className={`w-full sm:w-auto px-5 py-2 sm:py-1.5 rounded text-[12px] font-bold transition-colors text-center ${idx === 0 ? 'bg-[#222777] text-white hover:bg-[#3a3f8f] shadow-sm' : 'bg-white border border-[#222777] text-[#222777] hover:bg-[#f1f3fc]'}`}>
-                                        {seminar.format === 'Pre-Recorded' ? 'Watch Now' : 'Register'}
+                                    <button
+                                        onClick={() => handleRegister(seminar)}
+                                        disabled={registeredIds.has(seminar._id) || registeringId === seminar._id}
+                                        className={`w-full sm:w-auto px-5 py-2 sm:py-1.5 rounded text-[12px] font-bold transition-colors text-center disabled:opacity-70 disabled:cursor-not-allowed ${registeredIds.has(seminar._id) ? 'bg-[#e6fbfc] border border-[#00c2cb] text-[#006e73]' : idx === 0 ? 'bg-[#222777] text-white hover:bg-[#3a3f8f] shadow-sm' : 'bg-white border border-[#222777] text-[#222777] hover:bg-[#f1f3fc]'}`}
+                                    >
+                                        {registeredIds.has(seminar._id)
+                                            ? 'Registered'
+                                            : registeringId === seminar._id
+                                                ? 'Joining...'
+                                                : seminar.format === 'Pre-Recorded' ? 'Watch Now' : 'Register'}
                                     </button>
                                 </div>
                             </div>
@@ -209,6 +251,19 @@ export default function NearbySeminars() {
                         </div>
                         <p className="text-[9px] sm:text-[11px] font-mono text-[#464651] leading-relaxed hidden sm:block">High concentration of events in the innovation district this week.</p>
                     </div>
+                </div>
+            </div>
+
+            {/* --- CUSTOM TOAST NOTIFICATION --- */}
+            <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#e6fbfc] border-[#00c2cb] text-[#006e73]'}`}>
+                    <span className="material-symbols-outlined text-[20px]">
+                        {toast.type === 'error' ? 'error' : 'check_circle'}
+                    </span>
+                    <span className="text-[13px] sm:text-[14px] font-bold">{toast.message}</span>
+                    <button onClick={() => setToast(prev => ({ ...prev, show: false }))} className="ml-2 hover:opacity-70">
+                        <span className="material-symbols-outlined text-[18px]">close</span>
+                    </button>
                 </div>
             </div>
         </div>

@@ -8,6 +8,7 @@ export default function ReportsLibrary() {
     const accessToken = useSelector((state) => state.auth?.accessToken);
 
     const [reports, setReports] = useState([]);
+    const [customAlert, setCustomAlert] = useState(null);
 
     useEffect(() => {
         if (!accessToken) return;
@@ -20,7 +21,7 @@ export default function ReportsLibrary() {
                         id: r._id,
                         title: r.title || 'Untitled Report',
                         date: r.createdAt,
-                        status: r.status, // 'generating', 'ready', 'failed'
+                        status: r.status, // 'generating', 'ready', 'failed', 'completed'
                         format: r.format || 'Standard'
                     })));
                 }
@@ -31,15 +32,46 @@ export default function ReportsLibrary() {
         fetchReports();
     }, [accessToken]);
 
+    const [activeMenu, setActiveMenu] = useState(null);
+
     const handleRowClick = (reportId, status) => {
-        if (status === 'ready') {
+        if (status === 'ready' || status === 'completed') {
             navigate(`/app/reports/${reportId}`);
         } else if (status === 'failed') {
-            alert("This report failed to generate. Please retry the generation process.");
+            setCustomAlert({
+                title: 'Generation Failed',
+                message: 'This report failed to generate. Please retry the generation process.'
+            });
         } else {
-            alert("This report is currently generating. Please wait.");
+            setCustomAlert({
+                title: 'Report Generating',
+                message: 'This report is currently generating. Please wait.'
+            });
         }
     };
+
+    const handleEdit = (reportId) => {
+        navigate(`/app/reports/${reportId}`);
+    };
+
+    const handleDelete = async (reportId) => {
+        try {
+            await api.delete(`/reports/${reportId}`);
+            setReports(prev => prev.filter(r => r.id !== reportId));
+        } catch (error) {
+            setCustomAlert({
+                title: 'Delete Failed',
+                message: 'Failed to delete the report. Please try again.'
+            });
+        }
+    };
+
+    // Close menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = () => setActiveMenu(null);
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
 
     return (
         <div className="flex-1 w-full bg-[#f9f9ff] p-4 sm:p-6 md:p-8 flex justify-center h-[calc(100vh-64px)] overflow-y-auto font-sans">
@@ -106,10 +138,28 @@ export default function ReportsLibrary() {
                                                 {report.status}
                                             </span>
                                         </td>
-                                        <td className="py-3 px-4 sm:py-4 sm:px-6 text-right">
-                                            <button className="text-[#c7c5d3] hover:text-[#222777] transition-colors p-1 rounded hover:bg-[#f1f3fc]">
+                                        <td className="py-3 px-4 sm:py-4 sm:px-6 text-right relative">
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === report.id ? null : report.id); }}
+                                                className="text-[#c7c5d3] hover:text-[#222777] transition-colors p-1 rounded hover:bg-[#f1f3fc]">
                                                 <span className="material-symbols-outlined text-[18px] sm:text-[20px]">more_vert</span>
                                             </button>
+                                            {activeMenu === report.id && (
+                                                <div className="absolute right-8 top-10 bg-white border border-[#e0e2eb] rounded-lg shadow-lg py-1 w-32 z-10 animate-in fade-in zoom-in duration-200">
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); handleEdit(report.id); setActiveMenu(null); }}
+                                                        className="w-full text-left px-4 py-2 text-[13px] text-[#464651] hover:bg-[#f9f9ff] hover:text-[#222777] transition-colors flex items-center gap-2">
+                                                        <span className="material-symbols-outlined text-[16px]">edit</span>
+                                                        Edit
+                                                    </button>
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); handleDelete(report.id); setActiveMenu(null); }}
+                                                        className="w-full text-left px-4 py-2 text-[13px] text-[#ba1a1a] hover:bg-[#ffdad6]/30 transition-colors flex items-center gap-2">
+                                                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -136,6 +186,33 @@ export default function ReportsLibrary() {
                     </div>
                 )}
             </div>
+
+            {/* Custom Alert Modal */}
+            {customAlert && (
+                <div className="fixed inset-0 bg-[#181c22]/50 flex items-center justify-center z-[100] backdrop-blur-sm px-4">
+                    <div className="bg-white rounded-xl shadow-lg w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="px-6 py-5 border-b border-[#e0e2eb] flex items-center gap-3">
+                            <span className={`material-symbols-outlined text-[24px] ${customAlert.title === 'Generation Failed' ? 'text-[#ba1a1a]' : 'text-[#222777]'}`}>
+                                {customAlert.title === 'Generation Failed' ? 'error' : 'info'}
+                            </span>
+                            <h3 className="text-[16px] font-bold text-[#181c22]">{customAlert.title}</h3>
+                        </div>
+                        <div className="px-6 py-5">
+                            <p className="text-[14px] text-[#464651] leading-relaxed">
+                                {customAlert.message}
+                            </p>
+                        </div>
+                        <div className="px-6 py-4 bg-[#f9f9ff] flex justify-end">
+                            <button
+                                onClick={() => setCustomAlert(null)}
+                                className="bg-[#222777] text-white px-5 py-2 rounded-lg text-[13px] font-bold shadow-sm hover:bg-[#3a3f8f] transition-colors"
+                            >
+                                OK
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

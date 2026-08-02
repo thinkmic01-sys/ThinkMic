@@ -127,6 +127,7 @@ function LocationMapPicker({ locationString, setLocationString }) {
 
 export default function CreateSeminar() {
     const navigate = useNavigate();
+    
     const user = useSelector(state => state.auth?.user);
     const token = useSelector(state => state.auth?.accessToken);
     const userName = user?.name || 'Dr. A. Turing';
@@ -148,6 +149,11 @@ export default function CreateSeminar() {
     const [startTime, setStartTime] = useState('14:00');
     const [endTime, setEndTime] = useState('15:30');
     const [format, setFormat] = useState('Live Broadcast');
+    const [rewardEnabled, setRewardEnabled] = useState(false);
+    const [rewardPerUser, setRewardPerUser] = useState(0);
+    const [rewardMaxRecipients, setRewardMaxRecipients] = useState(0);
+    const availableCoins = user?.coins || 0;
+    const totalRewardRequired = (Number(rewardPerUser) || 0) * (Number(rewardMaxRecipients) || 0);
 
     // --- CUSTOM TOAST STATE ---
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -195,7 +201,7 @@ export default function CreateSeminar() {
         if (!title) return alert("Please enter a seminar title.");
         
         try {
-            await api.post('/seminars', {
+            const payload = {
                 title,
                 abstract,
                 category,
@@ -208,10 +214,16 @@ export default function CreateSeminar() {
                 location: locationInput,
                 hostName,
                 hostImageUrl,
-                status: statusToSave
-            });
+                status: statusToSave,
+                rewardEnabled,
+                rewardPerUser: Number(rewardPerUser) || 0,
+                rewardMaxRecipients: Number(rewardMaxRecipients) || 0
+            };
+            await api.post('/seminars', payload);
             showToast(`Seminar "${title}" ${statusToSave === 'scheduled' ? 'scheduled' : 'saved as draft'} successfully!`, 'success');
-            setTimeout(() => navigate('/app/projects'), 2000);
+            setTimeout(() => {
+                navigate('/app/courses/seminars');
+            }, 2000);
         } catch (error) {
             console.error(error);
             const errData = error.response?.data || {};
@@ -500,6 +512,63 @@ export default function CreateSeminar() {
                                     </div>
                                 ))}
                             </div>
+                        </div>
+
+                        {/* Step 4: Reward Campaign */}
+                        <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-5 sm:p-6 md:p-8">
+                            <div className="flex items-center justify-between mb-5 sm:mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#eef0f9] text-[#222777] font-bold flex items-center justify-center text-[13px] sm:text-[14px] shrink-0">4</div>
+                                    <h2 className="text-[18px] sm:text-[20px] font-bold text-[#222777]">Reward Campaign</h2>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setRewardEnabled(v => !v)}
+                                    className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${rewardEnabled ? 'bg-[#00c2cb]' : 'bg-[#c7c5d3]'}`}
+                                >
+                                    <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${rewardEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                                </button>
+                            </div>
+
+                            {rewardEnabled && (
+                                <div className="space-y-4 sm:space-y-5 border-t border-[#e0e2eb] pt-5 sm:pt-6">
+                                    <div className="flex flex-col sm:flex-row gap-4 sm:gap-5">
+                                        <div className="flex-1">
+                                            <label className="block text-[11px] sm:text-[12px] font-bold text-[#464651] mb-2 uppercase tracking-wider">Reward Per User (coins)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={rewardPerUser}
+                                                onChange={(e) => setRewardPerUser(e.target.value)}
+                                                className="w-full border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none transition-shadow"
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="block text-[11px] sm:text-[12px] font-bold text-[#464651] mb-2 uppercase tracking-wider">Max Recipients</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={rewardMaxRecipients}
+                                                onChange={(e) => setRewardMaxRecipients(e.target.value)}
+                                                className="w-full border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none transition-shadow"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className={`flex items-center justify-between rounded-lg p-4 border ${totalRewardRequired > availableCoins ? 'bg-[#ffdad6] border-[#ffb4ab]' : 'bg-[#f1f3fc] border-[#e0e2eb]'}`}>
+                                        <div>
+                                            <p className="text-[11px] font-bold uppercase tracking-wider text-[#464651]">Total Coins Required</p>
+                                            <p className={`text-[20px] font-bold ${totalRewardRequired > availableCoins ? 'text-[#ba1a1a]' : 'text-[#222777]'}`}>{totalRewardRequired.toLocaleString()}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[11px] font-bold uppercase tracking-wider text-[#464651]">Your Available Coins</p>
+                                            <p className="text-[16px] font-bold text-[#181c22]">{availableCoins.toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                    {totalRewardRequired > availableCoins && (
+                                        <p className="text-[12px] text-[#ba1a1a] font-semibold">You don't have enough coins to fund this reward campaign. Reduce the reward or purchase more coins.</p>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                     </div>

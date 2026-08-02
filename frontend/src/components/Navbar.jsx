@@ -3,6 +3,19 @@ import { useSelector } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
 import api from '../services/api';
 
+const NOTIFICATION_META = {
+    reminder: { icon: 'schedule', color: 'text-[#222777] bg-[#eef0f9]', title: 'Reminder' },
+    system: { icon: 'info', color: 'text-[#464651] bg-[#f1f3fc]', title: 'System' },
+    update: { icon: 'campaign', color: 'text-[#222777] bg-[#eef0f9]', title: 'Update' },
+    referral_pending: { icon: 'hourglass_empty', color: 'text-[#b45309] bg-[#fff8e1]', title: 'Referral Pending' },
+    referral_approved: { icon: 'check_circle', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Referral Approved' },
+    referral_rejected: { icon: 'cancel', color: 'text-[#ba1a1a] bg-[#ffdad6]', title: 'Referral Rejected' },
+    seminar_reward_received: { icon: 'redeem', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Reward Received' },
+    seminar_coins_reserved: { icon: 'lock_clock', color: 'text-[#222777] bg-[#eef0f9]', title: 'Coins Reserved' },
+    seminar_coins_refunded: { icon: 'replay', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Coins Refunded' }
+};
+const DEFAULT_NOTIFICATION_META = { icon: 'notifications', color: 'text-[#777682] bg-[#f1f3fc]', title: 'Notification' };
+
 export default function Navbar({ onMenuClick }) {
     const { user, isAuthenticated, accessToken } = useSelector((state) => state.auth);
     const location = useLocation();
@@ -43,11 +56,11 @@ export default function Navbar({ onMenuClick }) {
         if (location.pathname.includes('/app/projects') || location.pathname.includes('/app/research')) {
             return (
                 <div className="flex space-x-4 sm:space-x-6 h-full items-center overflow-x-auto hide-scrollbar">
-                    <Link to="/app/projects" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/projects') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
-                        Projects Hub
-                    </Link>
                     <Link to="/app/research" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/research') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
                         AI Research Wizard
+                    </Link>
+                    <Link to="/app/projects" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/projects') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
+                        Projects Hub
                     </Link>
                 </div>
             );
@@ -68,7 +81,7 @@ export default function Navbar({ onMenuClick }) {
         }
 
         // If inside Management workflow
-        if (location.pathname.startsWith('/app/admin/users') || location.pathname.startsWith('/app/admin/schemas')) {
+        if (location.pathname.startsWith('/app/admin/users') || location.pathname.startsWith('/app/admin/schemas') || location.pathname.startsWith('/app/admin/rewards')) {
             return (
                 <div className="flex space-x-4 sm:space-x-6 h-full items-center overflow-x-auto hide-scrollbar">
                     <Link to="/app/admin/users" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/admin/users') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
@@ -76,6 +89,9 @@ export default function Navbar({ onMenuClick }) {
                     </Link>
                     <Link to="/app/admin/schemas" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/admin/schemas') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
                         Schemas
+                    </Link>
+                    <Link to="/app/admin/rewards" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/admin/rewards') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
+                        Rewards
                     </Link>
                 </div>
             );
@@ -137,12 +153,21 @@ export default function Navbar({ onMenuClick }) {
                                         {notifications.length === 0 ? (
                                             <p className="p-4 text-center text-[13px] text-[#777682]">No notifications yet.</p>
                                         ) : (
-                                            notifications.map(n => (
-                                                <div key={n._id} className={`p-3 border-b border-[#e0e2eb] last:border-b-0 hover:bg-[#f1f3fc] transition-colors cursor-pointer ${!n.isRead ? 'bg-blue-50/50' : ''}`}>
-                                                    <p className="text-[13px] text-[#181c22] leading-tight mb-1">{n.message}</p>
-                                                    <span className="text-[10px] text-[#777682] font-mono">{new Date(n.createdAt).toLocaleDateString()}</span>
-                                                </div>
-                                            ))
+                                            notifications.map(n => {
+                                                const meta = NOTIFICATION_META[n.type] || DEFAULT_NOTIFICATION_META;
+                                                return (
+                                                    <div key={n._id} className={`p-3 border-b border-[#e0e2eb] last:border-b-0 hover:bg-[#f1f3fc] transition-colors cursor-pointer flex gap-2.5 ${!n.isRead ? 'bg-blue-50/50' : ''}`}>
+                                                        <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${meta.color}`}>
+                                                            <span className="material-symbols-outlined text-[15px]">{meta.icon}</span>
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-[12px] font-bold text-[#181c22] leading-tight mb-0.5">{meta.title}</p>
+                                                            <p className="text-[13px] text-[#464651] leading-tight mb-1">{n.message}</p>
+                                                            <span className="text-[10px] text-[#777682] font-mono">{new Date(n.createdAt).toLocaleDateString()}</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })
                                         )}
                                     </div>
                                 </div>

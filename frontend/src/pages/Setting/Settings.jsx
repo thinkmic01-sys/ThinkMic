@@ -4,6 +4,20 @@ import { useNavigate } from 'react-router-dom';
 import { logout, updateUser, normalizeUser } from '../../store/slices/authSlice';
 import api from '../../services/api';
 
+// Mirrors NOTIFICATION_META in components/Navbar.jsx so notification cards look identical in both places
+const NOTIFICATION_META = {
+    reminder: { icon: 'schedule', color: 'text-[#222777] bg-[#eef0f9]', title: 'Reminder' },
+    system: { icon: 'info', color: 'text-[#464651] bg-[#f1f3fc]', title: 'System' },
+    update: { icon: 'campaign', color: 'text-[#222777] bg-[#eef0f9]', title: 'Update' },
+    referral_pending: { icon: 'hourglass_empty', color: 'text-[#b45309] bg-[#fff8e1]', title: 'Referral Pending' },
+    referral_approved: { icon: 'check_circle', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Referral Approved' },
+    referral_rejected: { icon: 'cancel', color: 'text-[#ba1a1a] bg-[#ffdad6]', title: 'Referral Rejected' },
+    seminar_reward_received: { icon: 'redeem', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Reward Received' },
+    seminar_coins_reserved: { icon: 'lock_clock', color: 'text-[#222777] bg-[#eef0f9]', title: 'Coins Reserved' },
+    seminar_coins_refunded: { icon: 'replay', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Coins Refunded' }
+};
+const DEFAULT_NOTIFICATION_META = { icon: 'notifications', color: 'text-[#777682] bg-[#f1f3fc]', title: 'Notification' };
+
 export default function Settings() {
     const { user, accessToken } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
@@ -12,6 +26,22 @@ export default function Settings() {
     const [activeTab, setActiveTab] = useState('profile');
     const [isSaving, setIsSaving] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+    // Security tab state
+    const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    const [showPassword, setShowPassword] = useState({ current: false, next: false, confirm: false });
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+    // Notifications tab state
+    const [notificationPrefs, setNotificationPrefs] = useState({
+        seminarReminders: true,
+        researchReports: true,
+        rewardAlerts: true,
+        systemUpdates: true
+    });
+    const [isSavingPrefs, setIsSavingPrefs] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const [isMarkingRead, setIsMarkingRead] = useState(false);
 
     // We added 'avatar' to this state object so we can update it locally
     const [profileData, setProfileData] = useState({
@@ -30,7 +60,7 @@ export default function Settings() {
         setTimeout(() => setToast(prev => ({ ...prev, show: false })), 4000);
     };
 
-    // Load the real profile so Title/Language/Avatar reflect what's actually saved
+    // Load the real profile so Title/Language/Avatar/Notification Prefs reflect what's actually saved
     useEffect(() => {
         if (!accessToken) return;
         api.get('/users/me').then(res => {
@@ -43,16 +73,27 @@ export default function Settings() {
                 language: u.preferredLanguage || 'English (US)',
                 avatar: u.avatarUrl || prev.avatar
             }));
+            // Undefined/missing prefs default to true; only an explicit false is honored
+            const prefs = u.notificationPrefs || {};
+            setNotificationPrefs({
+                seminarReminders: prefs.seminarReminders !== false,
+                researchReports: prefs.researchReports !== false,
+                rewardAlerts: prefs.rewardAlerts !== false,
+                systemUpdates: prefs.systemUpdates !== false
+            });
         }).catch(err => console.error('Failed to load profile', err));
+    }, [accessToken]);
+
+    // Load the notification feed for the Notifications tab
+    useEffect(() => {
+        if (!accessToken) return;
+        api.get('/notifications').then(res => {
+            setNotifications(res.data);
+        }).catch(err => console.error('Failed to load notifications', err));
     }, [accessToken]);
 
     // Reference to our hidden file input element
     const fileInputRef = useRef(null);
-
-    const [apiKeys, setApiKeys] = useState([
-        { id: 1, service: 'Data Ingestion API', key: 'tm_live_****************8f9a' },
-        { id: 2, service: 'Analytics Export', key: 'tm_export_****************2b4c' },
-    ]);
 
     // Handle Text Inputs
     const handleProfileChange = (e) => {
@@ -114,8 +155,70 @@ export default function Settings() {
         }
     };
 
-    const handleRotateKey = (service) => {
-        alert(`Requesting key rotation for: ${service}`);
+    const handlePasswordFieldChange = (e) => {
+        const { name, value } = e.target;
+        setPasswordForm(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleChangePassword = async () => {
+        const { currentPassword, newPassword, confirmPassword } = passwordForm;
+        if (!currentPassword) {
+            showToast('Please enter your current password.', 'error');
+            return;
+        }
+        if (newPassword.length < 8) {
+            showToast('New password must be at least 8 characters long.', 'error');
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            showToast('New passwords do not match.', 'error');
+            return;
+        }
+
+        setIsChangingPassword(true);
+        try {
+            await api.patch('/auth/change-password', { currentPassword, newPassword });
+            setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+            showToast('Password updated successfully!', 'success');
+        } catch (error) {
+            const message = error.response?.data?.message || 'Failed to update password. Please try again.';
+            showToast(message, 'error');
+        } finally {
+            setIsChangingPassword(false);
+        }
+    };
+
+    const handleTogglePref = (key) => {
+        setNotificationPrefs(prev => ({ ...prev, [key]: !prev[key] }));
+    };
+
+    const handleSavePrefs = async () => {
+        setIsSavingPrefs(true);
+        try {
+            await api.patch('/users/me', { notificationPrefs });
+            showToast('Notification preferences saved!', 'success');
+        } catch (error) {
+            console.error('Failed to save notification preferences', error);
+            showToast('Failed to save preferences. Please try again.', 'error');
+        } finally {
+            setIsSavingPrefs(false);
+        }
+    };
+
+    const handleMarkAllRead = async () => {
+        if (!notifications.some(n => !n.isRead)) return;
+        setIsMarkingRead(true);
+        try {
+            await api.put('/notifications/read');
+            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+            // Navbar's notification bell keeps its own local copy - nudge it to clear the unread dot too
+            window.dispatchEvent(new Event('thinkmic:notifications-read'));
+        } catch (error) {
+            console.error('Failed to mark notifications as read', error);
+            showToast('Failed to mark notifications as read.', 'error');
+        } finally {
+            setIsMarkingRead(false);
+        }
     };
 
     const handleLogout = async () => {
@@ -142,7 +245,7 @@ export default function Settings() {
 
                 {/* Horizontal scroll on mobile, Vertical stack on md+ */}
                 <nav className="flex flex-row md:flex-col gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
-                    {['Profile', 'Security', 'API Keys', 'Notifications', 'Branding'].map((tab) => {
+                    {['Profile', 'Security', 'Notifications'].map((tab) => {
                         const tabId = tab.toLowerCase().replace(' ', '-');
                         const isActive = activeTab === tabId;
                         return (
@@ -298,54 +401,148 @@ export default function Settings() {
                     </section>
                 )}
 
-                {/* API Keys */}
-                {(activeTab === 'api-keys' || activeTab === 'profile') && (
-                    <section className={`bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-gray-100 p-5 sm:p-6 md:p-8 animate-in fade-in slide-in-from-bottom-2 duration-300 ${activeTab === 'profile' ? 'delay-75' : ''}`}>
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 sm:mb-6 gap-3 sm:gap-4">
-                            <div>
-                                <h3 className="text-xl sm:text-2xl font-bold text-gray-900">API Keys</h3>
-                                <p className="font-mono text-[11px] sm:text-xs text-gray-500 mt-1">Manage credentials for external integrations.</p>
-                            </div>
-                            <button className="w-full sm:w-auto border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-[13px] sm:text-sm font-bold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shadow-sm">
-                                <span className="material-symbols-outlined text-[18px]">add</span> New Key
-                            </button>
-                        </div>
+                {/* Render Security Tab Content */}
+                {activeTab === 'security' && (
+                    <section className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-gray-100 p-5 sm:p-6 md:p-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">Change Password</h3>
+                        <p className="font-mono text-[11px] sm:text-xs text-gray-500 mb-5 sm:mb-6">Use a strong password you don't use elsewhere.</p>
 
-                        <div className="overflow-x-auto border border-gray-200 rounded-lg w-full">
-                            <table className="w-full text-left border-collapse min-w-[500px]">
-                                <thead>
-                                <tr className="bg-gray-50 border-b border-gray-200">
-                                    <th className="py-3 px-4 text-[11px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider">Service</th>
-                                    <th className="py-3 px-4 text-[11px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider">Key</th>
-                                    <th className="py-3 px-4 text-[11px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
-                                </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200 text-[13px] sm:text-sm">
-                                {apiKeys.map((item) => (
-                                    <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="py-3 px-4 font-semibold text-gray-900 whitespace-nowrap">{item.service}</td>
-                                        <td className="py-3 px-4 font-mono text-gray-500">{item.key}</td>
-                                        <td className="py-3 px-4 text-right">
-                                            <button
-                                                onClick={() => handleRotateKey(item.service)}
-                                                className="text-[#00c2cb] hover:text-[#006e73] font-semibold flex items-center justify-end gap-1 ml-auto transition-colors"
-                                            >
-                                                <span className="material-symbols-outlined text-[16px]">autorenew</span> Rotate
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                                </tbody>
-                            </table>
+                        <div className="max-w-md space-y-4 sm:space-y-5">
+                            {[
+                                { key: 'current', field: 'currentPassword', label: 'Current Password' },
+                                { key: 'next', field: 'newPassword', label: 'New Password' },
+                                { key: 'confirm', field: 'confirmPassword', label: 'Confirm New Password' }
+                            ].map(({ key, field, label }) => (
+                                <div key={field}>
+                                    <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">{label}</label>
+                                    <div className="relative">
+                                        <input
+                                            type={showPassword[key] ? 'text' : 'password'}
+                                            name={field}
+                                            value={passwordForm[field]}
+                                            onChange={handlePasswordFieldChange}
+                                            autoComplete="new-password"
+                                            className="w-full bg-[#f9f9ff] rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2.5 px-3 pr-10 text-[14px] outline-none transition-shadow"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(prev => ({ ...prev, [key]: !prev[key] }))}
+                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#777682] hover:text-[#222777] transition-colors"
+                                        >
+                                            <span className="material-symbols-outlined text-[18px]">{showPassword[key] ? 'visibility_off' : 'visibility'}</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+
+                            <div className="flex justify-end pt-2 sm:pt-4">
+                                <button
+                                    onClick={handleChangePassword}
+                                    disabled={isChangingPassword}
+                                    className={`w-full sm:w-auto bg-[#222777] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2
+                                        ${isChangingPassword ? 'opacity-80 cursor-not-allowed' : 'hover:bg-[#3a3f8f]'}`}
+                                >
+                                    {isChangingPassword ? (
+                                        <>
+                                            <span className="material-symbols-outlined text-[18px] animate-spin">sync</span>
+                                            Updating...
+                                        </>
+                                    ) : (
+                                        'Update Password'
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </section>
                 )}
 
-                {/* Placeholders for other tabs */}
-                {['security', 'notifications', 'branding'].includes(activeTab) && (
-                    <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-gray-100 h-48 sm:h-64 flex items-center justify-center animate-in fade-in zoom-in-95 duration-200 p-6 text-center">
-                        <h2 className="text-lg sm:text-xl font-bold text-gray-400 capitalize">{activeTab} settings coming soon</h2>
-                    </div>
+                {/* Render Notifications Tab Content */}
+                {activeTab === 'notifications' && (
+                    <>
+                        <section className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-gray-100 p-5 sm:p-6 md:p-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">Notification Preferences</h3>
+                            <p className="font-mono text-[11px] sm:text-xs text-gray-500 mb-5 sm:mb-6">Choose what you'd like to be notified about.</p>
+
+                            <div className="space-y-3 sm:space-y-4">
+                                {[
+                                    { key: 'seminarReminders', icon: 'schedule', title: 'Seminar Reminders', desc: 'Receive alerts for upcoming registered seminars.' },
+                                    { key: 'researchReports', icon: 'campaign', title: 'Research & Reports', desc: 'Notify when background AI report synthesis completes.' },
+                                    { key: 'rewardAlerts', icon: 'toll', title: 'Reward & Referral Alerts', desc: 'Alert when coins or referral bonuses are credited.' },
+                                    { key: 'systemUpdates', icon: 'notifications', title: 'System Updates', desc: 'Important system announcements and maintenance.' }
+                                ].map(({ key, icon, title, desc }) => (
+                                    <div key={key} className="flex items-center justify-between gap-4 p-3.5 sm:p-4 rounded-lg border border-gray-100 bg-[#f9f9ff]">
+                                        <div className="flex items-start gap-3 min-w-0">
+                                            <span className="material-symbols-outlined text-[#222777] text-[20px] shrink-0 mt-0.5">{icon}</span>
+                                            <div className="min-w-0">
+                                                <p className="text-[13px] sm:text-sm font-bold text-gray-900">{title}</p>
+                                                <p className="font-mono text-[11px] sm:text-xs text-gray-500 mt-0.5">{desc}</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleTogglePref(key)}
+                                            className={`shrink-0 w-11 h-6 rounded-full transition-colors relative ${notificationPrefs[key] ? 'bg-[#222777]' : 'bg-gray-300'}`}
+                                        >
+                                            <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all ${notificationPrefs[key] ? 'left-[22px]' : 'left-0.5'}`}></span>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="flex justify-end pt-4 sm:pt-6">
+                                <button
+                                    onClick={handleSavePrefs}
+                                    disabled={isSavingPrefs}
+                                    className={`w-full sm:w-auto bg-[#222777] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2
+                                        ${isSavingPrefs ? 'opacity-80 cursor-not-allowed' : 'hover:bg-[#3a3f8f]'}`}
+                                >
+                                    {isSavingPrefs ? (
+                                        <>
+                                            <span className="material-symbols-outlined text-[18px] animate-spin">sync</span>
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        'Save Preferences'
+                                    )}
+                                </button>
+                            </div>
+                        </section>
+
+                        <section className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-gray-100 p-5 sm:p-6 md:p-8 animate-in fade-in slide-in-from-bottom-2 duration-300 delay-75">
+                            <div className="flex justify-between items-center mb-5 sm:mb-6 gap-3">
+                                <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Recent Notifications</h3>
+                                <button
+                                    onClick={handleMarkAllRead}
+                                    disabled={isMarkingRead || !notifications.some(n => !n.isRead)}
+                                    className="text-[#00c2cb] hover:text-[#006e73] font-semibold text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                                >
+                                    Mark all as read
+                                </button>
+                            </div>
+
+                            {notifications.length === 0 ? (
+                                <p className="text-center text-[13px] text-gray-500 py-8">You have no notifications.</p>
+                            ) : (
+                                <div className="space-y-2 max-h-96 overflow-y-auto">
+                                    {notifications.map(n => {
+                                        const meta = NOTIFICATION_META[n.type] || DEFAULT_NOTIFICATION_META;
+                                        return (
+                                            <div key={n._id} className={`flex gap-3 p-3 rounded-lg border border-gray-100 ${!n.isRead ? 'bg-blue-50/50' : ''}`}>
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${meta.color}`}>
+                                                    <span className="material-symbols-outlined text-[16px]">{meta.icon}</span>
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-[12px] font-bold text-gray-900 leading-tight mb-0.5">{meta.title}</p>
+                                                    <p className="text-[13px] text-gray-600 leading-tight mb-1">{n.message}</p>
+                                                    <span className="text-[10px] text-gray-400 font-mono">{new Date(n.createdAt).toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </section>
+                    </>
                 )}
 
             </div>

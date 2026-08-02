@@ -156,6 +156,35 @@ exports.refresh = async (req, res) => {
     }
 };
 
+// @desc    Change current user's password
+// @route   PATCH /api/v1/auth/change-password
+// @access  Private (Requires Token)
+exports.changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ message: 'Current and new password are required' });
+        }
+        if (newPassword.length < 8) {
+            return res.status(400).json({ message: 'New password must be at least 8 characters long' });
+        }
+
+        const user = await User.findById(req.user._id);
+        if (!user || !(await user.matchPassword(currentPassword))) {
+            return res.status(400).json({ message: 'Current password is incorrect' });
+        }
+
+        user.passwordHash = newPassword; // re-hashed by the pre('save') hook
+        await user.save();
+
+        res.status(200).json({ message: 'Password updated successfully' });
+    } catch (error) {
+        console.error('Change Password Error:', error);
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
 // @desc    Logout user & clear cookie
 // @route   POST /api/v1/auth/logout
 // @access  Public

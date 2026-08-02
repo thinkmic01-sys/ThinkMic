@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 const NOTIFICATION_META = {
@@ -19,6 +19,7 @@ const DEFAULT_NOTIFICATION_META = { icon: 'notifications', color: 'text-[#777682
 export default function Navbar({ onMenuClick }) {
     const { user, isAuthenticated, accessToken } = useSelector((state) => state.auth);
     const location = useLocation();
+    const navigate = useNavigate();
     
     const [notifications, setNotifications] = useState([]);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -34,6 +35,13 @@ export default function Navbar({ onMenuClick }) {
         fetchNotifs();
     }, [isAuthenticated, accessToken]);
 
+    // Settings page's "Mark all as read" fires this so the bell's unread dot clears immediately
+    useEffect(() => {
+        const handleExternalRead = () => setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        window.addEventListener('thinkmic:notifications-read', handleExternalRead);
+        return () => window.removeEventListener('thinkmic:notifications-read', handleExternalRead);
+    }, []);
+
     const handleNotificationClick = async () => {
         setIsNotifOpen(!isNotifOpen);
         const hasUnread = notifications.some(n => !n.isRead);
@@ -45,7 +53,8 @@ export default function Navbar({ onMenuClick }) {
         }
     };
 
-    const handleSettingsClick = () => alert("Settings panel would open here!");
+    const handleSettingsClick = () => navigate('/app/settings');
+    const isSettingsActive = location.pathname.startsWith('/app/settings');
 
     // Helper to determine active Topbar link
     const isTopActive = (path) => location.pathname.includes(path);
@@ -174,7 +183,7 @@ export default function Navbar({ onMenuClick }) {
                             )}
                         </div>
 
-                        <button onClick={handleSettingsClick} className="text-[#777682] hover:text-[#222777] transition w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full hover:bg-[#f1f3fc]">
+                        <button onClick={handleSettingsClick} className={`transition w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full ${isSettingsActive ? 'text-[#222777] bg-[#f1f3fc]' : 'text-[#777682] hover:text-[#222777] hover:bg-[#f1f3fc]'}`}>
                             <span className="material-symbols-outlined text-[20px] sm:text-[24px]">settings</span>
                         </button>
                     </div>

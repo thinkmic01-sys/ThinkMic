@@ -4,11 +4,13 @@
 2026-08-02
 
 ## Current Sprint
+- Completed Settings Refactor & Notifications Unification (removed API Keys/Branding tabs, added real password change security endpoint, notification preferences persistence, and instant cross-component unread badge sync with Navbar).
 - Completed Achievements & Gamified Level Progression system (10-tier progression curve, dynamic streak & weekly activity calendar, live stats, leaderboard medals, and timeline event routing).
 - Completed the Referral & Coin Management System (build, harden, and audit passes).
 - Completed a full production-readiness audit of both the User Dashboard and Admin Dashboard.
 
 ## Completed Features
+- **Settings & Account Management**: Unified Navbar and Settings panel routing, real password change mechanism (`PATCH /api/v1/auth/change-password` with bcrypt validation and length checks), granular notification preferences (seminar reminders, research alerts, reward updates, system announcements) saved to `User.notificationPrefs`, full notification history feed matching Navbar metadata styling, and real-time cross-component unread sync (`thinkmic:notifications-read` event). Obsolete API Keys and Branding placeholder tabs completely cleaned up.
 - **Achievements & Gamification Engine**: 10-tier progressive level scaling (`getLevelInfo` from Level 1 Novice @ 500 XP to Level 10 Grandmaster @ 45,000+ XP), real-time activity streak calculator from live `Transaction`/`TimelineEvent` logs, 7-day visual week calendar widget, dynamic leaderboard with medals (🥇/🥈/🥉), and atomic negative-balance transaction guards (`$gte` checks).
 - Dual-engine audio recording (live WebSocket streaming via Deepgram & file upload via OpenAI Whisper).
 - BullMQ worker architecture with 4 Redis job queues (transcription, summarization, search, report-generation).

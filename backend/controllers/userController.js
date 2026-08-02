@@ -25,13 +25,14 @@ exports.getMe = async (req, res) => {
 exports.updateMe = async (req, res) => {
     try {
         // Explicit allowlist - never let a user change their own role/status/email/coins via this route
-        const { fullName, title, language, avatarUrl } = req.body;
+        const { fullName, title, language, avatarUrl, notificationPrefs } = req.body;
         const update = {};
         if (fullName !== undefined) update.fullName = fullName;
         if (title !== undefined) update.title = title;
         // Stored as preferredLanguage - "language" is MongoDB's reserved text-index language_override field name
         if (language !== undefined) update.preferredLanguage = language;
         if (avatarUrl !== undefined) update.avatarUrl = avatarUrl;
+        if (notificationPrefs !== undefined) update.notificationPrefs = notificationPrefs;
 
         const user = await User.findByIdAndUpdate(req.user._id, update, { new: true, runValidators: true }).select('-passwordHash');
         if (!user) {

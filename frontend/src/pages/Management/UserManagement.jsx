@@ -90,15 +90,6 @@ export default function UserManagement() {
         setCurrentPage(1);
     }, [roleFilter, statusFilter, searchQuery]);
 
-    // 1. Filtering Logic
-    const filteredUsers = users.filter((user) => {
-        const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.email.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesRole = roleFilter === '' || user.role === roleFilter;
-        const matchesStatus = statusFilter === '' || user.status === statusFilter;
-        return matchesSearch && matchesRole && matchesStatus;
-    });
-
     // 2. Checkbox Logic
     const handleSelectAll = (e) => {
         if (e.target.checked) {
@@ -469,8 +460,13 @@ export default function UserManagement() {
                                     if (!accessToken || !inviteEmails) return;
                                     try {
                                         const emails = inviteEmails.split(',').map(e => e.trim());
-                                        await api.post('/admin/users/invite', { emails, role: inviteRole });
-                                        showToast("Invites sent successfully!", "success");
+                                        const res = await api.post('/admin/users/invite', { emails, role: inviteRole });
+                                        const { invited = [], failed = [] } = res.data || {};
+                                        if (failed.length > 0) {
+                                            showToast(`Invited ${invited.length}, ${failed.length} failed: ${failed.map(f => f.email).join(', ')}`, invited.length > 0 ? "success" : "error");
+                                        } else {
+                                            showToast("Invites sent successfully!", "success");
+                                        }
                                         setIsInviteModalOpen(false);
                                         setInviteEmails('');
                                         setInviteRole('user');

@@ -30,7 +30,8 @@ export default function UserTimeline() {
         fetchStats();
     }, [token]);
 
-    const filters = ['All', 'Recordings', 'Summaries', 'Reports', 'Seminars', 'Notes', 'Rewards'];
+    // Must match the TimelineEvent.type enum exactly (backend/models/TimelineEvent.js) for filtering to work
+    const filters = ['All', 'Recording', 'Reports', 'Seminars', 'Notes', 'Rewards'];
 
     const filteredEvents = activeFilter === 'All'
         ? timelineEvents

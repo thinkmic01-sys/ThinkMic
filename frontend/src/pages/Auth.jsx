@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { login } from '../store/slices/authSlice';
+import { login, normalizeUser } from '../store/slices/authSlice';
 import api from '../services/api';
 
 export default function Auth() {
@@ -50,16 +50,7 @@ export default function Auth() {
 
             if (isLoginView) {
                 // SUCCESSFUL LOGIN
-                dispatch(login({
-                    id: data.user.id,
-                    name: data.user.fullName,
-                    email: data.user.email,
-                    role: data.user.role,
-                    accessToken: data.accessToken,
-                    coins: data.user.coins || 0,
-                    referralCode: data.user.referralCode,
-                    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.user.fullName)}&background=222777&color=fff`
-                }));
+                dispatch(login({ ...normalizeUser(data.user), accessToken: data.accessToken }));
 
                 navigate('/app/dashboard');
             } else {
@@ -71,16 +62,7 @@ export default function Auth() {
 
                 const loginData = loginRes.data;
 
-                dispatch(login({
-                    id: loginData.user.id,
-                    name: loginData.user.fullName,
-                    email: loginData.user.email,
-                    role: loginData.user.role,
-                    accessToken: loginData.accessToken,
-                    coins: loginData.user.coins || 0,
-                    referralCode: loginData.user.referralCode,
-                    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(loginData.user.fullName)}&background=222777&color=fff`
-                }));
+                dispatch(login({ ...normalizeUser(loginData.user), accessToken: loginData.accessToken }));
                 navigate('/app/dashboard');
             }
 

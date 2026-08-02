@@ -76,6 +76,7 @@ export default function NearbySeminars() {
     const navigate = useNavigate();
     const token = useSelector(state => state.auth?.accessToken);
     const [seminars, setSeminars] = useState([]);
+    const [topicFilter, setTopicFilter] = useState('All Topics');
     const [registeredIds, setRegisteredIds] = useState(new Set());
     const [registeringId, setRegisteringId] = useState(null);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -142,10 +143,12 @@ export default function NearbySeminars() {
                 </div>
                 <div className="flex gap-2 sm:gap-4 w-full sm:w-auto pl-11 sm:pl-0">
                     <div className="relative flex-1 sm:flex-none">
-                        <select className="w-full appearance-none bg-[#f9f9ff] sm:bg-white border border-[#e0e2eb] sm:border-[#c7c5d3] rounded text-[#181c22] px-3 sm:px-4 py-2 pr-8 sm:pr-10 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#222777] cursor-pointer">
+                        <select value={topicFilter} onChange={(e) => setTopicFilter(e.target.value)} className="w-full appearance-none bg-[#f9f9ff] sm:bg-white border border-[#e0e2eb] sm:border-[#c7c5d3] rounded text-[#181c22] px-3 sm:px-4 py-2 pr-8 sm:pr-10 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#222777] cursor-pointer">
                             <option>All Topics</option>
                             <option>Machine Learning</option>
-                            <option>Ethics</option>
+                            <option>Quantum Computing</option>
+                            <option>Bioinformatics</option>
+                            <option>Ethics in AI</option>
                         </select>
                         <span className="material-symbols-outlined absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none text-[18px]">expand_more</span>
                     </div>
@@ -167,10 +170,14 @@ export default function NearbySeminars() {
                 <div className="w-full md:w-[360px] lg:w-[420px] h-[50vh] md:h-full border-b md:border-b-0 md:border-r border-[#e0e2eb] bg-[#f9f9ff] overflow-y-auto p-4 sm:p-5 space-y-4 shrink-0 shadow-[2px_0_10px_rgba(0,0,0,0.03)] z-10 custom-scrollbar pb-6 md:pb-20">
 
                     {/* Dynamic Cards */}
-                    {seminars.length === 0 ? (
+                    {(() => {
+                        const filteredSeminars = topicFilter === 'All Topics'
+                            ? seminars
+                            : seminars.filter(s => s.category === topicFilter);
+                        return filteredSeminars.length === 0 ? (
                         <div className="text-center py-10 text-[#777682] text-[14px]">No seminars found.</div>
                     ) : (
-                        seminars.map((seminar, idx) => (
+                        filteredSeminars.map((seminar, idx) => (
                             <div key={seminar._id || idx} className="bg-white border border-[#e0e2eb] rounded-lg p-4 sm:p-5 hover:border-[#222777] transition-colors cursor-pointer relative shadow-sm">
                                 {idx === 0 && <div className="absolute top-0 left-0 w-1 h-full bg-[#00c2cb] rounded-l-lg"></div>}
                                 <div className="flex justify-between items-start mb-2 sm:mb-3 pl-2">
@@ -211,7 +218,8 @@ export default function NearbySeminars() {
                                 </div>
                             </div>
                         ))
-                    )}
+                    );
+                    })()}
                 </div>
 
                 {/* Map Area: flex-1 ensures it takes the remaining height on mobile and width on desktop */}

@@ -31,6 +31,9 @@ const UserSchema = new mongoose.Schema({
         default: 'pending_verification'
     },
     avatarUrl: String,
+    title: String,
+    // Named to avoid colliding with MongoDB's text-index language_override field (default name "language")
+    preferredLanguage: String,
     lastLoginAt: Date,
     inviteToken: { type: String, sparse: true },
     inviteExpiresAt: Date,

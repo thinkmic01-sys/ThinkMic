@@ -1,22 +1,25 @@
 const Recording = require('../models/Recording');
 const Report = require('../models/Report');
 const SearchResult = require('../models/SearchResult');
+const Submission = require('../models/Submission');
 const User = require('../models/User');
 
 exports.getUsageKPIs = async (req, res) => {
     try {
-        const userId = req.user._id;
+        // Admins see platform-wide totals (used by AdminDashboard); regular users see their own (used by Dashboard).
+        const scope = req.user.role === 'admin' ? {} : { userId: req.user._id };
 
-        const [recordings, reports, searchesRun, activeUsers] = await Promise.all([
-            Recording.countDocuments({ userId }),
-            Report.countDocuments({ userId }),
-            SearchResult.countDocuments({ userId }),
+        const [recordings, reports, searchesRun, submissions, activeUsers] = await Promise.all([
+            Recording.countDocuments(scope),
+            Report.countDocuments(scope),
+            SearchResult.countDocuments(scope),
+            Submission.countDocuments(scope),
             User.countDocuments({ lastLoginAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } })
         ]);
 
         res.status(200).json({
             kpis: {
-                submissions: recordings,
+                submissions,
                 recordings,
                 reports,
                 activeUsers,

@@ -66,9 +66,9 @@ export default function SupportInbox() {
             });
         });
 
-        // Admin room
-        socketRef.current.emit('join_room', 'admin_support');
-        if (currentUser) socketRef.current.emit('join_room', currentUser.id);
+        // Admin room - lets io.to('admin_support') pushes (new user messages) reach this inbox
+        socketRef.current.emit('join', 'admin_support');
+        if (currentUser) socketRef.current.emit('join', currentUser.id);
 
         return () => {
             if (socketRef.current) socketRef.current.disconnect();

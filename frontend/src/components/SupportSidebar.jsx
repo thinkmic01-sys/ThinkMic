@@ -49,8 +49,8 @@ export default function SupportSidebar({ isOpen, onClose }) {
             });
         });
 
-        // Setup simple identity in case server requires it for emitting back
-        socketRef.current.emit('join_room', currentUser?.id);
+        // Join this user's room so admin replies pushed via io.to(userId) are received
+        socketRef.current.emit('join', currentUser?.id);
 
         return () => {
             if (socketRef.current) socketRef.current.disconnect();

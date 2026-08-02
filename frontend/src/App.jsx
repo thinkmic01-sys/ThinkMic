@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { store } from './store/store';
-import { login, logout } from './store/slices/authSlice'; // Ensure this path is correct
+import { login, logout, normalizeUser } from './store/slices/authSlice'; // Ensure this path is correct
 import api from './services/api';
 
 // Pages & Components
@@ -39,6 +39,11 @@ const Placeholder = ({ title }) => (
     </div>
 );
 
+// Redirects away from a route if the current user's role isn't in `allowed`
+function RequireRole({ allowed, role, children }) {
+    return allowed.includes(role) ? children : <Navigate to="/app/dashboard" replace />;
+}
+
 // Inner component to handle Redux logic and route protection
 function AppRoutes() {
     const dispatch = useDispatch();
@@ -60,16 +65,7 @@ function AppRoutes() {
 
                 if (data.accessToken) {
                     // Success! Put the user back into Redux
-                    dispatch(login({
-                        id: data.user.id,
-                        name: data.user.fullName,
-                        email: data.user.email,
-                        role: data.user.role,
-                        accessToken: data.accessToken,
-                        coins: data.user.coins || 0,
-                        referralCode: data.user.referralCode,
-                        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.user.fullName)}&background=222777&color=fff`
-                    }));
+                    dispatch(login({ ...normalizeUser(data.user), accessToken: data.accessToken }));
                 } else {
                     // No valid cookie, clear Redux
                     dispatch(logout());
@@ -143,13 +139,13 @@ function AppRoutes() {
                             {/* ADMIN ZONE (Nested Routes) */}
                             <Route path="admin">
                                 <Route index element={<Navigate to="users" replace />} />
-                                <Route path="users" element={<UserManagement />} />
-                                <Route path="schemas" element={<SchemaLibrary />} />
-                                <Route path="schemas/new" element={<SchemaBuilder />} />
-                                <Route path="schemas/edit/:id" element={<SchemaBuilder />} />
-                                <Route path="support" element={<SupportInbox />} />
-                                <Route path="rewards" element={<ReferralCoinManagement />} />
-                                <Route path="analytics" element={<Dashboard />} />
+                                <Route path="users" element={<RequireRole allowed={['admin']} role={role}><UserManagement /></RequireRole>} />
+                                <Route path="schemas" element={<RequireRole allowed={['admin']} role={role}><SchemaLibrary /></RequireRole>} />
+                                <Route path="schemas/new" element={<RequireRole allowed={['admin']} role={role}><SchemaBuilder /></RequireRole>} />
+                                <Route path="schemas/edit/:id" element={<RequireRole allowed={['admin']} role={role}><SchemaBuilder /></RequireRole>} />
+                                <Route path="support" element={<RequireRole allowed={['admin', 'manager']} role={role}><SupportInbox /></RequireRole>} />
+                                <Route path="rewards" element={<RequireRole allowed={['admin']} role={role}><ReferralCoinManagement /></RequireRole>} />
+                                <Route path="analytics" element={<RequireRole allowed={['admin']} role={role}><Dashboard /></RequireRole>} />
                             </Route>
                         </Routes>
                     </Layout>

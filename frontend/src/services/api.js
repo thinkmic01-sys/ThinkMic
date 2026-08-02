@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { store } from '../store/store';
-import { login, logout } from '../store/slices/authSlice';
+import { login, logout, normalizeUser } from '../store/slices/authSlice';
 
 const api = axios.create({
     baseURL: 'http://localhost:5000/api/v1',
@@ -33,9 +33,10 @@ api.interceptors.response.use(
                 });
                 
                 const { accessToken, user } = refreshRes.data;
-                
-                // Update global Redux state with new token
-                store.dispatch(login({ accessToken, ...user }));
+
+                // Update global Redux state with new token - normalized the same way as
+                // the login flow, so the auth state shape never diverges between the two.
+                store.dispatch(login({ ...normalizeUser(user), accessToken }));
                 
                 // Update the original request's authorization header and retry
                 originalRequest.headers.Authorization = `Bearer ${accessToken}`;

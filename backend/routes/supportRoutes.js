@@ -9,8 +9,8 @@ router.use(protect);
 router.get('/', getTicket);
 router.post('/', sendMessage);
 
-// Admin routes
-router.get('/all', checkRole('admin'), getAllTickets);
-router.patch('/:id/close', checkRole('admin'), closeTicket);
+// Admin/manager routes
+router.get('/all', checkRole('admin', 'manager'), getAllTickets);
+router.patch('/:id/close', checkRole('admin', 'manager'), closeTicket);
 
 module.exports = router;

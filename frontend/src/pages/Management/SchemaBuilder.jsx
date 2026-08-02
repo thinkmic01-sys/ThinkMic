@@ -4,6 +4,18 @@ import { useSelector } from 'react-redux';
 import VoiceRecorder from '../../components/VoiceRecorder';
 import api from '../../services/api';
 
+const ICON_BY_TYPE = {
+    'Text': 'short_text',
+    'Long Text': 'notes',
+    'Voice': 'mic',
+    'Dropdown': 'arrow_drop_down_circle',
+    'Checkbox': 'check_box',
+    'Rating': 'star',
+    'Date': 'calendar_today',
+    'Number': 'pin',
+    'File': 'upload_file'
+};
+
 export default function SchemaBuilder() {
     const accessToken = useSelector((state) => state.auth?.accessToken);
     const [schemaName, setSchemaName] = useState(`New Form ${Math.floor(Math.random() * 10000)}`);
@@ -30,16 +42,20 @@ export default function SchemaBuilder() {
                         if (t === 'textarea') return 'Long Text';
                         return t.charAt(0).toUpperCase() + t.slice(1);
                     };
-                    const loadedFields = data.schema.fields.map((f, i) => ({
-                        id: f.id,
-                        type: mapTypeFromDB(f.type),
-                        label: f.label,
-                        required: f.required,
-                        allowMultiple: f.allowMultiple,
-                        options: f.options,
-                        prompt: f.voicePrompt,
-                        active: i === 0
-                    }));
+                    const loadedFields = data.schema.fields.map((f, i) => {
+                        const uiType = mapTypeFromDB(f.type);
+                        return {
+                            id: f.id,
+                            type: uiType,
+                            label: f.label,
+                            required: f.required,
+                            allowMultiple: f.allowMultiple,
+                            options: f.options,
+                            prompt: f.voicePrompt,
+                            icon: ICON_BY_TYPE[uiType] || 'short_text',
+                            active: i === 0
+                        };
+                    });
                     setFields(loadedFields);
                 }
             })
@@ -139,6 +155,8 @@ export default function SchemaBuilder() {
                     case 'textarea': return 'textarea';
                     case 'long text': return 'textarea';
                     case 'rating': return 'rating';
+                    case 'number': return 'number';
+                    case 'file': return 'file';
                     default: return 'text';
                 }
             };

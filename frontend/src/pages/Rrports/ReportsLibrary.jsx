@@ -55,6 +55,7 @@ export default function ReportsLibrary() {
     };
 
     const handleDelete = async (reportId) => {
+        if (!window.confirm('Delete this report? This cannot be undone.')) return;
         try {
             await api.delete(`/reports/${reportId}`);
             setReports(prev => prev.filter(r => r.id !== reportId));

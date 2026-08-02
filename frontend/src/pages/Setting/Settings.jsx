@@ -1,11 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { logout } from '../../store/slices/authSlice';
+import { logout, updateUser, normalizeUser } from '../../store/slices/authSlice';
 import api from '../../services/api';
 
 export default function Settings() {
-    const { user } = useSelector((state) => state.auth);
+    const { user, accessToken } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
@@ -15,12 +15,36 @@ export default function Settings() {
 
     // We added 'avatar' to this state object so we can update it locally
     const [profileData, setProfileData] = useState({
-        fullName: user?.name || 'Dr. Aria Thorne',
-        title: user?.role || 'Lead AI Researcher',
-        email: 'aria.thorne@thinkmic.edu',
+        fullName: user?.name || '',
+        title: '',
+        email: user?.email || '',
         language: 'English (US)',
         avatar: user?.avatar || "https://i.pravatar.cc/150?u=aria"
     });
+    const [avatarFile, setAvatarFile] = useState(null);
+
+    // Custom Toast State
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast(prev => ({ ...prev, show: false })), 4000);
+    };
+
+    // Load the real profile so Title/Language/Avatar reflect what's actually saved
+    useEffect(() => {
+        if (!accessToken) return;
+        api.get('/users/me').then(res => {
+            const u = res.data.user;
+            setProfileData(prev => ({
+                ...prev,
+                fullName: u.fullName || prev.fullName,
+                title: u.title || '',
+                email: u.email || prev.email,
+                language: u.preferredLanguage || 'English (US)',
+                avatar: u.avatarUrl || prev.avatar
+            }));
+        }).catch(err => console.error('Failed to load profile', err));
+    }, [accessToken]);
 
     // Reference to our hidden file input element
     const fileInputRef = useRef(null);
@@ -48,18 +72,46 @@ export default function Settings() {
             // Create a temporary local URL to instantly preview the selected image
             const imageUrl = URL.createObjectURL(file);
             setProfileData(prev => ({ ...prev, avatar: imageUrl }));
+            setAvatarFile(file);
         }
     };
 
     // Handle Form Submission
-    const handleSaveProfile = () => {
+    const handleSaveProfile = async () => {
         setIsSaving(true);
+        try {
+            let avatarUrl;
+            if (avatarFile) {
+                const formData = new FormData();
+                formData.append('image', avatarFile);
+                const uploadRes = await api.post('/upload', formData);
+                avatarUrl = uploadRes.data.url;
+            }
 
-        // Simulating a backend API call (e.g., uploading the image and saving data)
-        setTimeout(() => {
+            const res = await api.patch('/users/me', {
+                fullName: profileData.fullName,
+                title: profileData.title,
+                language: profileData.language,
+                ...(avatarUrl ? { avatarUrl } : {})
+            });
+
+            // Push the authoritative saved values into Redux so the Navbar (and anything else
+            // reading state.auth.user) reflects them immediately - no refresh/re-login needed.
+            // Routed through the same normalizeUser used by login/refresh so the auth state
+            // shape can never drift between the two flows.
+            const savedUser = res.data.user;
+            dispatch(updateUser(normalizeUser(savedUser)));
+            // Replace any transient local blob: preview URL with the real hosted one
+            setProfileData(prev => ({ ...prev, avatar: savedUser.avatarUrl || prev.avatar }));
+
+            setAvatarFile(null);
+            showToast('Profile updated successfully!', 'success');
+        } catch (error) {
+            console.error('Failed to save profile', error);
+            showToast('Failed to update profile. Please try again.', 'error');
+        } finally {
             setIsSaving(false);
-            alert(`Profile successfully updated for: ${profileData.fullName}`);
-        }, 1000);
+        }
     };
 
     const handleRotateKey = (service) => {
@@ -204,8 +256,8 @@ export default function Settings() {
                                     <div className="sm:col-span-2">
                                         <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Email Address</label>
                                         <input
-                                            type="email" name="email" value={profileData.email} onChange={handleProfileChange}
-                                            className="w-full bg-[#f9f9ff] rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
+                                            type="email" name="email" value={profileData.email} disabled title="Contact support to change your login email"
+                                            className="w-full bg-gray-100 rounded-md border border-gray-200 text-gray-500 py-2.5 px-3 text-[14px] outline-none cursor-not-allowed"
                                         />
                                     </div>
                                     <div>
@@ -296,6 +348,19 @@ export default function Settings() {
                     </div>
                 )}
 
+            </div>
+
+            {/* --- CUSTOM TOAST NOTIFICATION --- */}
+            <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#e6fbfc] border-[#00c2cb] text-[#006e73]'}`}>
+                    <span className="material-symbols-outlined text-[20px]">
+                        {toast.type === 'error' ? 'error' : 'check_circle'}
+                    </span>
+                    <span className="text-[13px] sm:text-[14px] font-bold">{toast.message}</span>
+                    <button onClick={() => setToast(prev => ({ ...prev, show: false }))} className="ml-2 hover:opacity-70">
+                        <span className="material-symbols-outlined text-[18px]">close</span>
+                    </button>
+                </div>
             </div>
         </div>
     );

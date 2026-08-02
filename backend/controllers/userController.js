@@ -18,3 +18,29 @@ exports.getMe = async (req, res) => {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };
+
+// @desc    Update current user's own profile
+// @route   PATCH /api/v1/users/me
+// @access  Private (Requires Token)
+exports.updateMe = async (req, res) => {
+    try {
+        // Explicit allowlist - never let a user change their own role/status/email/coins via this route
+        const { fullName, title, language, avatarUrl } = req.body;
+        const update = {};
+        if (fullName !== undefined) update.fullName = fullName;
+        if (title !== undefined) update.title = title;
+        // Stored as preferredLanguage - "language" is MongoDB's reserved text-index language_override field name
+        if (language !== undefined) update.preferredLanguage = language;
+        if (avatarUrl !== undefined) update.avatarUrl = avatarUrl;
+
+        const user = await User.findByIdAndUpdate(req.user._id, update, { new: true, runValidators: true }).select('-passwordHash');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.status(200).json({ user });
+    } catch (error) {
+        console.error('Update Me Error:', error);
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};

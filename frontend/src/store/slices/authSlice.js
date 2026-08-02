@@ -8,6 +8,25 @@ const initialState = {
     user: null
 };
 
+// Single source of truth for mapping a raw backend User object (fullName, avatarUrl,
+// id/_id, ...) into the normalized shape this app stores in Redux (name, avatar, ...).
+// Every place that dispatches `login` or `updateUser` with server data MUST route the
+// user object through this function first - that's what keeps the auth state shape
+// identical after login, silent/page refresh, token refresh, and profile updates.
+export function normalizeUser(rawUser) {
+    if (!rawUser) return rawUser;
+    return {
+        id: rawUser.id || rawUser._id,
+        name: rawUser.fullName,
+        email: rawUser.email,
+        role: rawUser.role,
+        title: rawUser.title,
+        coins: rawUser.coins || 0,
+        referralCode: rawUser.referralCode,
+        avatar: rawUser.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(rawUser.fullName || '')}&background=222777&color=fff`
+    };
+}
+
 const authSlice = createSlice({
     name: 'auth',
     initialState,
@@ -17,6 +36,14 @@ const authSlice = createSlice({
             state.accessToken = action.payload.accessToken;
             state.user = action.payload;
         },
+        // Merges partial profile changes into the existing user object (e.g. after a
+        // Settings save) without touching accessToken/isAuthenticated or dropping fields
+        // the caller didn't include - unlike `login`, which replaces `state.user` wholesale.
+        updateUser: (state, action) => {
+            if (state.user) {
+                state.user = { ...state.user, ...action.payload };
+            }
+        },
         logout: (state) => {
             state.isAuthenticated = false;
             state.accessToken = null;
@@ -25,5 +52,5 @@ const authSlice = createSlice({
     }
 });
 
-export const { login, logout } = authSlice.actions;
+export const { login, logout, updateUser } = authSlice.actions;
 export default authSlice.reducer;

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 
 export default function Dashboard() {
+    const navigate = useNavigate();
     const accessToken = useSelector((state) => state.auth?.accessToken);
     const userName = useSelector((state) => state.auth?.name || 'User');
     const [currentDate, setCurrentDate] = useState('');
@@ -72,13 +74,13 @@ export default function Dashboard() {
                         <p className="font-mono text-[12px] text-[#777682] uppercase tracking-wider">{currentDate}</p>
                     </div>
                     <div className="mt-4 md:mt-0 flex gap-3">
-                        <button className="bg-[#222777] text-white font-bold text-[12px] px-4 py-2 rounded-md hover:bg-[#222777]/90 transition-colors flex items-center gap-2 shadow-sm">
+                        <button onClick={() => navigate('/app/research')} className="bg-[#222777] text-white font-bold text-[12px] px-4 py-2 rounded-md hover:bg-[#222777]/90 transition-colors flex items-center gap-2 shadow-sm">
                             <span className="material-symbols-outlined text-[18px]">mic</span> New Session
                         </button>
-                        <button className="border border-[#6bf6ff] text-[#006e73] bg-[#e6fbfc] font-bold text-[12px] px-4 py-2 rounded-md hover:bg-[#6bf6ff]/20 transition-colors flex items-center gap-2">
+                        <button onClick={() => navigate('/app/research')} className="border border-[#6bf6ff] text-[#006e73] bg-[#e6fbfc] font-bold text-[12px] px-4 py-2 rounded-md hover:bg-[#6bf6ff]/20 transition-colors flex items-center gap-2">
                             <span className="material-symbols-outlined text-[18px]">search</span> New Research
                         </button>
-                        <button className="text-[#222777] font-bold text-[12px] px-4 py-2 rounded-md hover:bg-[#e0e2eb] transition-colors flex items-center gap-2 border border-transparent">
+                        <button onClick={() => navigate('/app/reports')} className="text-[#222777] font-bold text-[12px] px-4 py-2 rounded-md hover:bg-[#e0e2eb] transition-colors flex items-center gap-2 border border-transparent">
                             <span className="material-symbols-outlined text-[18px]">description</span> View Reports
                         </button>
                     </div>

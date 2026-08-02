@@ -93,7 +93,9 @@ exports.login = async (req, res) => {
                 fullName: user.fullName,
                 role: user.role,
                 coins: user.coins,
-                referralCode: user.referralCode
+                referralCode: user.referralCode,
+                avatarUrl: user.avatarUrl,
+                title: user.title
             }
         });
     } catch (error) {
@@ -143,7 +145,9 @@ exports.refresh = async (req, res) => {
                 fullName: user.fullName,
                 role: user.role,
                 coins: user.coins,
-                referralCode: user.referralCode
+                referralCode: user.referralCode,
+                avatarUrl: user.avatarUrl,
+                title: user.title
             }
         });
     } catch (error) {

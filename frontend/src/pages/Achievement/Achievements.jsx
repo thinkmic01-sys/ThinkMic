@@ -1,26 +1,35 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import api from '../../services/api';
 
+const DEFAULT_LEVEL_INFO = {
+    currentLevel: 1,
+    levelName: 'Novice Researcher',
+    currentLevelMin: 0,
+    nextLevelThreshold: 500,
+    progressPercent: 0,
+    isMaxLevel: false
+};
+
 export default function Achievements() {
+    const navigate = useNavigate();
     // Pull the live coin balance and auth token from our Redux store
     const { user, accessToken: token } = useSelector((state) => state.auth);
     const currentCoins = user?.coins ?? 0;
-    const progressPercent = Math.min((currentCoins / 2000) * 100, 100);
 
     const [activeTab, setActiveTab] = useState('history');
 
     // Dynamic data arrays (Ready for backend integration)
     const waysToEarn = [
-        { id: 1, title: 'Complete a seminar', desc: 'Finish any verified academic video module.', amount: 50, icon: 'school' },
-        { id: 2, title: 'Publish AI notes', desc: 'Share your synthesized notes with the community.', amount: 100, icon: 'edit_document' },
-        { id: 3, title: 'Invite a peer', desc: 'Refer a colleague to join ThinkMic.', amount: 200, icon: 'group_add' },
+        { id: 1, title: 'Complete a seminar', desc: 'Finish any verified academic video module.', amount: 50, icon: 'school', path: '/app/courses/seminars' },
+        { id: 2, title: 'Publish AI notes', desc: 'Share your synthesized notes with the community.', amount: 100, icon: 'edit_document', path: '/app/research' },
+        { id: 3, title: 'Invite a peer', desc: 'Refer a colleague to join ThinkMic.', amount: 200, icon: 'group_add', path: '/app/forms' },
     ];
 
     const [transactions, setTransactions] = useState([]);
     const [leaderboard, setLeaderboard] = useState([]);
-    const [stats, setStats] = useState({ weekEarned: 0, lifetime: 0, rank: '-', streak: 0 });
+    const [stats, setStats] = useState({ weekEarned: 0, lifetime: 0, rank: '-', streak: 0, levelInfo: DEFAULT_LEVEL_INFO });
 
     React.useEffect(() => {
         const fetchTransactions = async () => {
@@ -80,9 +89,11 @@ export default function Achievements() {
 
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full lg:w-auto">
                             {/* Coin Badge */}
-                            <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-[#1E2255] flex items-center justify-center border-4 border-[#00c2cb] shadow-[0_0_15px_rgba(0,194,203,0.4)] animate-pulse relative shrink-0">
-                                <span className="material-symbols-outlined text-[#00c2cb] text-[32px] sm:text-[40px] md:text-[48px]" style={{ fontVariationSettings: "'FILL' 1" }}>toll</span>
-                                <div className="absolute -bottom-2 bg-[#e6fbfc] text-[#006e73] px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] uppercase tracking-wider font-bold border border-[#00c2cb]">Lvl 4</div>
+                            <div className={`w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center border-4 shadow-[0_0_15px_rgba(0,194,203,0.4)] animate-pulse relative shrink-0 ${stats.levelInfo.isMaxLevel ? 'bg-[#3a2f00] border-[#FFD700]' : 'bg-[#1E2255] border-[#00c2cb]'}`}>
+                                <span className={`material-symbols-outlined text-[32px] sm:text-[40px] md:text-[48px] ${stats.levelInfo.isMaxLevel ? 'text-[#FFD700]' : 'text-[#00c2cb]'}`} style={{ fontVariationSettings: "'FILL' 1" }}>{stats.levelInfo.isMaxLevel ? 'military_tech' : 'toll'}</span>
+                                <div className={`absolute -bottom-2 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] uppercase tracking-wider font-bold border whitespace-nowrap ${stats.levelInfo.isMaxLevel ? 'bg-[#fff8e1] text-[#8a6d00] border-[#FFD700]' : 'bg-[#e6fbfc] text-[#006e73] border-[#00c2cb]'}`}>
+                                    {stats.levelInfo.isMaxLevel ? 'MAX' : `Lvl ${stats.levelInfo.currentLevel}`}
+                                </div>
                             </div>
 
                             <div>
@@ -90,17 +101,22 @@ export default function Achievements() {
                                 <h3 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#222777] tracking-tight flex items-baseline gap-1 sm:gap-2">
                                     {currentCoins.toLocaleString()} <span className="text-lg sm:text-xl md:text-2xl text-[#777682] font-medium">Coins</span>
                                 </h3>
+                                <p className="text-[12px] sm:text-[13px] text-[#3a3f8f] font-bold mt-1">{stats.levelInfo.levelName}</p>
                             </div>
                         </div>
 
                         {/* Progress Bar */}
                         <div className="w-full lg:w-1/3 shrink-0">
                             <div className="flex justify-between text-[11px] sm:text-xs font-bold mb-2">
-                                <span className="text-[#777682]">Progress to Level 5</span>
-                                <span className="text-[#222777]">{currentCoins.toLocaleString()} / 2,000</span>
+                                <span className="text-[#777682]">
+                                    {stats.levelInfo.isMaxLevel ? 'Max Level Reached 🏆' : `Progress to Level ${stats.levelInfo.currentLevel + 1}`}
+                                </span>
+                                <span className="text-[#222777]">
+                                    {stats.levelInfo.isMaxLevel ? 'MAX' : `${stats.lifetime.toLocaleString()} / ${stats.levelInfo.nextLevelThreshold.toLocaleString()}`}
+                                </span>
                             </div>
                             <div className="h-1.5 sm:h-2 w-full bg-[#e0e2eb] rounded-full overflow-hidden">
-                                <div className="h-full bg-[#00c2cb] rounded-full transition-all duration-1000 ease-out" style={{ width: `${progressPercent}%` }}></div>
+                                <div className={`h-full rounded-full transition-all duration-1000 ease-out ${stats.levelInfo.isMaxLevel ? 'bg-[#FFD700]' : 'bg-[#00c2cb]'}`} style={{ width: `${stats.levelInfo.progressPercent}%` }}></div>
                             </div>
                         </div>
                     </div>
@@ -134,7 +150,7 @@ export default function Achievements() {
                         <h3 className="text-xl sm:text-2xl text-[#222777] mb-3 sm:mb-4 font-bold">Ways to Earn</h3>
                         <div className="flex flex-col gap-2 sm:gap-3">
                             {waysToEarn.map((item) => (
-                                <div key={item.id} className="bg-white rounded-lg p-3 sm:p-4 border border-[#e0e2eb] shadow-sm flex items-center justify-between hover:border-[#222777] transition-colors cursor-pointer group">
+                                <div key={item.id} onClick={() => navigate(item.path)} className="bg-white rounded-lg p-3 sm:p-4 border border-[#e0e2eb] shadow-sm flex items-center justify-between hover:border-[#222777] transition-colors cursor-pointer group">
                                     <div className="flex items-center gap-3 sm:gap-4 min-w-0 pr-3">
                                         <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#f1f3fc] flex items-center justify-center text-[#3a3f8f] group-hover:bg-[#e0e0ff] transition-colors shrink-0">
                                             <span className="material-symbols-outlined text-[18px] sm:text-[24px]">{item.icon}</span>
@@ -214,7 +230,7 @@ export default function Achievements() {
                                         {leaderboard.map((u, idx) => (
                                             <tr key={u._id} className={`hover:bg-[#f1f3fc] transition-colors ${u._id === user?.id ? 'bg-[#e6fbfc] hover:bg-[#cbf4f6]' : ''}`}>
                                                 <td className="py-3 sm:py-4 px-3 sm:px-4 font-mono text-[12px] sm:text-[14px] text-[#222777] font-bold whitespace-nowrap">
-                                                    #{idx + 1}
+                                                    {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
                                                 </td>
                                                 <td className="py-3 sm:py-4 px-3 sm:px-4 text-[#181c22] flex items-center gap-2 sm:gap-3 font-semibold min-w-[200px]">
                                                     <img src={u.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName)}&background=222777&color=fff`} className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border border-[#c7c5d3] object-cover" alt="Avatar"/>

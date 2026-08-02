@@ -4,10 +4,114 @@ const TimelineEvent = require('../models/TimelineEvent');
 const Recording = require('../models/Recording');
 const Report = require('../models/Report');
 
+// --- LEVEL PROGRESSION ENGINE ---
+// 10-tier progressive curve based on lifetimeCoins (a permanent, never-decreasing metric -
+// unlike `coins`, which is the spendable balance and can go down when redeemed).
+const LEVELS = [
+    { level: 1, name: 'Novice Researcher', min: 0, next: 500 },
+    { level: 2, name: 'Junior Scholar', min: 501, next: 1500 },
+    { level: 3, name: 'Research Associate', min: 1501, next: 3000 },
+    { level: 4, name: 'Senior Analyst', min: 3001, next: 5500 },
+    { level: 5, name: 'Lead Investigator', min: 5501, next: 9000 },
+    { level: 6, name: 'Principal Scholar', min: 9001, next: 14000 },
+    { level: 7, name: 'Research Fellow', min: 14001, next: 21000 },
+    { level: 8, name: 'Distinguished Fellow', min: 21001, next: 30000 },
+    { level: 9, name: 'Grandmaster', min: 30001, next: 45000 },
+    { level: 10, name: 'Legendary Scholar', min: 45001, next: 45001 }
+];
+
+// Never returns NaN/negative values, even for missing/invalid input.
+function getLevelInfo(lifetimeCoinsRaw) {
+    const lifetimeCoins = Math.max(0, Number(lifetimeCoinsRaw) || 0);
+
+    let tier = LEVELS[0];
+    for (const l of LEVELS) {
+        if (lifetimeCoins >= l.min) tier = l;
+        else break;
+    }
+
+    const isMaxLevel = tier.level === 10;
+    const currentLevelMin = tier.min;
+    const nextLevelThreshold = isMaxLevel ? currentLevelMin : tier.next;
+
+    let progressPercent;
+    if (isMaxLevel) {
+        progressPercent = 100;
+    } else {
+        const span = nextLevelThreshold - currentLevelMin;
+        progressPercent = span > 0 ? ((lifetimeCoins - currentLevelMin) / span) * 100 : 0;
+        progressPercent = Math.min(100, Math.max(0, progressPercent));
+    }
+
+    return {
+        currentLevel: tier.level,
+        levelName: tier.name,
+        currentLevelMin,
+        nextLevelThreshold,
+        progressPercent: Number(progressPercent.toFixed(1)),
+        isMaxLevel,
+        lifetimeCoins
+    };
+}
+
+// --- STREAK CALCULATION ---
+// Consecutive-day streak, counting backward from today (or yesterday, if today has no
+// activity yet - so the streak isn't zeroed out just because the user hasn't acted yet today).
+// A day counts as "active" if it has a Transaction OR a TimelineEvent for this user.
+const dayKey = (d) => new Date(d).toISOString().slice(0, 10);
+
+async function getActiveDaySet(userId, lookbackDays) {
+    const since = new Date();
+    since.setDate(since.getDate() - lookbackDays);
+    since.setHours(0, 0, 0, 0);
+
+    const [transactions, events] = await Promise.all([
+        Transaction.find({ userId, date: { $gte: since } }).select('date'),
+        TimelineEvent.find({ userId, createdAt: { $gte: since } }).select('createdAt')
+    ]);
+
+    const activeDays = new Set();
+    transactions.forEach(t => { if (t.date) activeDays.add(dayKey(t.date)); });
+    events.forEach(e => { if (e.createdAt) activeDays.add(dayKey(e.createdAt)); });
+    return activeDays;
+}
+
+function calculateStreakFromSet(activeDays) {
+    let streak = 0;
+    const cursor = new Date();
+    if (!activeDays.has(dayKey(cursor))) {
+        cursor.setDate(cursor.getDate() - 1);
+    }
+    while (activeDays.has(dayKey(cursor))) {
+        streak++;
+        cursor.setDate(cursor.getDate() - 1);
+    }
+    return streak;
+}
+
+// Last 7 days (oldest -> today) with an `active` flag, for the Activity Streak mini-calendar.
+function buildWeekActivity(activeDays) {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        days.push({
+            date: dayKey(d),
+            label: d.toLocaleDateString('en-US', { weekday: 'narrow' }),
+            active: activeDays.has(dayKey(d)),
+            isToday: i === 0
+        });
+    }
+    return days;
+}
+
 exports.getTransactions = async (req, res) => {
     try {
-        const transactions = await Transaction.find({ userId: req.user.id }).sort({ date: -1 });
-        
+        // Bounded so a long-lived power user's ledger can't return an unbounded scan.
+        const transactions = await Transaction.find({ userId: req.user.id })
+            .sort({ date: -1 })
+            .limit(100);
+
         if (transactions.length === 0) {
             return res.status(200).json([]);
         }
@@ -22,22 +126,28 @@ exports.getTransactions = async (req, res) => {
 exports.addTransaction = async (req, res) => {
     try {
         const { action, amount, icon } = req.body;
-        
-        const newTransaction = new Transaction({
-            userId: req.user.id,
-            action,
-            amount,
-            icon
-        });
 
-        await newTransaction.save();
+        if (typeof amount !== 'number' || !Number.isInteger(amount) || amount === 0) {
+            return res.status(400).json({ message: 'amount must be a non-zero integer' });
+        }
 
-        // Update user coins
+        // Debits only increment lifetimeCoins on the way up (never down) and can never
+        // push `coins` negative - guarded atomically so this can't race with itself.
         const updateQuery = { $inc: { coins: amount } };
         if (amount > 0) {
             updateQuery.$inc.lifetimeCoins = amount;
         }
-        await User.findByIdAndUpdate(req.user.id, updateQuery);
+        const filter = amount < 0
+            ? { _id: req.user.id, coins: { $gte: -amount } }
+            : { _id: req.user.id };
+
+        const updatedUser = await User.findOneAndUpdate(filter, updateQuery, { new: true });
+        if (!updatedUser) {
+            return res.status(400).json({ message: 'Insufficient coin balance' });
+        }
+
+        const newTransaction = new Transaction({ userId: req.user.id, action, amount, icon });
+        await newTransaction.save();
 
         res.status(201).json(newTransaction);
     } catch (err) {
@@ -49,7 +159,8 @@ exports.addTransaction = async (req, res) => {
 exports.getLeaderboard = async (req, res) => {
     try {
         const topUsers = await User.find({ role: { $ne: 'admin' } })
-            .sort({ lifetimeCoins: -1 })
+            // Tie-break by account age so equal-coin users get a stable, consistent order.
+            .sort({ lifetimeCoins: -1, createdAt: 1 })
             .limit(10)
             .select('fullName avatarUrl lifetimeCoins coins');
         res.status(200).json(topUsers);
@@ -85,7 +196,7 @@ exports.getStats = async (req, res) => {
         });
         const weekEarned = recentTransactions.reduce((acc, curr) => acc + curr.amount, 0);
 
-        // Rank
+        // Rank + Level (based on lifetimeCoins, which never decreases on spend)
         const userDoc = await User.findById(userId);
         const lifetime = userDoc ? userDoc.lifetimeCoins : 0;
         const higherRankedCount = await User.countDocuments({
@@ -93,6 +204,7 @@ exports.getStats = async (req, res) => {
             lifetimeCoins: { $gt: lifetime }
         });
         const rank = higherRankedCount + 1;
+        const levelInfo = getLevelInfo(lifetime);
 
         // Reports Generated
         const reportsGenerated = await Report.countDocuments({
@@ -108,13 +220,20 @@ exports.getStats = async (req, res) => {
         const totalDurationSeconds = recentRecordings.reduce((acc, curr) => acc + (curr.durationSeconds || 0), 0);
         const hoursRecorded = (totalDurationSeconds / 3600).toFixed(1);
 
+        // Streak + weekly activity calendar (share the same active-day lookup)
+        const activeDays = await getActiveDaySet(userId, 60);
+        const streak = calculateStreakFromSet(activeDays);
+        const weekActivity = buildWeekActivity(activeDays);
+
         res.status(200).json({
             weekEarned,
             lifetime,
             rank,
-            streak: 14, // Basic static streak logic for now
+            streak,
             hoursRecorded: parseFloat(hoursRecorded),
-            reportsGenerated
+            reportsGenerated,
+            levelInfo,
+            weekActivity
         });
     } catch (err) {
         console.error("Stats Error:", err);

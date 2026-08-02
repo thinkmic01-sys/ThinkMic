@@ -39,6 +39,12 @@ const timelineEventSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    // Frontend route to navigate to when hasLink is true (e.g. "/app/reports/<id>").
+    // May point at a since-deleted entity - the frontend must handle that gracefully.
+    link: {
+        type: String,
+        default: ''
+    },
     isLive: {
         type: Boolean,
         default: false

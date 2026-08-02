@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useSelector } from 'react-redux';
 import api from '../../services/api';
 
 export default function UserTimeline() {
+    const navigate = useNavigate();
     const [activeFilter, setActiveFilter] = useState('All');
     const [timelineEvents, setTimelineEvents] = useState([]);
-    const [stats, setStats] = useState({ weekEarned: 0, streak: 0, hoursRecorded: 0, reportsGenerated: 0 });
+    const [stats, setStats] = useState({ weekEarned: 0, streak: 0, hoursRecorded: 0, reportsGenerated: 0, weekActivity: [] });
     const token = useSelector(state => state.auth?.accessToken);
 
     useEffect(() => {
@@ -123,9 +124,9 @@ export default function UserTimeline() {
 
                                         <p className="text-[15px] text-[#464651] leading-relaxed mb-1">{event.description}</p>
 
-                                        {event.hasLink && (
-                                            <button className="text-[#222777] font-bold text-[13px] hover:underline flex items-center gap-1 mt-3">
-                                                <span>View Report</span>
+                                        {event.hasLink && event.link && (
+                                            <button onClick={() => navigate(event.link)} className="text-[#222777] font-bold text-[13px] hover:underline flex items-center gap-1 mt-3">
+                                                <span>{event.type === 'Seminars' ? 'View Session' : 'View Report'}</span>
                                                 <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                                             </button>
                                         )}
@@ -158,22 +159,22 @@ export default function UserTimeline() {
                         </div>
                         <p className="font-mono text-[10px] sm:text-[11px] text-[#464651] mb-4 sm:mb-5 leading-relaxed font-bold">Keep recording or synthesizing to maintain your streak!</p>
 
-                        {/* Mini Week View */}
+                        {/* Mini Week View - real last-7-days activity from the backend */}
                         <div className="flex justify-between items-center px-1">
-                            {['M', 'T', 'W'].map((day, i) => (
-                                <div key={i} className="flex flex-col items-center gap-1 opacity-50">
-                                    <span className="font-mono text-[9px] sm:text-[10px] font-bold text-[#777682]">{day}</span>
-                                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#3a3f8f] flex items-center justify-center"><span className="material-symbols-outlined text-[10px] sm:text-[12px] text-white">check</span></div>
+                            {stats.weekActivity.map((day, i) => (
+                                <div key={day.date || i} className={`flex flex-col items-center gap-1 ${!day.active && !day.isToday ? 'opacity-30' : ''}`}>
+                                    <span className={`font-mono text-[9px] sm:text-[10px] font-bold ${day.isToday ? 'text-[#222777]' : 'text-[#777682]'}`}>{day.label}</span>
+                                    {day.isToday ? (
+                                        <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-[#00c2cb] flex items-center justify-center pulse-ring ${day.active ? 'bg-[#00c2cb]/10' : ''}`}>
+                                            <span className="material-symbols-outlined text-[10px] sm:text-[12px] text-[#00c2cb]">{day.active ? 'check' : 'mic'}</span>
+                                        </div>
+                                    ) : (
+                                        <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center ${day.active ? 'bg-[#3a3f8f]' : 'bg-[#ebeef6]'}`}>
+                                            {day.active && <span className="material-symbols-outlined text-[10px] sm:text-[12px] text-white">check</span>}
+                                        </div>
+                                    )}
                                 </div>
                             ))}
-                            <div className="flex flex-col items-center gap-1">
-                                <span className="font-mono text-[9px] sm:text-[10px] font-bold text-[#222777]">T</span>
-                                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-[#00c2cb] flex items-center justify-center pulse-ring"><span className="material-symbols-outlined text-[10px] sm:text-[12px] text-[#00c2cb]">mic</span></div>
-                            </div>
-                            <div className="flex flex-col items-center gap-1 opacity-30">
-                                <span className="font-mono text-[9px] sm:text-[10px] font-bold text-[#777682]">F</span>
-                                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#ebeef6] flex items-center justify-center"></div>
-                            </div>
                         </div>
                     </div>
 

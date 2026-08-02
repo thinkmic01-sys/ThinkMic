@@ -1,6 +1,31 @@
 const Report = require('../models/Report');
 const { reportGenerationQueue } = require('../queues');
 
+// Accepts either the raw frontend labels/keys or the already-normalized backend enum/keys
+const TEMPLATE_ALIASES = {
+    'standard academic': 'academic',
+    'academic': 'academic',
+    'executive brief': 'executive',
+    'executive': 'executive',
+    'data dense': 'standard',
+    'standard': 'standard'
+};
+
+function normalizeTemplate(value) {
+    const key = (value || '').toString().trim().toLowerCase();
+    return TEMPLATE_ALIASES[key] || 'standard';
+}
+
+function normalizeSections(rawSections) {
+    const s = rawSections || {};
+    return {
+        summary: s.summary !== undefined ? !!s.summary : !!s.execSummary,
+        research: s.research !== undefined ? !!s.research : !!s.findings,
+        transcript: s.transcript !== undefined ? !!s.transcript : !!s.transcripts,
+        sources: s.sources !== undefined ? !!s.sources : false
+    };
+}
+
 exports.listUserReports = async (req, res) => {
     try {
         const { page = 1, status } = req.query;
@@ -20,17 +45,18 @@ exports.listUserReports = async (req, res) => {
 
 exports.createAndGenerateReport = async (req, res) => {
     try {
-        const { title, summaryId, sessionIds, template, sections } = req.body;
-        
+        const { title, subtitle, summaryId, sessionIds, template, sections } = req.body;
+
         const reportData = {
             userId: req.user._id,
             title,
             summaryId,
             searchSessionIds: sessionIds,
-            template,
-            sections,
+            template: normalizeTemplate(template),
+            sections: normalizeSections(sections),
             status: 'pending'
         };
+        if (subtitle !== undefined) reportData.subtitle = subtitle;
 
         if (req.body.projectId) {
             reportData.projectId = req.body.projectId;
@@ -41,7 +67,7 @@ exports.createAndGenerateReport = async (req, res) => {
         const job = await reportGenerationQueue.add('generate', {
             reportId: report._id,
             userId: req.user._id,
-            templateType: template
+            templateType: report.template
         });
 
         res.status(202).json({ reportId: report._id, jobId: job.id });
@@ -54,9 +80,10 @@ exports.getReport = async (req, res) => {
     try {
         const report = await Report.findOne({ _id: req.params.id, userId: req.user._id });
         if (!report) return res.status(404).json({ message: 'Report not found' });
-        
-        // In a real scenario, this might return pre-rendered HTML.
-        res.status(200).json({ report, previewHtml: '<p>Report Preview</p>' });
+
+        const previewHtml = report.content || '<p>Report content is still being generated...</p>';
+
+        res.status(200).json({ report, previewHtml });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
@@ -79,11 +106,17 @@ exports.getReportStatus = async (req, res) => {
 
 exports.regenerateReport = async (req, res) => {
     try {
-        const { title, template, sections } = req.body;
-        
+        const { title, subtitle, template, sections } = req.body;
+
+        const update = { status: 'pending' };
+        if (title !== undefined) update.title = title;
+        if (subtitle !== undefined) update.subtitle = subtitle;
+        if (template !== undefined) update.template = normalizeTemplate(template);
+        if (sections !== undefined) update.sections = normalizeSections(sections);
+
         const report = await Report.findOneAndUpdate(
             { _id: req.params.id, userId: req.user._id },
-            { title, template, sections, status: 'pending' },
+            update,
             { new: true }
         );
 
@@ -93,7 +126,7 @@ exports.regenerateReport = async (req, res) => {
         const job = await reportGenerationQueue.add('generate', {
             reportId: report._id,
             userId: req.user._id,
-            templateType: template
+            templateType: report.template
         });
 
         res.status(202).json({ reportId: report._id, jobId: job.id });
@@ -107,18 +140,21 @@ exports.exportReport = async (req, res) => {
         const { type, title, subtitle } = req.query;
         const report = await Report.findOne({ _id: req.params.id, userId: req.user._id });
         if (!report) return res.status(404).json({ message: 'Report not found' });
-        
+
         const { generatePDF, generateDOCX } = require('../../workers/utils/documentGenerator');
-        
+
+        const resolvedTitle = title || report.title;
+        const resolvedSubtitle = subtitle || report.subtitle;
+
         let fileUrl;
         if (type === 'pdf') {
-            fileUrl = await generatePDF(report._id, title || report.title, report.content, subtitle);
+            fileUrl = await generatePDF(report._id, resolvedTitle, report.content, resolvedSubtitle);
         } else if (type === 'docx') {
-            fileUrl = await generateDOCX(report._id, title || report.title, report.content, subtitle);
+            fileUrl = await generateDOCX(report._id, resolvedTitle, report.content, resolvedSubtitle);
         } else {
             return res.status(400).json({ message: 'Invalid export type' });
         }
-        
+
         res.status(200).json({ url: fileUrl });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });

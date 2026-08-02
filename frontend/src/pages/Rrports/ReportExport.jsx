@@ -3,6 +3,25 @@ import { Link, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import api from '../../services/api';
 
+const TEMPLATE_OPTIONS = [
+    { value: 'academic', label: 'Standard Academic' },
+    { value: 'executive', label: 'Executive Brief' },
+    { value: 'standard', label: 'Data Dense' }
+];
+const TEMPLATE_LABEL = TEMPLATE_OPTIONS.reduce((acc, t) => ({ ...acc, [t.value]: t.label }), {});
+
+function formatRelativeTime(dateStr) {
+    if (!dateStr) return 'Not generated yet';
+    const diffMs = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return 'Generated just now';
+    if (mins < 60) return `Generated ${mins} min${mins === 1 ? '' : 's'} ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `Generated ${hours} hour${hours === 1 ? '' : 's'} ago`;
+    const days = Math.floor(hours / 24);
+    return `Generated ${days} day${days === 1 ? '' : 's'} ago`;
+}
+
 export default function ReportExport() {
     const { id } = useParams();
     const accessToken = useSelector((state) => state.auth?.accessToken);
@@ -10,7 +29,7 @@ export default function ReportExport() {
     // State to manage the live preview updates
     const [title, setTitle] = useState("Loading Report...");
     const [subtitle, setSubtitle] = useState("Prepared by ThinkMic AI");
-    const [template, setTemplate] = useState("Standard Academic");
+    const [template, setTemplate] = useState("academic");
     const [sections, setSections] = useState({
         execSummary: true,
         findings: true,
@@ -30,6 +49,7 @@ export default function ReportExport() {
                 if (data.report) {
                     setReport(data.report);
                     setTitle(data.report.title || "Untitled Document");
+                    setSubtitle(data.report.subtitle || "Prepared by ThinkMic AI");
                     if (data.report.template) setTemplate(data.report.template);
                 }
             } catch (err) {
@@ -72,6 +92,7 @@ export default function ReportExport() {
             setReport(prev => ({ ...prev, status: 'generating' }));
             await api.put(`/reports/${id}/regenerate`, {
                 title,
+                subtitle,
                 template,
                 sections
             });
@@ -113,7 +134,7 @@ export default function ReportExport() {
                     </div>
                     <div className="flex items-center gap-2 text-[#777682] font-mono text-[11px] sm:text-[12px] font-bold bg-white border border-[#e0e2eb] px-3 py-1.5 rounded-md shadow-sm w-full md:w-auto justify-center md:justify-start mt-2 md:mt-0">
                         <span className="material-symbols-outlined text-[14px] sm:text-[16px]">history</span>
-                        Generated 2 min ago
+                        {formatRelativeTime(report?.updatedAt || report?.createdAt)}
                     </div>
                 </div>
 
@@ -133,9 +154,9 @@ export default function ReportExport() {
                                         onChange={(e) => setTemplate(e.target.value)}
                                         className="w-full sm:w-auto appearance-none bg-white border border-[#c7c5d3] rounded-md pl-3 pr-8 py-1.5 text-[12px] sm:text-[13px] font-bold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none cursor-pointer shadow-sm"
                                     >
-                                        <option>Standard Academic</option>
-                                        <option>Executive Brief</option>
-                                        <option>Data Dense</option>
+                                        {TEMPLATE_OPTIONS.map(opt => (
+                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                        ))}
                                     </select>
                                     <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[16px] text-[#777682] pointer-events-none">expand_more</span>
                                 </div>
@@ -148,15 +169,25 @@ export default function ReportExport() {
                             {/* Cover */}
                             <div className="text-center py-8 sm:py-12 border-b border-[#e0e2eb] mb-8 sm:mb-10">
                                 <h1 className="text-[24px] sm:text-[28px] md:text-[36px] font-bold text-[#181c22] mb-3 sm:mb-4 leading-tight tracking-tight">{title || "Untitled Document"}</h1>
-                                <p className="text-[15px] md:text-[18px] text-[#464651] mb-6 sm:mb-8 max-w-2xl mx-auto leading-relaxed">A comprehensive study of enterprise integration patterns.</p>
-                                <div className="font-mono text-[12px] sm:text-[14px] font-bold text-[#777682]">{subtitle || "Author Name"}</div>
-                                <div className="font-mono text-[11px] sm:text-[12px] font-bold text-[#c7c5d3] mt-2 sm:mt-3">October 24, 2026</div>
+                                <div className="font-mono text-[12px] sm:text-[14px] font-bold text-[#777682] mb-4 sm:mb-5">{subtitle || "Prepared by ThinkMic AI"}</div>
+                                <div className="flex flex-wrap items-center justify-center gap-2">
+                                    <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#e6fbfc] text-[#006e73] border border-[#6bf6ff]/50">
+                                        {TEMPLATE_LABEL[template] || template}
+                                    </span>
+                                    {sections.execSummary && <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#eef0f9] text-[#222777] border border-[#c7c5d3]">Executive Summary</span>}
+                                    {sections.findings && <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#eef0f9] text-[#222777] border border-[#c7c5d3]">Research Findings</span>}
+                                    {sections.transcripts && <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#eef0f9] text-[#222777] border border-[#c7c5d3]">Transcripts</span>}
+                                    {sections.sources && <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#eef0f9] text-[#222777] border border-[#c7c5d3]">Sources</span>}
+                                    <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#f9f9ff] text-[#777682] border border-[#e0e2eb]">
+                                        {formatRelativeTime(report?.updatedAt || report?.createdAt)}
+                                    </span>
+                                </div>
                             </div>
 
                             {report && report.status === 'completed' && report.content ? (
                                 <div className="mb-8 sm:mb-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                    <div className="prose prose-sm sm:prose-base prose-slate max-w-none text-[#464651]">
-                                        <div dangerouslySetInnerHTML={{ __html: report.content.replace(/\n/g, '<br/>') }} />
+                                    <div className="report-content max-w-none text-[#464651]">
+                                        <div dangerouslySetInnerHTML={{ __html: report.content }} />
                                     </div>
                                 </div>
                             ) : (
@@ -166,29 +197,6 @@ export default function ReportExport() {
                                     <div className="h-4 bg-gray-200 rounded w-full"></div>
                                     <div className="h-4 bg-gray-200 rounded w-5/6"></div>
                                     <div className="h-4 bg-gray-200 rounded w-4/6 mt-6"></div>
-                                </div>
-                            )}
-
-                            {sections.transcripts && (
-                                <div className="mb-8 sm:mb-10 opacity-70 animate-in fade-in slide-in-from-bottom-2 duration-300 bg-[#f9f9ff] p-4 sm:p-6 rounded-lg border border-[#e0e2eb] border-dashed">
-                                    <h3 className="text-[16px] sm:text-[20px] font-bold text-[#777682] mb-2">Full Transcripts</h3>
-                                    <p className="text-[12px] sm:text-[13px] text-[#777682] font-mono">[Transcript data hidden for brevity in preview mode. Will be appended to final export.]</p>
-                                </div>
-                            )}
-
-                            {sections.sources && (
-                                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                    <h3 className="text-[18px] sm:text-[22px] font-bold text-[#222777] border-b-2 border-[#e0e2eb] pb-2 mb-3 sm:mb-4">Sources & Citations</h3>
-                                    <div className="space-y-3 sm:space-y-4">
-                                        <div className="flex items-start gap-2 sm:gap-3 text-[13px] sm:text-[14px] text-[#464651]">
-                                            <span className="material-symbols-outlined text-[#c7c5d3] text-[18px] sm:text-[20px] mt-0.5">mic</span>
-                                            <span className="leading-relaxed">Interview: VP Engineering, TechCorp (Oct 12) - <em className="text-[#181c22]">"Security is paramount."</em></span>
-                                        </div>
-                                        <div className="flex items-start gap-2 sm:gap-3 text-[13px] sm:text-[14px] text-[#464651]">
-                                            <span className="material-symbols-outlined text-[#c7c5d3] text-[18px] sm:text-[20px] mt-0.5">description</span>
-                                            <span className="leading-relaxed">Internal Survey Data Q3-Q4 2026</span>
-                                        </div>
-                                    </div>
                                 </div>
                             )}
                         </div>
@@ -341,6 +349,19 @@ export default function ReportExport() {
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c7c5d3; border-radius: 10px; }
+
+                .report-content h1, .report-content h2, .report-content h3 { color: #222777; font-weight: 700; }
+                .report-content h1 { font-size: 1.6rem; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+                .report-content h2 { font-size: 1.3rem; margin-top: 1.75rem; margin-bottom: 0.6rem; border-bottom: 2px solid #e0e2eb; padding-bottom: 0.4rem; }
+                .report-content h3 { font-size: 1.1rem; margin-top: 1.25rem; margin-bottom: 0.4rem; }
+                .report-content p { line-height: 1.75; margin-bottom: 0.9rem; font-size: 14px; }
+                .report-content ul { list-style: disc; margin-left: 1.5rem; margin-bottom: 0.9rem; }
+                .report-content li { margin-bottom: 0.4rem; line-height: 1.65; font-size: 14px; }
+                .report-content blockquote { border-left: 4px solid #00c2cb; background: #f9f9ff; padding: 0.75rem 1rem; margin: 1rem 0; font-style: italic; color: #464651; border-radius: 0 6px 6px 0; }
+                .report-content table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 13px; }
+                .report-content th, .report-content td { border: 1px solid #e0e2eb; padding: 0.5rem 0.75rem; text-align: left; }
+                .report-content th { background: #f1f3fc; color: #222777; font-weight: 700; }
+                .report-content a { color: #00c2cb; text-decoration: underline; word-break: break-word; }
             `}</style>
         </div>
     );

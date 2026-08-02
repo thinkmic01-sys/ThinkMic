@@ -117,23 +117,51 @@ CRITICAL INSTRUCTION: ${langInstruction}`;
     }
 };
 
+// Section structure per template - each maps to the report's `template` enum on Report.js
+const REPORT_TEMPLATE_STRUCTURES = {
+    academic: `- Abstract / Executive Summary (<h2>Abstract</h2>)
+- Methodology & Context (<h2>Methodology & Context</h2>)
+- Literature & Web Synthesis (<h2>Literature & Web Synthesis</h2>) - synthesize the web research into a scholarly narrative, citing sources inline with <a href="...">
+- Direct Quotations & Evidence (<h2>Direct Quotations & Evidence</h2>) - use <blockquote> for verbatim transcript quotes or notable research excerpts
+- Structured References (<h2>References</h2>) - a <table> of cited sources with their URLs`,
+    executive: `- Executive Brief (<h2>Executive Brief</h2>) - a tight, high-level overview for decision-makers
+- Key Insights & Drivers (<h2>Key Insights & Drivers</h2>)
+- Strategic Recommendations (<h2>Strategic Recommendations</h2>)
+- Risk & Opportunity Matrix (<h2>Risk & Opportunity Matrix</h2>) - a <table> with columns for Item, Type (Risk/Opportunity), and Impact
+- Cited Sources (<h2>Cited Sources</h2>)`,
+    standard: `- Overview (<h2>Overview</h2>)
+- Detailed Analysis (<h2>Detailed Analysis</h2>)
+- Key Data Points & Bulletins (<h2>Key Data Points</h2>) - <ul><li> bullet points
+- Speech Transcripts (<h2>Speech Transcripts</h2>) - use <blockquote> for quoted excerpts
+- Web References (<h2>Web References</h2>)`
+};
+
 exports.generateReport = async (summaryText, transcriptText, templateType, sections = {}) => {
     try {
-        console.log(`[OpenAI] Generating ${templateType} report...`);
-        let systemPrompt = `You are a highly skilled AI assistant that writes professional reports based on meeting transcripts and summaries.
-Your job is to generate a well-structured HTML report. DO NOT return markdown or JSON. Return raw HTML suitable for injecting into a div. Use <h1>, <h2>, <p>, <ul>, <li> tags.
-Do NOT include \`\`\`html or \`\`\` blocks in your response, just the raw HTML elements.`;
+        const normalizedTemplate = REPORT_TEMPLATE_STRUCTURES[templateType] ? templateType : 'standard';
+        console.log(`[OpenAI] Generating ${normalizedTemplate} report...`);
 
-        let userContent = `Here is the data for the report:\n\nSummary:\n${summaryText}\n\nTranscripts:\n${transcriptText}\n\nTemplate Type: ${templateType}\n\n`;
-        
+        let systemPrompt = `You are a highly skilled AI research analyst who writes publication-ready professional reports by synthesizing meeting audio transcripts, AI-generated summaries, and live web research.
+
+Return ONLY raw semantic HTML suitable for injecting directly into a <div> - never markdown, never JSON, and never \`\`\` code fences.
+Use only these tags: <h1>, <h2>, <h3>, <p>, <ul>, <li>, <blockquote>, <table>, <tr>, <td>, <th>, <a>, <strong>, <em>.
+Use <blockquote> for direct quotes from the transcript or research, and <a href="..."> for every cited web source URL.
+If the source material contains Urdu or any other non-English script, preserve it verbatim in its original language and script - do not transliterate or translate it.
+
+Structure the report using this "${normalizedTemplate}" template:
+${REPORT_TEMPLATE_STRUCTURES[normalizedTemplate]}`;
+
         let requestedSections = [];
-        if (sections.summary) requestedSections.push("Executive Summary");
-        if (sections.research) requestedSections.push("Research Findings / Main Body");
-        if (sections.transcript) requestedSections.push("Transcripts & Quotes");
+        if (sections.summary) requestedSections.push("Executive/Abstract Summary");
+        if (sections.research) requestedSections.push("Web Research Synthesis");
+        if (sections.transcript) requestedSections.push("Audio Transcript Quotes");
         if (sections.sources) requestedSections.push("Sources & Citations");
-        
+
+        let userContent = `SUMMARY MATERIAL:\n${summaryText || '(none provided)'}\n\nRESEARCH & TRANSCRIPT MATERIAL:\n${transcriptText || '(none provided)'}\n\n`;
         if (requestedSections.length > 0) {
-            userContent += `Please ensure the following sections are included in the HTML report: ${requestedSections.join(', ')}.`;
+            userContent += `Only include the following sections, in this order, and OMIT any section whose source material is unavailable above: ${requestedSections.join(', ')}.`;
+        } else {
+            userContent += `No specific sections were requested - use your judgement to produce a complete report following the template structure above, omitting sections with no available source material.`;
         }
 
         const response = await openai.chat.completions.create({

@@ -79,6 +79,7 @@ const generateDOCX = async (reportId, title, content, subtitle) => {
         ensureDirectoryExists(reportsDir);
 
         const fileName = `report_${reportId}.docx`;
+        const filePath = path.join(reportsDir, fileName);
         const paragraphs = [];
         const regex = /<(h[1-6]|p|div|li)[^>]*>(.*?)<\/\1>/gi;
         let match;

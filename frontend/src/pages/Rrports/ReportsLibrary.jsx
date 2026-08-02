@@ -3,6 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import api from '../../services/api';
 
+const TEMPLATE_LABELS = { academic: 'Standard Academic', executive: 'Executive Brief', standard: 'Data Dense' };
+
+// completed/ready both mean "done" (workers write 'completed'; kept 'ready' too for forward-compat)
+const STATUS_META = {
+    completed: { label: 'Completed', className: 'bg-[#e6fbfc] text-[#006e73] border-[#6bf6ff]/50', icon: 'check_circle', pulse: false },
+    ready: { label: 'Completed', className: 'bg-[#e6fbfc] text-[#006e73] border-[#6bf6ff]/50', icon: 'check_circle', pulse: false },
+    generating: { label: 'Generating', className: 'bg-[#e6fbfc] text-[#00a8b0] border-[#6bf6ff]/50', icon: 'sync', pulse: true },
+    pending: { label: 'Pending', className: 'bg-[#e6fbfc] text-[#00a8b0] border-[#6bf6ff]/50', icon: 'schedule', pulse: true },
+    failed: { label: 'Failed', className: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ffb4ab]', icon: 'error', pulse: false }
+};
+
 export default function ReportsLibrary() {
     const navigate = useNavigate();
     const accessToken = useSelector((state) => state.auth?.accessToken);
@@ -21,8 +32,8 @@ export default function ReportsLibrary() {
                         id: r._id,
                         title: r.title || 'Untitled Report',
                         date: r.createdAt,
-                        status: r.status, // 'generating', 'ready', 'failed', 'completed'
-                        format: r.format || 'Standard'
+                        status: r.status, // 'pending', 'generating', 'ready', 'failed', 'completed'
+                        format: TEMPLATE_LABELS[r.template] || 'Standard'
                     })));
                 }
             } catch (err) {
@@ -35,19 +46,16 @@ export default function ReportsLibrary() {
     const [activeMenu, setActiveMenu] = useState(null);
 
     const handleRowClick = (reportId, status) => {
-        if (status === 'ready' || status === 'completed') {
-            navigate(`/app/reports/${reportId}`);
-        } else if (status === 'failed') {
+        if (status === 'failed') {
             setCustomAlert({
                 title: 'Generation Failed',
                 message: 'This report failed to generate. Please retry the generation process.'
             });
-        } else {
-            setCustomAlert({
-                title: 'Report Generating',
-                message: 'This report is currently generating. Please wait.'
-            });
+            return;
         }
+        // Pending/generating reports open the same export page, which already shows a live
+        // skeleton preview and updates itself in real time via Socket.IO once ready.
+        navigate(`/app/reports/${reportId}`);
     };
 
     const handleEdit = (reportId) => {
@@ -115,7 +123,7 @@ export default function ReportsLibrary() {
                                     >
                                         <td className="py-3 px-4 sm:py-4 sm:px-6">
                                             <div className="flex items-center gap-3">
-                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${report.status === 'ready' ? 'bg-[#e6fbfc] text-[#006e73]' : 'bg-[#f1f3fc] text-[#777682]'}`}>
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${(report.status === 'ready' || report.status === 'completed') ? 'bg-[#e6fbfc] text-[#006e73]' : 'bg-[#f1f3fc] text-[#777682]'}`}>
                                                     <span className="material-symbols-outlined text-[18px]">description</span>
                                                 </div>
                                                 <span className="font-bold text-[#181c22] text-[13px] sm:text-[14px] group-hover:text-[#222777] transition-colors line-clamp-1">{report.title}</span>
@@ -124,20 +132,21 @@ export default function ReportsLibrary() {
                                         <td className="py-3 px-4 sm:py-4 sm:px-6 font-mono text-[12px] sm:text-[13px] text-[#464651] whitespace-nowrap">
                                             {new Date(report.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                                         </td>
-                                        <td className="py-3 px-4 sm:py-4 sm:px-6 text-[12px] sm:text-[13px] font-semibold text-[#464651] whitespace-nowrap">
-                                            {report.format}
+                                        <td className="py-3 px-4 sm:py-4 sm:px-6 whitespace-nowrap">
+                                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] sm:text-[12px] font-bold bg-[#f1f3fc] text-[#464651] border border-[#e0e2eb]">
+                                                {report.format}
+                                            </span>
                                         </td>
                                         <td className="py-3 px-4 sm:py-4 sm:px-6 whitespace-nowrap">
-                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border
-                                                ${report.status === 'ready' ? 'bg-[#e6fbfc] text-[#006e73] border-[#6bf6ff]/50' : ''}
-                                                ${report.status === 'generating' ? 'bg-[#fff8e1] text-[#b45309] border-[#ffe082]' : ''}
-                                                ${report.status === 'failed' ? 'bg-[#ffdad6] text-[#ba1a1a] border-[#ffb4ab]' : ''}
-                                            `}>
-                                                {report.status === 'generating' && <span className="material-symbols-outlined text-[12px] sm:text-[14px] animate-spin">sync</span>}
-                                                {report.status === 'ready' && <span className="material-symbols-outlined text-[12px] sm:text-[14px]">check_circle</span>}
-                                                {report.status === 'failed' && <span className="material-symbols-outlined text-[12px] sm:text-[14px]">error</span>}
-                                                {report.status}
-                                            </span>
+                                            {(() => {
+                                                const meta = STATUS_META[report.status] || STATUS_META.pending;
+                                                return (
+                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider border ${meta.className} ${meta.pulse ? 'animate-pulse' : ''}`}>
+                                                        <span className={`material-symbols-outlined text-[12px] sm:text-[14px] ${meta.icon === 'sync' ? 'animate-spin' : ''}`}>{meta.icon}</span>
+                                                        {meta.label}
+                                                    </span>
+                                                );
+                                            })()}
                                         </td>
                                         <td className="py-3 px-4 sm:py-4 sm:px-6 text-right relative">
                                             <button 

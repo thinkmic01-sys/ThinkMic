@@ -16,6 +16,10 @@ const ReportSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    subtitle: {
+        type: String,
+        default: 'Prepared by ThinkMic AI'
+    },
     recordingId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Recording'

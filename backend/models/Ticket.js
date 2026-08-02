@@ -28,6 +28,18 @@ const TicketSchema = new mongoose.Schema({
         enum: ['open', 'closed'],
         default: 'open'
     },
+    category: {
+        type: String,
+        default: 'General'
+    },
+    rating: {
+        type: Number,
+        min: 1,
+        max: 5
+    },
+    feedback: {
+        type: String
+    },
     messages: [MessageSchema]
 }, { timestamps: true });
 

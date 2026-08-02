@@ -15,8 +15,8 @@ exports.getTicket = async (req, res) => {
 
 exports.sendMessage = async (req, res) => {
     try {
-        const { text, ticketId } = req.body;
-        
+        const { text, ticketId, category } = req.body;
+
         if (!text || text.trim() === '') {
             return res.status(400).json({ message: 'Message text is required' });
         }
@@ -26,17 +26,20 @@ exports.sendMessage = async (req, res) => {
         if (ticketId) {
             ticket = await Ticket.findById(ticketId);
             if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
-            
+
             // Check auth (only ticket owner or admin/manager can reply)
             if (ticket.user.toString() !== req.user._id.toString() && !['admin', 'manager'].includes(req.user.role)) {
                 return res.status(403).json({ message: 'Not authorized to reply to this ticket' });
             }
+            if (category) ticket.category = category;
         } else {
             // Check if user already has an open ticket
             ticket = await Ticket.findOne({ user: req.user._id, status: 'open' });
             // If not, create one
             if (!ticket) {
-                ticket = new Ticket({ user: req.user._id, status: 'open', messages: [] });
+                ticket = new Ticket({ user: req.user._id, status: 'open', messages: [], category: category || 'General' });
+            } else if (category) {
+                ticket.category = category;
             }
         }
 
@@ -93,13 +96,48 @@ exports.closeTicket = async (req, res) => {
     try {
         const { id } = req.params;
         const ticket = await Ticket.findById(id);
-        
+
         if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
-        
+
+        const isOwner = ticket.user.toString() === req.user._id.toString();
+        const isStaff = ['admin', 'manager'].includes(req.user.role);
+        if (!isOwner && !isStaff) {
+            return res.status(403).json({ message: 'Not authorized to close this ticket' });
+        }
+
         ticket.status = 'closed';
         await ticket.save();
 
         res.status(200).json({ message: 'Ticket closed successfully', ticket });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+// @desc    Submit a satisfaction rating/feedback for a resolved ticket
+// @route   PATCH /api/v1/support/:id/rate
+// @access  Private (ticket owner only)
+exports.rateTicket = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { rating, feedback } = req.body;
+
+        if (rating === undefined || rating < 1 || rating > 5) {
+            return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+        }
+
+        const ticket = await Ticket.findById(id);
+        if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+
+        if (ticket.user.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Not authorized to rate this ticket' });
+        }
+
+        ticket.rating = rating;
+        if (feedback !== undefined) ticket.feedback = feedback;
+        await ticket.save();
+
+        res.status(200).json({ message: 'Rating submitted successfully', ticket });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }

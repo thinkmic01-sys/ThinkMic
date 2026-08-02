@@ -9,7 +9,8 @@ const helpCategories = [
     { icon: 'list_alt', title: 'Learning List', desc: 'Curated tutorials to master advanced workflows.' },
 ];
 
-const faqs = [
+// Exported so SupportSidebar's Instant Help tab searches this exact same list - single source of truth
+export const faqs = [
     { question: 'How do I calibrate the AI sentiment analysis?', answer: 'To calibrate the sentiment analysis engine for specific domains, navigate to Settings > AI Processing > Model Calibration. We recommend uploading at least 5 baseline audio samples.' },
     { question: 'Where can I find my invoice history?', answer: 'You can find your full invoice history by going to Settings > Billing and scrolling down to the "Invoices" section.' },
     { question: 'What is the difference between standard and high-fidelity transcription?', answer: 'High-fidelity transcription uses a larger AI model that processes audio slower but achieves higher accuracy, especially for complex technical jargon.' },

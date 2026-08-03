@@ -24,17 +24,49 @@ const storage = multer.diskStorage({
     }
 });
 
+// Only accept real audio files - covers every codec our cross-browser MediaRecorder fallback
+// chain can produce (webm/opus, mp4, aac, ogg) plus common uploaded file formats (mp3, wav, m4a)
+const audioFileFilter = (req, file, cb) => {
+    if (file.mimetype && file.mimetype.startsWith('audio/')) {
+        cb(null, true);
+    } else {
+        cb(new Error('INVALID_FILE_TYPE'), false);
+    }
+};
+
 // Initialize multer with a 50MB file size limit
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 50 * 1024 * 1024 }
+    limits: { fileSize: 50 * 1024 * 1024 },
+    fileFilter: audioFileFilter
 });
+
+// Wraps multer so upload errors (file too large, wrong type) return clean JSON instead of
+// bubbling up to Express's default HTML error page
+const handleAudioUpload = (req, res, next) => {
+    upload.single('audio')(req, res, (err) => {
+        if (!err) return next();
+
+        if (err instanceof multer.MulterError) {
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(400).json({ message: 'Audio file exceeds the 50MB limit.' });
+            }
+            return res.status(400).json({ message: `Upload error: ${err.message}` });
+        }
+        if (err.message === 'INVALID_FILE_TYPE') {
+            return res.status(400).json({ message: 'Invalid file type. Please upload a valid audio file (webm, mp4, aac, ogg, mp3, wav, or m4a).' });
+        }
+
+        console.error('Recording upload error:', err);
+        return res.status(500).json({ message: 'Server Error processing upload', error: err.message });
+    });
+};
 
 // Protect all routes
 router.use(protect);
 
 // Our new Local Upload route. Multer handles the file labeled 'audio' in the form data
-router.post('/', upload.single('audio'), uploadAudioLocal);
+router.post('/', handleAudioUpload, uploadAudioLocal);
 
 // Get recordings
 router.get('/', getMyRecordings);

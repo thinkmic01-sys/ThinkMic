@@ -6,6 +6,38 @@ import api from '../../services/api';
 import deepgramService from '../../services/deepgramService';
 import { io } from 'socket.io-client';
 
+// Probes for a codec MediaRecorder can actually use in this browser - Safari/iOS don't support
+// audio/webm at all, so a hardcoded mimeType silently breaks recording there
+const getSupportedAudioMimeType = () => {
+    const types = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+        'audio/aac',
+        'audio/ogg;codecs=opus'
+    ];
+    for (const t of types) {
+        if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(t)) {
+            return t;
+        }
+    }
+    return ''; // Fallback to browser default
+};
+
+const getExtensionForMimeType = (mimeType) => {
+    if (!mimeType) return 'webm';
+    if (mimeType.includes('mp4')) return 'mp4';
+    if (mimeType.includes('aac')) return 'aac';
+    if (mimeType.includes('ogg')) return 'ogg';
+    return 'webm';
+};
+
+// openaiService.generateSummary uses `language` as a natural-language prompt instruction
+// ("write entirely in ${language}"), not a locale code - convert before sending it, mirroring
+// the same mapping backend/controllers/recordingController.js applies on the upload path
+const LOCALE_LANGUAGE_NAMES = { 'en-US': 'English', 'ur-PK': 'Urdu' };
+const localeToLanguageName = (locale) => LOCALE_LANGUAGE_NAMES[locale] || 'English';
+
 export default function SpeechWorkspace() {
     // --- STATE MANAGEMENT ---
     const navigate = useNavigate();
@@ -29,6 +61,9 @@ export default function SpeechWorkspace() {
     const recognitionRef = useRef(null);
     const interimTextRef = useRef('');
     const recordingStartTimeRef = useRef(null);
+    // Mirrors recordingState for callbacks/closures (e.g. deepgramService.onClose) that would
+    // otherwise capture a stale value from whenever startRecording originally ran
+    const recordingStateRef = useRef('idle');
 
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -188,6 +223,14 @@ export default function SpeechWorkspace() {
                 deepgramService.onError = (err) => {
                     showToast(err.message || 'Deepgram error', 'error');
                 };
+
+                deepgramService.onClose = () => {
+                    // Only surface this if we're still actively in a recording session - an
+                    // intentional stop already flips isIntentionalDisconnect before disconnecting
+                    if (recordingStateRef.current === 'recording' || recordingStateRef.current === 'paused') {
+                        showToast('Live transcription connection was lost. Please stop and restart recording.', 'error');
+                    }
+                };
             }
 
             // If starting from idle (new session), clear everything out first
@@ -200,7 +243,20 @@ export default function SpeechWorkspace() {
             }
             
             // For Deepgram, we need timeslice chunks. For others, we also need it for the final blob.
-            const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            const supportedMimeType = getSupportedAudioMimeType();
+            let mediaRecorder;
+            try {
+                mediaRecorder = supportedMimeType
+                    ? new MediaRecorder(stream, { mimeType: supportedMimeType })
+                    : new MediaRecorder(stream);
+            } catch (recorderError) {
+                console.error('Failed to initialize MediaRecorder:', recorderError);
+                showToast('This browser does not support any compatible audio recording format.', 'error');
+                stream.getTracks().forEach((track) => track.stop());
+                setRecordingState('idle');
+                if (sttEngine === 'Deepgram') deepgramService.disconnect();
+                return;
+            }
             mediaRecorderRef.current = mediaRecorder;
             audioChunksRef.current = []; // Reset chunks
             recordingStartTimeRef.current = Date.now();
@@ -214,34 +270,33 @@ export default function SpeechWorkspace() {
                 }
             };
 
+            mediaRecorder.onerror = (event) => {
+                console.error('MediaRecorder error:', event.error);
+                showToast('A recording error occurred. Please stop and try again.', 'error');
+            };
+
             mediaRecorder.onstop = () => {
-                // When recording stops, assemble the blob and upload
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                
-                // If Browser or Deepgram, we have the full text. We pass it to bypass Whisper.
-                let rawText = null;
-                if (sttEngine === 'Browser' || sttEngine === 'Deepgram') {
-                    // Extract text from state (note: state might be slightly stale if accessed here directly, 
-                    // but transcripts updates synchronously enough for most cases. To be safe, we can use a ref, 
-                    // but for now we map what we have in DOM/state).
-                    // Actually, getting from setTranscripts might be safer, but let's use the UI text for simplicity.
-                }
-                
+                // Use the codec MediaRecorder actually negotiated (not a hardcoded guess) so the
+                // blob's type - and the extension we upload it with - always match its real content
+                const resolvedMimeType = mediaRecorder.mimeType || 'audio/webm';
+                const audioBlob = new Blob(audioChunksRef.current, { type: resolvedMimeType });
+                const extension = getExtensionForMimeType(resolvedMimeType);
+
                 // For simplicity, we just pass the joined transcript text
                 setTranscripts((currentTranscripts) => {
                     if (sttEngine === 'Browser' || sttEngine === 'Deepgram') {
-                        rawText = currentTranscripts.map(t => t.text).join(' ').trim();
+                        let rawText = currentTranscripts.map(t => t.text).join(' ').trim();
                         if (interimTextRef.current) {
                             rawText = (rawText + ' ' + interimTextRef.current).trim();
                         }
-                        uploadAudioToBackend(audioBlob, `live-recording-${Date.now()}.webm`, rawText);
+                        uploadAudioToBackend(audioBlob, `live-recording-${Date.now()}.${extension}`, rawText);
                     } else {
                         // Whisper
-                        uploadAudioToBackend(audioBlob, `live-recording-${Date.now()}.webm`);
+                        uploadAudioToBackend(audioBlob, `live-recording-${Date.now()}.${extension}`);
                     }
                     return currentTranscripts;
                 });
-                
+
                 if (sttEngine === 'Deepgram') {
                     deepgramService.disconnect();
                 }
@@ -294,6 +349,9 @@ export default function SpeechWorkspace() {
 
                         recognitionRef.current = recognition;
                     }
+                    // recognitionRef.current is reused across sessions - keep its language in sync
+                    // with the current selector in case the user switched languages since last use
+                    recognitionRef.current.lang = language;
                     try { recognitionRef.current.start(); } catch(e) {}
                 } else if (sttEngine === 'Browser') {
                     showToast("Your browser does not support the Web Speech API. Please use Chrome or select Deepgram/Whisper.", "error");
@@ -307,22 +365,39 @@ export default function SpeechWorkspace() {
     };
 
     const pauseRecording = () => {
-        if (mediaRecorderRef.current && recordingState === 'recording') {
-            mediaRecorderRef.current.pause();
-            setRecordingState('paused');
-            try { recognitionRef.current?.stop(); } catch(e) {}
-        } else if (mediaRecorderRef.current && recordingState === 'paused') {
-            mediaRecorderRef.current.resume();
-            setRecordingState('recording');
-            try { recognitionRef.current?.start(); } catch(e) {}
+        const recorder = mediaRecorderRef.current;
+        if (!recorder) return;
+
+        if (recordingState === 'recording' && recorder.state === 'recording') {
+            try {
+                recorder.pause();
+                setRecordingState('paused');
+                try { recognitionRef.current?.stop(); } catch (e) {}
+            } catch (e) {
+                console.error('Failed to pause recording:', e);
+                showToast('Could not pause recording.', 'error');
+            }
+        } else if (recordingState === 'paused' && recorder.state === 'paused') {
+            try {
+                recorder.resume();
+                setRecordingState('recording');
+                try { recognitionRef.current?.start(); } catch (e) {}
+            } catch (e) {
+                console.error('Failed to resume recording:', e);
+                showToast('Could not resume recording.', 'error');
+            }
         }
     };
 
     const stopRecording = () => {
-        if (mediaRecorderRef.current) {
-            mediaRecorderRef.current.stop(); // This triggers the onstop event defined in startRecording
-            streamRef.current.getTracks().forEach(track => track.stop());
+        try {
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                mediaRecorderRef.current.stop(); // This triggers the onstop event defined in startRecording
+            }
+        } catch (e) {
+            console.error('Failed to stop MediaRecorder cleanly:', e);
         }
+        try { streamRef.current?.getTracks().forEach(track => track.stop()); } catch (e) {}
         try { recognitionRef.current?.stop(); } catch(e) {}
         setRecordingState('idle');
         setTimeElapsed(0);
@@ -334,8 +409,11 @@ export default function SpeechWorkspace() {
         const file = e.target.files[0];
         if (file) {
             if (file.size > 50 * 1024 * 1024) return showToast("File exceeds the 50MB limit.", "error");
+            if (file.type && !file.type.startsWith('audio/')) return showToast("Please select a valid audio file.", "error");
             uploadAudioToBackend(file, file.name, null, true);
         }
+        // Allow re-selecting the same file after a previous rejection
+        e.target.value = '';
     };
 
     // --- INTERACTIVE FUNCTIONALITY HANDLERS ---
@@ -376,7 +454,7 @@ export default function SpeechWorkspace() {
                 customPrompt: promptOverride || customPrompts[0].text,
                 length: summaryLength,
                 style: summaryStyle,
-                language: language
+                language: localeToLanguageName(language)
             });
             showToast("AI Job Queued! Waiting for results...", "success");
         } catch (err) {
@@ -406,6 +484,10 @@ export default function SpeechWorkspace() {
     };
 
     useEffect(() => {
+        recordingStateRef.current = recordingState;
+    }, [recordingState]);
+
+    useEffect(() => {
         if (recordingState === 'recording') {
             timerIntervalRef.current = setInterval(() => setTimeElapsed((prev) => prev + 1), 1000);
         } else {
@@ -415,6 +497,26 @@ export default function SpeechWorkspace() {
             clearInterval(timerIntervalRef.current);
         };
     }, [recordingState]);
+
+    // Ensure the mic, MediaRecorder, and live STT connection are fully released if the user
+    // navigates away mid-recording, rather than leaking an open microphone/WebSocket
+    useEffect(() => {
+        return () => {
+            try { streamRef.current?.getTracks().forEach((track) => track.stop()); } catch (e) {}
+            try {
+                if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                    // Detach handlers first so unmounting doesn't trigger a silent background upload
+                    mediaRecorderRef.current.ondataavailable = null;
+                    mediaRecorderRef.current.onstop = null;
+                    mediaRecorderRef.current.onerror = null;
+                    mediaRecorderRef.current.stop();
+                }
+            } catch (e) {}
+            try { recognitionRef.current?.stop(); } catch (e) {}
+            try { deepgramService.disconnect(); } catch (e) {}
+            clearInterval(timerIntervalRef.current);
+        };
+    }, []);
 
     const formatTime = (seconds) => {
         const h = Math.floor(seconds / 3600);
@@ -497,8 +599,15 @@ export default function SpeechWorkspace() {
                 <div className="flex flex-col items-center gap-1 w-full md:w-auto shrink-0 order-first md:order-none">
                     <div className="bg-[#222777] text-white rounded-md px-4 sm:px-5 py-2 flex items-center justify-between gap-4 md:gap-6 shadow-sm w-full md:w-[340px] border border-[#3a3f8f]">
                         <div className="flex items-center gap-2 md:gap-3">
-                            <span className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${recordingState === 'recording' ? 'bg-[#ba1a1a] animate-pulse' : (recordingState === 'connecting' ? 'bg-[#e3b505] animate-pulse' : 'bg-[#777682]')}`}></span>
-                            <span className="text-[11px] md:text-xs font-bold tracking-widest text-[#bfc2ff]">{recordingState === 'connecting' ? 'INIT' : 'REC'}</span>
+                            <span className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${
+                                recordingState === 'recording' ? 'bg-[#ba1a1a] animate-pulse'
+                                    : recordingState === 'connecting' ? 'bg-[#e3b505] animate-pulse'
+                                    : recordingState === 'paused' ? 'bg-[#e3b505]'
+                                    : 'bg-[#777682]'
+                            }`}></span>
+                            <span className="text-[11px] md:text-xs font-bold tracking-widest text-[#bfc2ff]">
+                                {recordingState === 'connecting' ? 'INIT' : recordingState === 'paused' ? 'PAUSED' : 'REC'}
+                            </span>
                             <span className="font-mono font-bold text-[13px] md:text-sm tracking-wide text-white">{formatTime(timeElapsed)}</span>
                         </div>
                         <div className="flex items-center gap-[2px] md:gap-[3px] h-4 md:h-5">

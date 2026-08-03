@@ -1,6 +1,20 @@
 const Transcript = require('../models/Transcript');
 const Recording = require('../models/Recording');
 const { transcriptionQueue, summarizationQueue } = require('../queues');
+
+// Locale codes used consistently across deepgramService.js/SpeechWorkspace.jsx (en-US, ur-PK)
+const SUPPORTED_LOCALES = ['en-US', 'ur-PK'];
+const LOCALE_LANGUAGE_NAMES = { 'en-US': 'English', 'ur-PK': 'Urdu' };
+
+// Whisper (openaiService.transcribeAudio) expects the raw locale code
+const normalizeLocale = (locale) => SUPPORTED_LOCALES.includes(locale) ? locale : 'en-US';
+// The AI summary prompt (openaiService.generateSummary) uses `language` as a natural-language
+// instruction ("write entirely in ${language}"), not a locale code, so it needs the plain name
+const localeToLanguageName = (locale) => LOCALE_LANGUAGE_NAMES[normalizeLocale(locale)];
+
+// Browsers report mimetype with codec params (e.g. "audio/webm;codecs=opus") - store the clean
+// base type so playback <audio> tags and format displays elsewhere in the app stay consistent
+const cleanMimeType = (mimetype) => (mimetype || '').split(';')[0].trim() || 'audio/webm';
 // const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 // const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 // const { v4: uuidv4 } = require('uuid');
@@ -65,12 +79,12 @@ exports.uploadAudioLocal = async (req, res) => {
         const recordingData = {
             userId: req.user._id,
             title: req.body.title || 'Untitled Research Audio',
-            mimeType: req.file.mimetype,
+            mimeType: cleanMimeType(req.file.mimetype),
             fileSizeBytes: req.file.size,
             s3Key: req.file.filename, // We temporarily store the local filename here
             status: 'uploaded'
         };
-        
+
         if (req.body.projectId) {
             recordingData.projectId = req.body.projectId;
         }
@@ -90,11 +104,11 @@ exports.uploadAudioLocal = async (req, res) => {
                 transcriptId: transcript._id,
                 userId: req.user._id,
                 customPrompt: req.body.customPrompt,
-                language: req.body.language,
+                language: localeToLanguageName(req.body.language),
                 length: req.body.length,
                 style: req.body.style
             });
-            
+
             // Notify frontend that transcription is already complete
             const socket = require('../utils/socket');
             socket.getIO().to(req.user._id.toString()).emit('transcription_complete', {
@@ -109,7 +123,7 @@ exports.uploadAudioLocal = async (req, res) => {
                 recordingId: recording._id,
                 s3Key: req.file.filename,
                 userId: req.user._id,
-                language: req.body.language,
+                language: normalizeLocale(req.body.language),
                 length: req.body.length,
                 style: req.body.style
             });

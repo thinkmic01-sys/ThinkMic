@@ -10,6 +10,12 @@ const Transcript = require('../backend/models/Transcript');
 const socketUtil = require('../backend/utils/socket');
 const { summarizationQueue } = require('../backend/queues');
 
+// openaiService.generateSummary treats `language` as a natural-language prompt instruction
+// ("write entirely in ${language}"), not a locale code - convert before forwarding it on,
+// mirroring the same mapping recordingController.js uses for its own summarization enqueue
+const LOCALE_LANGUAGE_NAMES = { 'en-US': 'English', 'ur-PK': 'Urdu' };
+const localeToLanguageName = (locale) => LOCALE_LANGUAGE_NAMES[locale] || 'English';
+
 const worker = new Worker('transcription', async (job) => {
     const { recordingId, s3Key, userId, language } = job.data;
     console.log(`[Worker] Starting transcription for recording ${recordingId}`);
@@ -47,7 +53,7 @@ const worker = new Worker('transcription', async (job) => {
         await summarizationQueue.add('summarize', {
             transcriptId: transcript._id,
             userId,
-            language: job.data.language,
+            language: localeToLanguageName(job.data.language),
             length: job.data.length,
             style: job.data.style
         });

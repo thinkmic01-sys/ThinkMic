@@ -10,6 +10,7 @@ export default function VoiceRecorder({ value, onChange, prompt }) {
     const [interimText, setInterimText] = useState('');
     const [supported, setSupported] = useState(true);
     const [elapsedTime, setElapsedTime] = useState(0);
+    const [errorMessage, setErrorMessage] = useState('');
     const recognitionRef = useRef(null);
     const timerRef = useRef(null);
 
@@ -48,9 +49,25 @@ export default function VoiceRecorder({ value, onChange, prompt }) {
 
         recognition.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
-            if (event.error === 'not-allowed') {
+
+            if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
                 setSupported(false);
+                return;
             }
+            if (event.error === 'no-speech') {
+                // Not a real failure - the browser just didn't hear anything. onend's own
+                // auto-restart logic will pick recognition back up if we're still listening.
+                return;
+            }
+
+            const messages = {
+                'audio-capture': 'No microphone was detected. Please connect a microphone and try again.',
+                'network': 'Network error - speech recognition requires an internet connection.',
+                'aborted': ''
+            };
+            setErrorMessage(messages[event.error] ?? 'Speech recognition encountered an error. Please try again.');
+
+            recognitionRef.current._shouldListen = false;
             setIsListening(false);
             clearInterval(timerRef.current);
             setElapsedTime(0);
@@ -69,7 +86,7 @@ export default function VoiceRecorder({ value, onChange, prompt }) {
         recognitionRef.current = recognition;
 
         return () => {
-            recognition.abort();
+            try { recognition.abort(); } catch (e) {}
             clearInterval(timerRef.current);
         };
     }, []);
@@ -115,12 +132,14 @@ export default function VoiceRecorder({ value, onChange, prompt }) {
                 recognitionRef.current._shouldListen = true;
                 recognitionRef.current.start();
                 setIsListening(true);
+                setErrorMessage('');
                 setElapsedTime(0);
                 timerRef.current = setInterval(() => {
                     setElapsedTime(prev => prev + 1);
                 }, 1000);
             } catch (e) {
                 console.error('Failed to start recognition:', e);
+                setErrorMessage('Could not start speech recognition. Please try again.');
             }
         }
     };
@@ -159,8 +178,17 @@ export default function VoiceRecorder({ value, onChange, prompt }) {
     return (
         <div>
             {prompt && <p className="text-[12px] italic text-[#777682] mb-3">"{prompt}"</p>}
+            {errorMessage && (
+                <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-lg bg-[#ffdad6] border border-[#ba1a1a]/30 text-[#ba1a1a]">
+                    <span className="material-symbols-outlined text-[16px] shrink-0">error</span>
+                    <span className="text-[12px] font-bold flex-1">{errorMessage}</span>
+                    <button type="button" onClick={() => setErrorMessage('')} className="hover:opacity-70">
+                        <span className="material-symbols-outlined text-[14px]">close</span>
+                    </button>
+                </div>
+            )}
             <div className="border border-[#e0e2eb] rounded-xl bg-[#f9f9ff] overflow-hidden shadow-sm">
-                
+
                 {/* Controls Bar */}
                 <div className="flex items-center justify-between border-b border-[#e0e2eb] p-3 sm:p-4 bg-white/50">
                     <div className="flex items-center gap-3">

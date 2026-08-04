@@ -124,10 +124,10 @@ const worker = new Worker('report-generation', async (job) => {
             console.log(`[Worker] Report generated via OpenAI fallback`);
         }
 
-        // 5. Generate PDF and DOCX with the report's current title/subtitle
+        // 5. Generate PDF and DOCX with the report's current title/subtitle/template/sections
         const { generatePDF, generateDOCX } = require('./utils/documentGenerator');
-        const pdfResult = await generatePDF(reportId, report.title, reportContent, report.subtitle);
-        const docxResult = await generateDOCX(reportId, report.title, reportContent, report.subtitle);
+        const pdfResult = await generatePDF(reportId, report.title, reportContent, report.subtitle, resolvedTemplate, report.sections);
+        const docxResult = await generateDOCX(reportId, report.title, reportContent, report.subtitle, resolvedTemplate, report.sections);
 
         // 6. Update report in DB
         await Report.findByIdAndUpdate(reportId, {

@@ -1,8 +1,12 @@
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const Report = require('../models/Report');
 const { reportGenerationQueue } = require('../queues');
 const r2StorageService = require('../services/r2StorageService');
+const emailService = require('../services/emailService');
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Accepts either the raw frontend labels/keys or the already-normalized backend enum/keys
 const TEMPLATE_ALIASES = {
@@ -191,9 +195,9 @@ exports.exportReport = async (req, res) => {
 
         let result;
         if (type === 'pdf') {
-            result = await generatePDF(report._id, resolvedTitle, report.content, resolvedSubtitle);
+            result = await generatePDF(report._id, resolvedTitle, report.content, resolvedSubtitle, report.template, report.sections);
         } else if (type === 'docx') {
-            result = await generateDOCX(report._id, resolvedTitle, report.content, resolvedSubtitle);
+            result = await generateDOCX(report._id, resolvedTitle, report.content, resolvedSubtitle, report.template, report.sections);
         } else {
             return res.status(400).json({ message: 'Invalid export type' });
         }
@@ -203,6 +207,68 @@ exports.exportReport = async (req, res) => {
         res.status(200).json({ url: result.localPath });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+// @desc    Email the report's PDF (as a real attachment) to a recipient
+// @route   POST /api/v1/reports/:id/email
+// @access  Private
+exports.sendReportEmail = async (req, res) => {
+    let tempFilePath = null;
+    try {
+        const { recipientEmail, message } = req.body;
+        if (!recipientEmail || !EMAIL_REGEX.test(recipientEmail)) {
+            return res.status(400).json({ message: 'A valid recipient email is required.' });
+        }
+
+        const report = await Report.findOne({ _id: req.params.id, userId: req.user._id });
+        if (!report) return res.status(404).json({ message: 'Report not found' });
+
+        // Resolve an absolute PDF path to attach: prefer the local copy already on
+        // disk, fall back to downloading the R2 mirror, and as a last resort generate
+        // one on the fly so "Send via Email" never fails just because nothing was cached.
+        let pdfPath = null;
+
+        if (report.pdfLocalPath) {
+            const candidate = path.join(__dirname, '..', report.pdfLocalPath);
+            if (fs.existsSync(candidate)) pdfPath = candidate;
+        }
+
+        if (!pdfPath && report.pdfR2Key) {
+            const buffer = await r2StorageService.downloadR2ObjectBuffer(report.pdfR2Key);
+            tempFilePath = path.join(os.tmpdir(), `report-email-${report._id}-${Date.now()}.pdf`);
+            fs.writeFileSync(tempFilePath, buffer);
+            pdfPath = tempFilePath;
+        }
+
+        if (!pdfPath) {
+            if (!report.content) {
+                return res.status(400).json({ message: 'This report has no content yet - generate it before sending.' });
+            }
+            const { generatePDF } = require('../../workers/utils/documentGenerator');
+            const result = await generatePDF(report._id, report.title, report.content, report.subtitle, report.template, report.sections);
+            pdfPath = path.join(__dirname, '..', result.localPath);
+
+            // Persist the freshly-generated copy onto the report so future sends/exports/
+            // downloads reuse it instead of silently regenerating it every time.
+            report.pdfLocalPath = result.localPath;
+            if (result.r2Key) report.pdfR2Key = result.r2Key;
+            await report.save();
+        }
+
+        await emailService.sendReportEmail(recipientEmail, {
+            report,
+            message,
+            senderName: req.user.fullName,
+            pdfPath
+        });
+
+        res.status(200).json({ message: 'Report email sent successfully' });
+    } catch (error) {
+        console.error('Send Report Email Error:', error);
+        res.status(502).json({ message: 'Failed to send the report email. Please check SMTP configuration or try again later.', error: error.message });
+    } finally {
+        if (tempFilePath) fs.unlink(tempFilePath, () => {});
     }
 };
 

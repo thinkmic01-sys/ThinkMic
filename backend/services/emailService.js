@@ -126,7 +126,7 @@ function ctaButtonHtml(href, label) {
     </div>`;
 }
 
-async function sendMail({ to, subject, html, code, link }) {
+async function sendMail({ to, subject, html, code, link, attachments }) {
     // Always surface the OTP in the terminal - development is never blocked on
     // real mail delivery, spam filters, or SMTP outages.
     if (code) logOtpBoxToTerminal(to, code);
@@ -135,6 +135,9 @@ async function sendMail({ to, subject, html, code, link }) {
 
     if (!client) {
         logToTerminal({ to, subject, code, link });
+        if (attachments?.length) {
+            console.log(`  [ThinkMic Dev Mail] Would attach: ${attachments.map((a) => a.filename).join(', ')}`);
+        }
         return { delivered: false, devMode: true };
     }
 
@@ -143,7 +146,8 @@ async function sendMail({ to, subject, html, code, link }) {
             from: process.env.EMAIL_FROM || process.env.SMTP_USER,
             to,
             subject,
-            html
+            html,
+            attachments
         });
 
         console.log(`[Email] Sent "${subject}" to ${to} - messageId=${info.messageId}, response="${info.response}", accepted=${JSON.stringify(info.accepted)}`);
@@ -207,4 +211,37 @@ async function sendPasswordResetEmail(user, code) {
     return sendMail({ to: user.email, subject: 'Reset your ThinkMic password', html, code, link });
 }
 
-module.exports = { sendVerificationEmail, sendPasswordResetEmail, verifySmtpConnection };
+// Sends a branded report email with the generated PDF attached.
+// pdfPath must be an absolute filesystem path to the PDF to attach.
+async function sendReportEmail(recipientEmail, { report, message, senderName, pdfPath }) {
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5174';
+    const reportLink = `${clientUrl}/app/reports/${report._id}/export`;
+    const senderLabel = senderName ? `${senderName} via ThinkMic` : 'ThinkMic';
+
+    const html = wrapperHtml({
+        heading: `${senderLabel} shared a report with you`,
+        bodyHtml: `
+            ${message ? `<p style="color:${BRAND.dark}; font-size:14px; line-height:1.6; background:${BRAND.bg}; padding:12px 16px; border-radius:8px; border-left:3px solid ${BRAND.cyan};">${message}</p>` : ''}
+            <p style="color:${BRAND.dark}; font-size:14px; line-height:1.6;">
+                <strong>${report.title}</strong>${report.subtitle ? `<br/><span style="color:${BRAND.muted};">${report.subtitle}</span>` : ''}
+            </p>
+            <p style="color:${BRAND.muted}; font-size:13px; line-height:1.6;">
+                The full report is attached as a PDF. You can also view it online:
+            </p>
+            ${ctaButtonHtml(reportLink, 'View Report Online')}
+        `
+    });
+
+    const filename = `${(report.title || 'ThinkMic_Report').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+    const attachments = pdfPath ? [{ filename, path: pdfPath }] : [];
+
+    return sendMail({
+        to: recipientEmail,
+        subject: `ThinkMic Report: ${report.title}`,
+        html,
+        link: reportLink,
+        attachments
+    });
+}
+
+module.exports = { sendVerificationEmail, sendPasswordResetEmail, verifySmtpConnection, sendReportEmail };

@@ -37,6 +37,11 @@ export default function ReportExport() {
         sources: true,
     });
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+    const [recipientEmail, setRecipientEmail] = useState('');
+    const [emailMessage, setEmailMessage] = useState('');
+    const [isSendingEmail, setIsSendingEmail] = useState(false);
+    const [emailSuccessMsg, setEmailSuccessMsg] = useState('');
+    const [emailErrorMsg, setEmailErrorMsg] = useState('');
     const [report, setReport] = useState(null);
     const userId = useSelector((state) => state.auth?.user?._id || state.auth?.user?.id);
 
@@ -113,6 +118,35 @@ export default function ReportExport() {
             }
         } catch (error) {
             console.error("Failed to download", error);
+        }
+    };
+
+    const openEmailModal = () => {
+        setRecipientEmail('');
+        setEmailMessage('');
+        setEmailErrorMsg('');
+        setEmailSuccessMsg('');
+        setIsEmailModalOpen(true);
+    };
+
+    const handleSendEmail = async () => {
+        if (!recipientEmail.trim()) {
+            setEmailErrorMsg('Please enter a recipient email address.');
+            return;
+        }
+        setIsSendingEmail(true);
+        setEmailErrorMsg('');
+        setEmailSuccessMsg('');
+        try {
+            await api.post(`/reports/${id}/email`, { recipientEmail, message: emailMessage });
+            setEmailSuccessMsg('Email sent successfully!');
+            setTimeout(() => {
+                setIsEmailModalOpen(false);
+            }, 1400);
+        } catch (error) {
+            setEmailErrorMsg(error.response?.data?.message || 'Failed to send email. Please try again.');
+        } finally {
+            setIsSendingEmail(false);
         }
     };
 
@@ -261,7 +295,7 @@ export default function ReportExport() {
                             <button
                                 onClick={handleRegenerate}
                                 disabled={report?.status !== 'completed'}
-                                className={`mt-6 w-full text-white text-[13px] sm:text-[14px] font-bold py-2 sm:py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-sm transition-colors ${report?.status === 'completed' ? 'bg-[#00c2cb] hover:bg-[#00a8b0]' : 'bg-[#e0e2eb] text-[#c7c5d3] cursor-wait'}`}
+                                className={`mt-6 w-full text-white text-[13px] sm:text-[14px] font-bold py-2 sm:py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99] ${report?.status === 'completed' ? 'bg-[#00c2cb] hover:bg-[#00a8b0] cursor-pointer' : 'bg-[#e0e2eb] text-[#c7c5d3] cursor-not-allowed'}`}
                             >
                                 <span className={`material-symbols-outlined text-[18px] sm:text-[20px] ${report?.status !== 'completed' ? 'animate-spin' : ''}`}>
                                     {report?.status === 'completed' ? 'refresh' : 'sync'}
@@ -272,25 +306,25 @@ export default function ReportExport() {
 
                         {/* Export Actions */}
                         <div className="mt-auto flex flex-col gap-3 pb-6 lg:pb-0">
-                            <button 
+                            <button
                                 onClick={() => handleDownload('pdf')}
                                 disabled={!report?.pdfLocalPath}
-                                className={`w-full text-white text-[13px] sm:text-[14px] font-bold py-2.5 sm:py-3 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-colors
-                                    ${report?.pdfLocalPath ? 'bg-[#222777] hover:bg-[#3a3f8f]' : 'bg-gray-400 cursor-not-allowed'}`}>
+                                className={`w-full text-white text-[13px] sm:text-[14px] font-bold py-2.5 sm:py-3 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-[0.99]
+                                    ${report?.pdfLocalPath ? 'bg-[#222777] hover:bg-[#3a3f8f] cursor-pointer' : 'bg-gray-400 cursor-not-allowed'}`}>
                                 <span className="material-symbols-outlined text-[18px] sm:text-[20px]">picture_as_pdf</span>
                                 Download PDF
                             </button>
-                            <button 
+                            <button
                                 onClick={() => handleDownload('docx')}
                                 disabled={!report?.docxLocalPath}
-                                className={`w-full border text-[13px] sm:text-[14px] font-bold py-2.5 sm:py-3 px-6 rounded-lg flex items-center justify-center gap-2 shadow-sm transition-colors
-                                    ${report?.docxLocalPath ? 'bg-white border-[#222777] text-[#222777] hover:bg-[#f1f3fc]' : 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'}`}>
+                                className={`w-full border text-[13px] sm:text-[14px] font-bold py-2.5 sm:py-3 px-6 rounded-lg flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99]
+                                    ${report?.docxLocalPath ? 'bg-white border-[#222777] text-[#222777] hover:bg-[#f1f3fc] cursor-pointer' : 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'}`}>
                                 <span className="material-symbols-outlined text-[18px] sm:text-[20px]">description</span>
                                 Download Word
                             </button>
                             <button
-                                onClick={() => setIsEmailModalOpen(true)}
-                                className="w-full bg-transparent text-[#464651] text-[13px] sm:text-[14px] font-bold py-2.5 sm:py-3 px-6 rounded-lg hover:bg-[#e0e2eb] hover:text-[#181c22] transition-colors flex items-center justify-center gap-2 border border-transparent"
+                                onClick={openEmailModal}
+                                className="w-full bg-transparent text-[#464651] text-[13px] sm:text-[14px] font-bold py-2.5 sm:py-3 px-6 rounded-lg hover:bg-[#e0e2eb] hover:text-[#181c22] transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 border border-transparent cursor-pointer"
                             >
                                 <span className="material-symbols-outlined text-[18px] sm:text-[20px]">send</span>
                                 Send via Email
@@ -305,40 +339,83 @@ export default function ReportExport() {
                         <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
                             <div className="px-5 sm:px-6 py-4 sm:py-5 border-b border-[#e0e2eb] flex justify-between items-center bg-[#f9f9ff]">
                                 <h3 className="text-[16px] sm:text-[18px] font-bold text-[#181c22]">Email Report</h3>
-                                <button className="text-[#777682] hover:text-[#ba1a1a] transition-colors flex items-center justify-center w-8 h-8 rounded-full hover:bg-white border border-transparent hover:border-[#e0e2eb]" onClick={() => setIsEmailModalOpen(false)}>
+                                <button
+                                    className="text-[#777682] hover:text-[#ba1a1a] transition-colors flex items-center justify-center w-8 h-8 rounded-full hover:bg-white border border-transparent hover:border-[#e0e2eb] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                                    onClick={() => setIsEmailModalOpen(false)}
+                                    disabled={isSendingEmail}
+                                >
                                     <span className="material-symbols-outlined text-[20px]">close</span>
                                 </button>
                             </div>
                             <div className="p-5 sm:p-6 flex flex-col gap-4 sm:gap-5">
+                                {emailErrorMsg && (
+                                    <div className="bg-[#ffdad6] text-[#ba1a1a] p-3 rounded-lg text-[12px] sm:text-[13px] font-semibold flex items-center gap-2 border border-[#ffb4ab]">
+                                        <span className="material-symbols-outlined text-[16px]">error</span>
+                                        {emailErrorMsg}
+                                    </div>
+                                )}
+                                {emailSuccessMsg && (
+                                    <div className="bg-[#e6fbfc] text-[#006e73] p-3 rounded-lg text-[12px] sm:text-[13px] font-semibold flex items-center gap-2 border border-[#b2f0f4]">
+                                        <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                                        {emailSuccessMsg}
+                                    </div>
+                                )}
                                 <div>
                                     <label className="block text-[11px] sm:text-[12px] font-bold text-[#464651] uppercase tracking-wider mb-1.5 sm:mb-2">To:</label>
-                                    <input type="email" placeholder="colleague@company.com" className="w-full bg-[#f9f9ff] border border-[#c7c5d3] rounded-md px-3 sm:px-4 py-2 sm:py-2.5 text-[13px] sm:text-[14px] font-semibold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none" />
+                                    <input
+                                        type="email"
+                                        value={recipientEmail}
+                                        onChange={(e) => setRecipientEmail(e.target.value)}
+                                        disabled={isSendingEmail}
+                                        placeholder="colleague@company.com"
+                                        className="w-full bg-[#f9f9ff] border border-[#c7c5d3] rounded-md px-3 sm:px-4 py-2 sm:py-2.5 text-[13px] sm:text-[14px] font-semibold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none disabled:opacity-60"
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-[11px] sm:text-[12px] font-bold text-[#464651] uppercase tracking-wider mb-1.5 sm:mb-2">Message (Optional):</label>
-                                    <textarea rows="3" placeholder="Here is the latest AI adoption report..." className="w-full bg-[#f9f9ff] border border-[#c7c5d3] rounded-md px-3 sm:px-4 py-2 sm:py-2.5 text-[13px] sm:text-[14px] font-semibold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none resize-none"></textarea>
+                                    <textarea
+                                        rows="3"
+                                        value={emailMessage}
+                                        onChange={(e) => setEmailMessage(e.target.value)}
+                                        disabled={isSendingEmail}
+                                        placeholder="Here is the latest AI adoption report..."
+                                        className="w-full bg-[#f9f9ff] border border-[#c7c5d3] rounded-md px-3 sm:px-4 py-2 sm:py-2.5 text-[13px] sm:text-[14px] font-semibold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none resize-none disabled:opacity-60"
+                                    ></textarea>
                                 </div>
                                 <div className="flex items-center gap-3 sm:gap-4 bg-[#f1f3fc] p-3 sm:p-4 rounded-lg border border-[#e0e2eb]">
                                     <span className="material-symbols-outlined text-[#222777] text-[24px] sm:text-[28px]">picture_as_pdf</span>
                                     <div className="flex-1 min-w-0">
-                                        <div className="text-[12px] sm:text-[13px] font-bold text-[#181c22] truncate">Market_Analysis_Q4.pdf</div>
-                                        <div className="font-mono text-[10px] sm:text-[11px] font-bold text-[#777682] mt-0.5">2.4 MB</div>
+                                        <div className="text-[12px] sm:text-[13px] font-bold text-[#181c22] truncate">{(title || 'Report').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf</div>
+                                        <div className="font-mono text-[10px] sm:text-[11px] font-bold text-[#777682] mt-0.5">PDF attachment</div>
                                     </div>
                                 </div>
                             </div>
                             <div className="px-5 sm:px-6 py-3 sm:py-4 border-t border-[#e0e2eb] bg-[#f9f9ff] flex justify-end gap-2 sm:gap-3">
-                                <button className="px-4 sm:px-5 py-2 text-[#464651] text-[12px] sm:text-[13px] font-bold hover:bg-[#e0e2eb] rounded-lg transition-colors border border-transparent" onClick={() => setIsEmailModalOpen(false)}>
+                                <button
+                                    className="px-4 sm:px-5 py-2 text-[#464651] text-[12px] sm:text-[13px] font-bold hover:bg-[#e0e2eb] rounded-lg transition-colors border border-transparent cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                                    onClick={() => setIsEmailModalOpen(false)}
+                                    disabled={isSendingEmail}
+                                >
                                     Cancel
                                 </button>
-                                <button 
-                                    onClick={async () => {
-                                        // Mock email send
-                                        alert("Email sent successfully!");
-                                        setIsEmailModalOpen(false);
-                                    }}
-                                    className="px-4 sm:px-6 py-2 bg-[#222777] text-white text-[12px] sm:text-[13px] font-bold rounded-lg shadow-sm hover:bg-[#3a3f8f] transition-colors flex items-center gap-1 sm:gap-2"
+                                <button
+                                    onClick={handleSendEmail}
+                                    disabled={isSendingEmail}
+                                    className="px-4 sm:px-6 py-2 bg-[#222777] text-white text-[12px] sm:text-[13px] font-bold rounded-lg shadow-sm hover:bg-[#3a3f8f] transition-colors flex items-center gap-1 sm:gap-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
                                 >
-                                    <span className="material-symbols-outlined text-[16px] sm:text-[18px]">send</span> Send
+                                    {isSendingEmail ? (
+                                        <>
+                                            <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Sending...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="material-symbols-outlined text-[16px] sm:text-[18px]">send</span> Send
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>

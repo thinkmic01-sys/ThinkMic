@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { getMyRecordings, uploadAudioLocal, getRecordingById, getUploadUrl, createRecordingDraft, deleteRecording } = require('../controllers/recordingController');
 const { protect } = require('../middleware/authMiddleware');
+const { expensiveOperationLimiter } = require('../middleware/rateLimiters');
 
 // Ensure 'uploads' directory exists on your local machine
 const uploadDir = path.join(__dirname, '../uploads');
@@ -66,13 +67,13 @@ const handleAudioUpload = (req, res, next) => {
 router.use(protect);
 
 // Presigned R2 upload URL generator (falls back to { storage: 'local' } if R2 isn't configured)
-router.get('/upload-url', getUploadUrl);
+router.get('/upload-url', expensiveOperationLimiter, getUploadUrl);
 
 // Finalizes a recording after a direct R2 upload completes
-router.post('/draft', createRecordingDraft);
+router.post('/draft', expensiveOperationLimiter, createRecordingDraft);
 
 // Our new Local Upload route. Multer handles the file labeled 'audio' in the form data
-router.post('/', handleAudioUpload, uploadAudioLocal);
+router.post('/', expensiveOperationLimiter, handleAudioUpload, uploadAudioLocal);
 
 // Get recordings
 router.get('/', getMyRecordings);

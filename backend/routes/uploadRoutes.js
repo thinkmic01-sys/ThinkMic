@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const { protect } = require('../middleware/authMiddleware');
+const { expensiveOperationLimiter } = require('../middleware/rateLimiters');
 
 const storage = multer.diskStorage({
     destination(req, file, cb) {
@@ -25,10 +26,13 @@ const upload = multer({
     }
 });
 
-router.post('/', protect, upload.single('image'), (req, res) => {
+router.post('/', protect, expensiveOperationLimiter, upload.single('image'), (req, res) => {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
-    // Return full absolute path for simplicity
-    res.json({ url: `http://localhost:5000/uploads/${req.file.filename}` });
+    // Derived from the actual incoming request rather than hardcoded, so this resolves
+    // correctly in any environment (dev, staging, production) without configuration -
+    // callers (Settings avatar, seminar images) store this URL as-is and render it directly.
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    res.json({ url: fileUrl });
 });
 
 module.exports = router;

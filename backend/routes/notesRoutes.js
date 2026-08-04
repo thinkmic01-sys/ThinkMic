@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const notesController = require('../controllers/notesController');
 const { protect } = require('../middleware/authMiddleware');
+const { expensiveOperationLimiter } = require('../middleware/rateLimiters');
 
 router.use(protect);
 
@@ -14,7 +15,7 @@ router.route('/:id')
     .delete(notesController.deleteNote);
 
 router.route('/:id/insights')
-    .post(notesController.generateInsights);
+    .post(expensiveOperationLimiter, notesController.generateInsights);
 
 router.route('/:id/export')
     .get(notesController.exportNote);

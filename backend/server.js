@@ -7,6 +7,7 @@ const connectDB = require('./config/db');
 
 // Load env vars
 dotenv.config();
+require('./config/validateEnv')();
 
 // Connect to database
 connectDB();
@@ -18,14 +19,24 @@ app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-// CORS configuration (Credentials allowed for HttpOnly cookies)
+// CORS configuration (Credentials allowed for HttpOnly cookies).
+// ALLOWED_ORIGINS supports a comma-separated list for multi-domain production setups
+// (e.g. apex + www, or a staging URL); falls back to the single CLIENT_URL if unset.
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.CLIENT_URL || '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+
 app.use(cors({
     origin: function (origin, callback) {
-        if (!origin || origin.startsWith('http://localhost:')) {
-            callback(null, true);
-        } else {
-            callback(null, process.env.CLIENT_URL);
+        // No Origin header - server-to-server, curl, mobile clients, etc.
+        if (!origin) return callback(null, true);
+        // Local development convenience only - never trusted in production.
+        if (process.env.NODE_ENV !== 'production' && origin.startsWith('http://localhost:')) {
+            return callback(null, true);
         }
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -61,6 +72,21 @@ app.use('/api/v1/upload', require('./routes/uploadRoutes'));
 app.use('/api/v1/notifications', require('./routes/notificationsRoutes'));
 app.use('/api/v1/support', require('./routes/supportRoutes'));
 app.use('/api/v1/deepgram', require('./routes/deepgramRoutes'));
+
+// 404 for anything that didn't match a mounted route
+app.use((req, res) => {
+    res.status(404).json({ message: 'Not found' });
+});
+
+// Global error handler - must be defined last with 4 args so Express treats it as
+// error-handling middleware. Catches anything that reaches next(err) that individual
+// route try/catch blocks don't cover (e.g. malformed JSON bodies from express.json()).
+// Never leaks internal stack traces to the client, regardless of NODE_ENV.
+app.use((err, req, res, next) => {
+    console.error('Unhandled Error:', err.stack || err);
+    if (res.headersSent) return next(err);
+    res.status(err.status || 500).json({ message: err.message || 'Server Error' });
+});
 
 // Initialize Background Jobs
 require('./jobs/reminderCron');

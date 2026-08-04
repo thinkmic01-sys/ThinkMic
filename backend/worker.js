@@ -6,6 +6,7 @@ const connectDB = require('./config/db');
 
 // Load environment variables
 dotenv.config();
+require('./config/validateEnv')();
 
 // Connect to MongoDB
 connectDB();

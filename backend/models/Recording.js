@@ -20,6 +20,10 @@ const RecordingSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    r2Key: {
+        type: String,
+        sparse: true
+    },
     mimeType: {
         type: String,
         required: true
@@ -44,5 +48,10 @@ const RecordingSchema = new mongoose.Schema({
         ref: 'Summary'
     }
 }, { timestamps: true });
+
+// Compound indexes for high-volume retrieval: a user's recordings feed (newest first)
+// and the worker/admin queues that scan by status across all users.
+RecordingSchema.index({ userId: 1, createdAt: -1 });
+RecordingSchema.index({ status: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Recording', RecordingSchema);

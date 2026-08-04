@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const { getMyRecordings, uploadAudioLocal } = require('../controllers/recordingController');
+const { getMyRecordings, uploadAudioLocal, getRecordingById, getUploadUrl, createRecordingDraft, deleteRecording } = require('../controllers/recordingController');
 const { protect } = require('../middleware/authMiddleware');
 
 // Ensure 'uploads' directory exists on your local machine
@@ -65,10 +65,22 @@ const handleAudioUpload = (req, res, next) => {
 // Protect all routes
 router.use(protect);
 
+// Presigned R2 upload URL generator (falls back to { storage: 'local' } if R2 isn't configured)
+router.get('/upload-url', getUploadUrl);
+
+// Finalizes a recording after a direct R2 upload completes
+router.post('/draft', createRecordingDraft);
+
 // Our new Local Upload route. Multer handles the file labeled 'audio' in the form data
 router.post('/', handleAudioUpload, uploadAudioLocal);
 
 // Get recordings
 router.get('/', getMyRecordings);
+
+// Get a single recording (with transcript + summary populated), for session resumption
+router.get('/:id', getRecordingById);
+
+// Cascade-deletes the recording plus its transcript, summary, and any derived reports
+router.delete('/:id', deleteRecording);
 
 module.exports = router;

@@ -11,7 +11,35 @@ const UserSchema = new mongoose.Schema({
     },
     passwordHash: {
         type: String,
-        required: true
+        // Not required for pure Google OAuth accounts (no googleId => password is mandatory)
+        required: function () {
+            return !this.googleId;
+        }
+    },
+    googleId: {
+        type: String,
+        sparse: true,
+        unique: true
+    },
+    isEmailVerified: {
+        type: Boolean,
+        default: false
+    },
+    emailVerificationCode: {
+        type: String,
+        select: false
+    },
+    emailVerificationExpires: {
+        type: Date,
+        select: false
+    },
+    passwordResetCode: {
+        type: String,
+        select: false
+    },
+    passwordResetExpires: {
+        type: Date,
+        select: false
     },
     fullName: {
         type: String,
@@ -69,8 +97,9 @@ const UserSchema = new mongoose.Schema({
 
 // Hash password before saving (Cost 12 per security spec)[cite: 1]
 UserSchema.pre('save', async function () {
-    // If the password hasn't been modified, just exit the function
-    if (!this.isModified('passwordHash')) return;
+    // If the password hasn't been modified, or there's no password to hash
+    // (pure Google OAuth accounts), just exit the function
+    if (!this.isModified('passwordHash') || !this.passwordHash) return;
 
     // Otherwise, hash the password
     const salt = await bcrypt.genSalt(12);
@@ -79,6 +108,7 @@ UserSchema.pre('save', async function () {
 
 // Match user entered password to hashed password in database
 UserSchema.methods.matchPassword = async function (enteredPassword) {
+    if (!this.passwordHash) return false; // Google-only account, no password set
     return await bcrypt.compare(enteredPassword, this.passwordHash);
 };
 

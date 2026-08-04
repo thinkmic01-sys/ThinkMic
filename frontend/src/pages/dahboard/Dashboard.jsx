@@ -39,6 +39,8 @@ export default function Dashboard() {
                 if (recData.recordings) {
                     const activity = recData.recordings.map((rec, index) => ({
                         id: rec._id,
+                        recordingId: rec._id,
+                        transcriptId: rec.transcriptId,
                         text: `Recording "${rec.title}" saved.`,
                         time: new Date(rec.createdAt).toLocaleString(),
                         color: index === 0 ? 'bg-[#6bf6ff]' : 'bg-[#222777]',
@@ -125,7 +127,11 @@ export default function Dashboard() {
                         <h3 className="text-[20px] font-bold text-[#181c22] mb-4 pb-2 border-b border-[#e0e2eb]">Recent Activity</h3>
                         <div className="flex-1 overflow-y-auto pr-2 space-y-5 custom-scrollbar">
                             {timelineActivity.map(item => (
-                                <div key={item.id} className="flex items-start gap-3">
+                                <div
+                                    key={item.id}
+                                    onClick={() => navigate(`/app/research?recordingId=${item.recordingId}${item.transcriptId ? `&transcriptId=${item.transcriptId}` : ''}`)}
+                                    className="flex items-start gap-3 cursor-pointer hover:bg-[#f9f9ff] rounded-md -mx-2 px-2 py-1 transition-colors"
+                                >
                                     <div className={`w-2.5 h-2.5 mt-1.5 rounded-full shrink-0 ${item.color} ${item.pulse ? 'pulse-ring' : ''}`}></div>
                                     <div>
                                         <p className="text-[14px] text-[#181c22]" dangerouslySetInnerHTML={{ __html: item.text.replace(/"([^"]+)"/, '<span class="font-bold">"$1"</span>') }}></p>

@@ -2,10 +2,47 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const referralService = require('../services/referralService');
+const emailService = require('../services/emailService');
+const googleAuthService = require('../services/googleAuthService');
 
 // Helper to generate access token
 const generateAccessToken = (id, role) => {
     return jwt.sign({ sub: id, role }, process.env.JWT_PRIVATE_KEY, { expiresIn: '7d' }); // 7-day expiry
+};
+
+const VERIFICATION_CODE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const RESEND_CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const RESET_CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+const generateOTP = () => crypto.randomInt(0, 1000000).toString().padStart(6, '0');
+
+// Shared response shape for anything that logs a user in (login, verify-email
+// auto-login, google auth): sets the HttpOnly refresh cookie and returns the
+// access token + public user fields.
+const issueAuthSession = (res, user) => {
+    const accessToken = generateAccessToken(user._id, user.role);
+    const refreshToken = jwt.sign({ sub: user._id }, process.env.JWT_PRIVATE_KEY, { expiresIn: '7d' });
+
+    res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    return {
+        accessToken,
+        user: {
+            id: user._id,
+            email: user.email,
+            fullName: user.fullName,
+            role: user.role,
+            coins: user.coins,
+            referralCode: user.referralCode,
+            avatarUrl: user.avatarUrl,
+            title: user.title
+        }
+    };
 };
 
 // @desc    Register new user
@@ -16,6 +53,8 @@ exports.register = async (req, res) => {
         const { email, password, fullName, referralCode } = req.body;
 
         const newReferralCode = crypto.randomBytes(4).toString('hex');
+        const verificationCode = generateOTP();
+        const verificationExpires = new Date(Date.now() + VERIFICATION_CODE_TTL_MS);
 
         let user = await User.findOne({ email });
 
@@ -25,7 +64,18 @@ exports.register = async (req, res) => {
                 user.passwordHash = password;
                 user.fullName = fullName;
                 user.referralCode = newReferralCode;
-                user.status = 'active'; // Or 'pending_verification'
+                user.status = 'pending_verification';
+                user.isEmailVerified = false;
+                user.emailVerificationCode = verificationCode;
+                user.emailVerificationExpires = verificationExpires;
+                await user.save();
+            } else if (!user.isEmailVerified && user.status === 'pending_verification') {
+                // User already started registration but hasn't verified yet:
+                // Refresh their credentials, generate a fresh OTP code, and re-send the email
+                user.passwordHash = password;
+                if (fullName) user.fullName = fullName;
+                user.emailVerificationCode = verificationCode;
+                user.emailVerificationExpires = verificationExpires;
                 await user.save();
             } else {
                 return res.status(400).json({ message: 'User already exists' });
@@ -36,7 +86,11 @@ exports.register = async (req, res) => {
                 email,
                 passwordHash: password,
                 fullName,
-                referralCode: newReferralCode
+                referralCode: newReferralCode,
+                status: 'pending_verification',
+                isEmailVerified: false,
+                emailVerificationCode: verificationCode,
+                emailVerificationExpires: verificationExpires
             });
         }
 
@@ -45,9 +99,229 @@ exports.register = async (req, res) => {
             await referralService.createPendingRewardsForNewUser(user);
         }
 
-        res.status(201).json({ userId: user._id, message: 'User registered successfully. Please verify your email.' }); // 201 per spec[cite: 1]
+        try {
+            await emailService.sendVerificationEmail(user, verificationCode);
+        } catch (emailError) {
+            console.error('REGISTER: verification email failed to send:', emailError.message);
+            // The account/OTP are already persisted - don't claim success when the user
+            // has no way to receive the code, and don't leak raw SMTP internals either.
+            return res.status(502).json({
+                message: 'Your account was created, but we could not send the verification email right now. Please try "Resend code" in a moment.',
+                userId: user._id,
+                email: user.email,
+                requiresVerification: true,
+                emailDelivered: false
+            });
+        }
+
+        res.status(201).json({
+            userId: user._id,
+            email: user.email,
+            requiresVerification: true,
+            message: 'Verification code sent to your email.'
+        });
     } catch (error) {
         console.error("REGISTER ERROR: ", error);
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+// @desc    Verify a registered account's email via OTP and auto-login
+// @route   POST /api/v1/auth/verify-email
+// @access  Public
+exports.verifyEmail = async (req, res) => {
+    try {
+        const { email, code } = req.body;
+        if (!email || !code) {
+            return res.status(400).json({ message: 'Email and verification code are required' });
+        }
+
+        const user = await User.findOne({ email }).select('+emailVerificationCode +emailVerificationExpires');
+        if (!user || !user.emailVerificationCode) {
+            return res.status(400).json({ message: 'Invalid or expired verification code' });
+        }
+
+        if (user.emailVerificationExpires < new Date()) {
+            return res.status(400).json({ message: 'Verification code has expired. Please request a new one.' });
+        }
+
+        if (user.emailVerificationCode !== code) {
+            return res.status(400).json({ message: 'Invalid verification code' });
+        }
+
+        user.isEmailVerified = true;
+        user.status = 'active';
+        user.emailVerificationCode = undefined;
+        user.emailVerificationExpires = undefined;
+        user.lastLoginAt = Date.now();
+        await user.save();
+
+        res.status(200).json(issueAuthSession(res, user));
+    } catch (error) {
+        console.error('Verify Email Error:', error);
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+// @desc    Resend the email verification OTP
+// @route   POST /api/v1/auth/resend-verification
+// @access  Public
+exports.resendVerification = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required' });
+        }
+
+        const user = await User.findOne({ email });
+
+        // Generic response either way, to avoid leaking whether an email is registered
+        if (!user || user.isEmailVerified) {
+            return res.status(200).json({ message: 'If an account exists and needs verification, a new code has been sent.' });
+        }
+
+        const verificationCode = generateOTP();
+        user.emailVerificationCode = verificationCode;
+        user.emailVerificationExpires = new Date(Date.now() + RESEND_CODE_TTL_MS);
+        await user.save();
+
+        try {
+            await emailService.sendVerificationEmail(user, verificationCode);
+        } catch (emailError) {
+            console.error('RESEND VERIFICATION: email failed to send:', emailError.message);
+            // The refreshed OTP is already persisted - be explicit that delivery failed
+            // rather than returning the generic "a new code has been sent" success message.
+            return res.status(502).json({
+                message: 'We generated a new code, but could not send the email right now. Please try again in a moment.',
+                emailDelivered: false
+            });
+        }
+
+        res.status(200).json({ message: 'If an account exists and needs verification, a new code has been sent.' });
+    } catch (error) {
+        console.error('Resend Verification Error:', error);
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+// @desc    Sign in / sign up via Google Identity Services ID token
+// @route   POST /api/v1/auth/google
+// @access  Public
+exports.googleAuth = async (req, res) => {
+    try {
+        const { credential, referralCode } = req.body;
+        if (!credential) {
+            return res.status(400).json({ message: 'Google credential is required' });
+        }
+
+        let profile;
+        try {
+            profile = await googleAuthService.verifyGoogleToken(credential);
+        } catch (err) {
+            return res.status(401).json({ message: 'Invalid Google credential' });
+        }
+
+        let user = await User.findOne({ $or: [{ googleId: profile.googleId }, { email: profile.email }] });
+        let isNewUser = false;
+
+        if (user) {
+            if (!user.googleId) user.googleId = profile.googleId;
+            if (!user.avatarUrl) user.avatarUrl = profile.avatarUrl;
+            user.isEmailVerified = true;
+            if (user.status === 'pending_verification') user.status = 'active';
+            user.lastLoginAt = Date.now();
+            await user.save();
+        } else {
+            isNewUser = true;
+            user = await User.create({
+                email: profile.email,
+                fullName: profile.fullName,
+                avatarUrl: profile.avatarUrl,
+                googleId: profile.googleId,
+                isEmailVerified: true,
+                status: 'active',
+                referralCode: crypto.randomBytes(4).toString('hex')
+            });
+        }
+
+        if (isNewUser && referralCode) {
+            await referralService.attachReferrer(user, referralCode);
+            await referralService.createPendingRewardsForNewUser(user);
+        }
+
+        res.status(200).json(issueAuthSession(res, user));
+    } catch (error) {
+        console.error('Google Auth Error:', error);
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+// @desc    Request a password reset code
+// @route   POST /api/v1/auth/forgot-password
+// @access  Public
+exports.forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ message: 'Email is required' });
+        }
+
+        const user = await User.findOne({ email });
+        const genericMessage = 'If an account with that email exists, a password reset code has been sent.';
+
+        // Google-only accounts have no password to reset
+        if (!user || !user.passwordHash) {
+            return res.status(200).json({ message: genericMessage });
+        }
+
+        const resetCode = generateOTP();
+        user.passwordResetCode = resetCode;
+        user.passwordResetExpires = new Date(Date.now() + RESET_CODE_TTL_MS);
+        await user.save();
+
+        await emailService.sendPasswordResetEmail(user, resetCode);
+
+        res.status(200).json({ message: genericMessage });
+    } catch (error) {
+        console.error('Forgot Password Error:', error);
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+// @desc    Reset password using a valid reset code
+// @route   POST /api/v1/auth/reset-password
+// @access  Public
+exports.resetPassword = async (req, res) => {
+    try {
+        const { email, code, newPassword } = req.body;
+        if (!email || !code || !newPassword) {
+            return res.status(400).json({ message: 'Email, code, and new password are required' });
+        }
+        if (newPassword.length < 8) {
+            return res.status(400).json({ message: 'New password must be at least 8 characters long' });
+        }
+
+        const user = await User.findOne({ email }).select('+passwordResetCode +passwordResetExpires');
+        if (!user || !user.passwordResetCode) {
+            return res.status(400).json({ message: 'Invalid or expired reset code' });
+        }
+
+        if (user.passwordResetExpires < new Date()) {
+            return res.status(400).json({ message: 'Reset code has expired. Please request a new one.' });
+        }
+
+        if (user.passwordResetCode !== code) {
+            return res.status(400).json({ message: 'Invalid reset code' });
+        }
+
+        user.passwordHash = newPassword; // re-hashed by the pre('save') hook
+        user.passwordResetCode = undefined;
+        user.passwordResetExpires = undefined;
+        await user.save();
+
+        res.status(200).json({ message: 'Password reset successfully. Please sign in with your new password.' });
+    } catch (error) {
+        console.error('Reset Password Error:', error);
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };
@@ -64,17 +338,13 @@ exports.login = async (req, res) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        // Generate Tokens[cite: 1]
-        const accessToken = generateAccessToken(user._id, user.role);
-        const refreshToken = jwt.sign({ sub: user._id }, process.env.JWT_PRIVATE_KEY, { expiresIn: '7d' }); // 7-day TTL[cite: 1]
-
-        // Set refresh token in HttpOnly cookie[cite: 1]
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'Strict',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-        });
+        if (!user.isEmailVerified && !user.googleId) {
+            return res.status(403).json({
+                requiresVerification: true,
+                email: user.email,
+                message: 'Please verify your email before logging in.'
+            });
+        }
 
         // Generate referral code for legacy users if they don't have one
         if (!user.referralCode) {
@@ -85,21 +355,9 @@ exports.login = async (req, res) => {
         user.lastLoginAt = Date.now();
         await user.save();
 
-        res.status(200).json({
-            accessToken,
-            user: {
-                id: user._id,
-                email: user.email,
-                fullName: user.fullName,
-                role: user.role,
-                coins: user.coins,
-                referralCode: user.referralCode,
-                avatarUrl: user.avatarUrl,
-                title: user.title
-            }
-        });
+        res.status(200).json(issueAuthSession(res, user));
     } catch (error) {
-        console.error("REGISTER ERROR: ", error);
+        console.error("LOGIN ERROR: ", error);
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };

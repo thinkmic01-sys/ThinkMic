@@ -2,9 +2,12 @@
 const { Worker } = require('bullmq');
 const connection = require('./config/redis');
 const path = require('path');
+const fs = require('fs');
+const os = require('os');
 
 // Import shared models and services from backend
 const openaiService = require('../backend/services/openaiService');
+const r2StorageService = require('../backend/services/r2StorageService');
 const Recording = require('../backend/models/Recording');
 const Transcript = require('../backend/models/Transcript');
 const socketUtil = require('../backend/utils/socket');
@@ -17,15 +20,26 @@ const LOCALE_LANGUAGE_NAMES = { 'en-US': 'English', 'ur-PK': 'Urdu' };
 const localeToLanguageName = (locale) => LOCALE_LANGUAGE_NAMES[locale] || 'English';
 
 const worker = new Worker('transcription', async (job) => {
-    const { recordingId, s3Key, userId, language } = job.data;
+    const { recordingId, s3Key, r2Key, storage, userId, language } = job.data;
     console.log(`[Worker] Starting transcription for recording ${recordingId}`);
+
+    let tempFilePath = null;
 
     try {
         const io = socketUtil.getIO();
         io.to(userId).emit('job_progress', { type: 'transcription', status: 'processing', recordingId });
 
-        // Build the file path from the local uploads folder
-        const filePath = path.join(__dirname, '..', 'backend', 'uploads', s3Key);
+        let filePath;
+        if (storage === 'r2' && r2Key) {
+            // Pull the R2 object down to a temp file - Whisper needs a local file path
+            const buffer = await r2StorageService.downloadR2ObjectBuffer(r2Key);
+            tempFilePath = path.join(os.tmpdir(), `r2-audio-${recordingId}${path.extname(r2Key) || '.webm'}`);
+            fs.writeFileSync(tempFilePath, buffer);
+            filePath = tempFilePath;
+        } else {
+            // Build the file path from the local uploads folder
+            filePath = path.join(__dirname, '..', 'backend', 'uploads', s3Key);
+        }
 
         // 1. Call OpenAI Service
         const transcriptionResult = await openaiService.transcribeAudio(filePath, language);
@@ -68,8 +82,12 @@ const worker = new Worker('transcription', async (job) => {
             const io = socketUtil.getIO();
             io.to(userId).emit('job_progress', { type: 'transcription', status: 'error', recordingId, error: error.message });
         } catch(e) {}
-        
+
         throw error;
+    } finally {
+        if (tempFilePath && fs.existsSync(tempFilePath)) {
+            fs.unlink(tempFilePath, () => {});
+        }
     }
 }, { connection });
 

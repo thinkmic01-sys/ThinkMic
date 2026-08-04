@@ -2,10 +2,24 @@ const PDFDocument = require('pdfkit');
 const { Document, Packer, Paragraph, TextRun, HeadingLevel, ImageRun } = require('docx');
 const fs = require('fs');
 const path = require('path');
+const r2StorageService = require('../../backend/services/r2StorageService');
 
 const ensureDirectoryExists = (dirPath) => {
     if (!fs.existsSync(dirPath)) {
         fs.mkdirSync(dirPath, { recursive: true });
+    }
+};
+
+// Best-effort mirror of a generated report buffer into R2. Never throws - if R2 upload
+// fails, the local copy (already written to disk) remains the source of truth.
+const mirrorToR2 = async (key, buffer, contentType) => {
+    if (!r2StorageService.isR2Configured()) return undefined;
+    try {
+        await r2StorageService.uploadR2Buffer(key, buffer, contentType);
+        return key;
+    } catch (error) {
+        console.error(`R2 mirror upload failed for ${key}:`, error.message);
+        return undefined;
     }
 };
 
@@ -18,10 +32,13 @@ const generatePDF = async (reportId, title, content, subtitle) => {
             const fileName = `report_${reportId}.pdf`;
             const filePath = path.join(reportsDir, fileName);
             const doc = new PDFDocument({ margin: 50 });
-            
+
             const stream = fs.createWriteStream(filePath);
             doc.pipe(stream);
-            
+
+            const chunks = [];
+            doc.on('data', (chunk) => chunks.push(chunk));
+
             // Logo Header
             const logoPath = path.join(__dirname, 'logo.jpg');
             if (fs.existsSync(logoPath)) {
@@ -64,8 +81,12 @@ const generatePDF = async (reportId, title, content, subtitle) => {
             }
             
             doc.end();
-            
-            stream.on('finish', () => resolve(`/uploads/reports/${fileName}`));
+
+            stream.on('finish', async () => {
+                const localPath = `/uploads/reports/${fileName}`;
+                const r2Key = await mirrorToR2(`reports/${reportId}.pdf`, Buffer.concat(chunks), 'application/pdf');
+                resolve({ localPath, r2Key });
+            });
             stream.on('error', reject);
         } catch (error) {
             reject(error);
@@ -173,8 +194,15 @@ const generateDOCX = async (reportId, title, content, subtitle) => {
 
         const buffer = await Packer.toBuffer(doc);
         fs.writeFileSync(filePath, buffer);
-        
-        return `/uploads/reports/${fileName}`;
+
+        const localPath = `/uploads/reports/${fileName}`;
+        const r2Key = await mirrorToR2(
+            `reports/${reportId}.docx`,
+            buffer,
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        );
+
+        return { localPath, r2Key };
     } catch (error) {
         throw error;
     }

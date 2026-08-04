@@ -44,7 +44,9 @@ export default function SpeechWorkspace() {
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const projectId = queryParams.get('projectId');
-    
+    const recordingIdParam = queryParams.get('recordingId');
+    const transcriptIdParam = queryParams.get('transcriptId');
+
     const accessToken = useSelector((state) => state.auth?.accessToken);
     const userId = useSelector((state) => state.auth?.user?.id);
     const [recordingState, setRecordingState] = useState('idle');
@@ -149,6 +151,57 @@ export default function SpeechWorkspace() {
             socket.disconnect();
         };
     }, [userId]);
+
+    // --- SESSION RESUMPTION: hydrate an existing recording from the URL (e.g. a notification
+    // or toast "Open Session" link, or a click from Dashboard/Project recent recordings) ---
+    useEffect(() => {
+        if (!recordingIdParam) return;
+
+        const hydrateSession = async () => {
+            try {
+                const res = await api.get(`/recordings/${recordingIdParam}`);
+                const rec = res.data.recording;
+                if (!rec) return;
+
+                const transcript = rec.transcriptId;
+                const summary = rec.summaryId;
+
+                if (transcript) {
+                    setCurrentTranscriptId(transcript._id);
+                    if (transcript.segments && transcript.segments.length > 0) {
+                        setTranscripts(transcript.segments.map((seg) => ({ time: Math.floor(seg.start || 0), text: seg.text })));
+                    } else if (transcript.text) {
+                        setTranscripts([{ time: 0, text: transcript.text }]);
+                    }
+                } else if (transcriptIdParam) {
+                    setCurrentTranscriptId(transcriptIdParam);
+                }
+
+                if (summary) {
+                    setSummaryText(summary.editedSummaryText || summary.summaryText || '');
+                    if (Array.isArray(summary.tags)) {
+                        setTopics(summary.tags.map((tag, i) => ({
+                            id: Date.now() + i,
+                            title: tag,
+                            color: ['bg-blue-500', 'bg-green-500', 'bg-[#00c2cb]', 'bg-[#222777]'][i % 4],
+                            tags: ['auto-generated']
+                        })));
+                    }
+                    if (Array.isArray(summary.queries)) {
+                        setQueries(summary.queries);
+                    }
+                }
+
+                showToast('Session restored — continue where you left off.', 'success');
+            } catch (err) {
+                console.error('Failed to hydrate session:', err);
+                showToast('Could not load the requested research session.', 'error');
+            }
+        };
+
+        hydrateSession();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [recordingIdParam]);
 
     // --- UPLOAD LOGIC TO BACKEND ---
     const uploadAudioToBackend = async (audioBlob, filename, rawText = null, isFileUpload = false) => {

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
 import api from '../services/api';
 
 const NOTIFICATION_META = {
     reminder: { icon: 'schedule', color: 'text-[#222777] bg-[#eef0f9]', title: 'Reminder' },
     system: { icon: 'info', color: 'text-[#464651] bg-[#f1f3fc]', title: 'System' },
-    update: { icon: 'campaign', color: 'text-[#222777] bg-[#eef0f9]', title: 'Update' },
+    update: { icon: 'auto_awesome', color: 'text-[#00c2cb] bg-[#e6fbfc]', title: 'Update' },
     referral_pending: { icon: 'hourglass_empty', color: 'text-[#b45309] bg-[#fff8e1]', title: 'Referral Pending' },
     referral_approved: { icon: 'check_circle', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Referral Approved' },
     referral_rejected: { icon: 'cancel', color: 'text-[#ba1a1a] bg-[#ffdad6]', title: 'Referral Rejected' },
@@ -42,6 +43,27 @@ export default function Navbar({ onMenuClick }) {
         return () => window.removeEventListener('thinkmic:notifications-read', handleExternalRead);
     }, []);
 
+    // Real-time: background jobs (e.g. summarization) create a Notification and push it here
+    // immediately, so the bell lights up even if the user never refreshes the page
+    useEffect(() => {
+        if (!isAuthenticated || !user?.id) return;
+
+        const socket = io('http://localhost:5000', { withCredentials: true });
+
+        socket.on('connect', () => socket.emit('join', user.id));
+
+        socket.on('new_notification', (data) => {
+            const incoming = data?.notification;
+            if (!incoming) return;
+            setNotifications(prev => {
+                if (prev.some(n => n._id === incoming._id)) return prev;
+                return [incoming, ...prev];
+            });
+        });
+
+        return () => socket.disconnect();
+    }, [isAuthenticated, user?.id]);
+
     const handleNotificationClick = async () => {
         setIsNotifOpen(!isNotifOpen);
         const hasUnread = notifications.some(n => !n.isRead);
@@ -50,6 +72,13 @@ export default function Navbar({ onMenuClick }) {
                 await api.put('/notifications/read');
                 setNotifications(notifications.map(n => ({ ...n, isRead: true })));
             } catch (err) {}
+        }
+    };
+
+    const handleNotificationItemClick = (notification) => {
+        setIsNotifOpen(false);
+        if (notification.link) {
+            navigate(notification.link);
         }
     };
 
@@ -165,7 +194,7 @@ export default function Navbar({ onMenuClick }) {
                                             notifications.map(n => {
                                                 const meta = NOTIFICATION_META[n.type] || DEFAULT_NOTIFICATION_META;
                                                 return (
-                                                    <div key={n._id} className={`p-3 border-b border-[#e0e2eb] last:border-b-0 hover:bg-[#f1f3fc] transition-colors cursor-pointer flex gap-2.5 ${!n.isRead ? 'bg-blue-50/50' : ''}`}>
+                                                    <div key={n._id} onClick={() => handleNotificationItemClick(n)} className={`p-3 border-b border-[#e0e2eb] last:border-b-0 hover:bg-[#f1f3fc] transition-colors cursor-pointer flex gap-2.5 ${!n.isRead ? 'bg-blue-50/50' : ''}`}>
                                                         <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${meta.color}`}>
                                                             <span className="material-symbols-outlined text-[15px]">{meta.icon}</span>
                                                         </div>

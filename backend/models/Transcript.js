@@ -33,4 +33,8 @@ const TranscriptSchema = new mongoose.Schema({
     editedText: String
 }, { timestamps: true });
 
+// recordingId already has a unique index (one transcript per recording); add the
+// compound index for a user's transcript history feed (newest first).
+TranscriptSchema.index({ userId: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Transcript', TranscriptSchema);

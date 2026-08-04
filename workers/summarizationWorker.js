@@ -8,6 +8,7 @@ const anthropicService = require('../backend/services/anthropicService');
 const Transcript = require('../backend/models/Transcript');
 const Summary = require('../backend/models/Summary');
 const Recording = require('../backend/models/Recording');
+const Notification = require('../backend/models/Notification');
 const socketUtil = require('../backend/utils/socket');
 
 const worker = new Worker('summarization', async (job) => {
@@ -60,12 +61,25 @@ const worker = new Worker('summarization', async (job) => {
         );
 
         // 4. Link summary to recording
-        await Recording.findOneAndUpdate({ transcriptId }, { summaryId: summary._id });
+        const recording = await Recording.findOneAndUpdate({ transcriptId }, { summaryId: summary._id }, { new: true });
 
-        // 5. Emit Success to User
-        io.to(userId).emit('summarization_complete', { 
-            transcriptId, 
+        // 5. Create a persistent notification so the user learns about it even if they left the page
+        const recTitle = recording?.title || 'Your research audio';
+        const sessionLink = `/app/research?recordingId=${recording?._id || ''}&transcriptId=${transcriptId}`;
+        const notif = await Notification.create({
+            userId,
+            message: `Research summary for "${recTitle}" is ready!`,
+            type: 'update',
+            link: sessionLink
+        });
+        io.to(userId).emit('new_notification', { notification: notif });
+
+        // 6. Emit Success to User
+        io.to(userId).emit('summarization_complete', {
+            recordingId: recording?._id,
+            transcriptId,
             summaryId: summary._id,
+            title: recTitle,
             summary: summary.summaryText,
             tags: summary.tags,
             queries: summary.queries
@@ -78,8 +92,19 @@ const worker = new Worker('summarization', async (job) => {
         try {
             const io = socketUtil.getIO();
             io.to(userId).emit('job_progress', { type: 'summarization', status: 'error', transcriptId, error: error.message });
+
+            // Notify the user even if they've already left the page
+            const recording = await Recording.findOne({ transcriptId });
+            const recTitle = recording?.title || 'Your research audio';
+            const notif = await Notification.create({
+                userId,
+                message: `Summary generation failed for "${recTitle}". Please try again.`,
+                type: 'system',
+                link: recording ? `/app/research?recordingId=${recording._id}&transcriptId=${transcriptId}` : ''
+            });
+            io.to(userId).emit('new_notification', { notification: notif });
         } catch(e) {}
-        
+
         throw error;
     }
 }, { connection });

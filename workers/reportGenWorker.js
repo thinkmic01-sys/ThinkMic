@@ -126,14 +126,16 @@ const worker = new Worker('report-generation', async (job) => {
 
         // 5. Generate PDF and DOCX with the report's current title/subtitle
         const { generatePDF, generateDOCX } = require('./utils/documentGenerator');
-        const pdfLocalPath = await generatePDF(reportId, report.title, reportContent, report.subtitle);
-        const docxLocalPath = await generateDOCX(reportId, report.title, reportContent, report.subtitle);
+        const pdfResult = await generatePDF(reportId, report.title, reportContent, report.subtitle);
+        const docxResult = await generateDOCX(reportId, report.title, reportContent, report.subtitle);
 
         // 6. Update report in DB
         await Report.findByIdAndUpdate(reportId, {
             content: reportContent,
-            pdfLocalPath,
-            docxLocalPath,
+            pdfLocalPath: pdfResult.localPath,
+            docxLocalPath: docxResult.localPath,
+            pdfR2Key: pdfResult.r2Key,
+            docxR2Key: docxResult.r2Key,
             status: 'completed',
             completedAt: new Date()
         });

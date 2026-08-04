@@ -112,7 +112,7 @@ export default function ProjectDashboard() {
                                 </thead>
                                 <tbody>
                                     {recordings.map(rec => (
-                                        <tr key={rec._id} className="border-b border-[#f1f3fc] hover:bg-[#f9f9ff] transition-colors">
+                                        <tr key={rec._id} onClick={() => navigate(`/app/research?recordingId=${rec._id}`)} className="border-b border-[#f1f3fc] hover:bg-[#f9f9ff] transition-colors cursor-pointer">
                                             <td className="py-3 px-4 sm:py-4 sm:px-6 text-[13px] sm:text-[14px] font-semibold text-[#181c22]">{rec.title || 'Untitled Recording'}</td>
                                             <td className="py-3 px-4 sm:py-4 sm:px-6 text-[13px] text-[#464651] hidden sm:table-cell">{rec.durationSeconds ? `${Math.round(rec.durationSeconds / 60)}m ${rec.durationSeconds % 60}s` : '--'}</td>
                                             <td className="py-3 px-4 sm:py-4 sm:px-6">

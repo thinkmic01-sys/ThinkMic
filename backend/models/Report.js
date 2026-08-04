@@ -61,6 +61,12 @@ const ReportSchema = new mongoose.Schema({
     docxLocalPath: { // Adapted from docxS3Key
         type: String
     },
+    pdfR2Key: {
+        type: String
+    },
+    docxR2Key: {
+        type: String
+    },
     shareToken: {
         type: String,
         sparse: true
@@ -69,5 +75,10 @@ const ReportSchema = new mongoose.Schema({
         type: Date
     }
 }, { timestamps: true });
+
+// Compound indexes for high-volume retrieval: a user's reports feed (newest first)
+// and looking up every report generated for a given recording (cascade deletion, history).
+ReportSchema.index({ userId: 1, createdAt: -1 });
+ReportSchema.index({ recordingId: 1 });
 
 module.exports = mongoose.model('Report', ReportSchema);

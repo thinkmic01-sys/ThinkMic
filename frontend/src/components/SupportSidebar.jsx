@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { io } from 'socket.io-client';
 import api from '../services/api';
+import { API_BASE_URL } from '../config';
 import { faqs } from '../pages/Support/Support';
 
 const QUICK_TOPICS = [
@@ -71,7 +72,7 @@ export default function SupportSidebar({ isOpen, onClose }) {
     useEffect(() => {
         if (!accessToken || !isOpen) return;
 
-        socketRef.current = io('http://localhost:5000');
+        socketRef.current = io(API_BASE_URL, { withCredentials: true });
 
         socketRef.current.on('new_support_message', (data) => {
             setMessages(prev => {

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from 'react-redux';
 import api from '../../services/api';
 import { io } from 'socket.io-client';
+import { API_BASE_URL } from '../../config';
 
 export default function ResearchResults() {
     const navigate = useNavigate();
@@ -97,7 +98,7 @@ export default function ResearchResults() {
     useEffect(() => {
         if (!userId) return;
 
-        const socket = io('http://localhost:5000', {
+        const socket = io(API_BASE_URL, {
             withCredentials: true
         });
 

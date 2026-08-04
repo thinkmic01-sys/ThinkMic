@@ -5,6 +5,7 @@ import { login, logout } from '../../store/slices/authSlice';
 import api from '../../services/api';
 import deepgramService from '../../services/deepgramService';
 import { io } from 'socket.io-client';
+import { API_BASE_URL } from '../../config';
 
 // Probes for a codec MediaRecorder can actually use in this browser - Safari/iOS don't support
 // audio/webm at all, so a hardcoded mimeType silently breaks recording there
@@ -101,7 +102,7 @@ export default function SpeechWorkspace() {
     useEffect(() => {
         if (!userId) return;
 
-        const socket = io('http://localhost:5000', {
+        const socket = io(API_BASE_URL, {
             withCredentials: true
         });
         socketRef.current = socket;

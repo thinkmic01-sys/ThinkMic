@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import api from '../../services/api';
+import { API_BASE_URL } from '../../config';
 
 const TEMPLATE_OPTIONS = [
     { value: 'academic', label: 'Standard Academic' },
@@ -68,7 +69,7 @@ export default function ReportExport() {
     useEffect(() => {
         if (!userId) return;
         import('socket.io-client').then(({ io }) => {
-            const socket = io('http://localhost:5000', { withCredentials: true });
+            const socket = io(API_BASE_URL, { withCredentials: true });
             socket.on('connect', () => socket.emit('join', userId));
             socket.on('job_progress', (data) => {
                 if (data.type === 'report' && data.reportId === id) {
@@ -114,7 +115,7 @@ export default function ReportExport() {
                 params: { type, title, subtitle }
             });
             if (res.data.url) {
-                window.open(`http://localhost:5000${res.data.url}`, '_blank');
+                window.open(`${API_BASE_URL}${res.data.url}`, '_blank');
             }
         } catch (error) {
             console.error("Failed to download", error);

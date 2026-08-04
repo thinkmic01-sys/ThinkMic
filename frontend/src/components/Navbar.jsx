@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import api from '../services/api';
+import { API_BASE_URL } from '../config';
 
 const NOTIFICATION_META = {
     reminder: { icon: 'schedule', color: 'text-[#222777] bg-[#eef0f9]', title: 'Reminder' },
@@ -48,7 +49,7 @@ export default function Navbar({ onMenuClick }) {
     useEffect(() => {
         if (!isAuthenticated || !user?.id) return;
 
-        const socket = io('http://localhost:5000', { withCredentials: true });
+        const socket = io(API_BASE_URL, { withCredentials: true });
 
         socket.on('connect', () => socket.emit('join', user.id));
 

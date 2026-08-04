@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
+import { API_BASE_URL } from '../config';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import SupportSidebar from './SupportSidebar';
@@ -28,7 +29,7 @@ export default function Layout({ children }) {
     useEffect(() => {
         if (!isAuthenticated || !userId) return;
 
-        const socket = io('http://localhost:5000', { withCredentials: true });
+        const socket = io(API_BASE_URL, { withCredentials: true });
         socket.on('connect', () => socket.emit('join', userId));
 
         socket.on('summarization_complete', (data) => {

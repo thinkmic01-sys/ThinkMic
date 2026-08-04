@@ -4,7 +4,7 @@ const Recording = require('../models/Recording');
 exports.getTranscriptStatus = async (req, res) => {
     try {
         const { id } = req.params;
-        const recording = await Recording.findById(id).select('status transcriptId');
+        const recording = await Recording.findOne({ _id: id, userId: req.user._id }).select('status transcriptId');
         
         if (!recording) {
             return res.status(404).json({ message: 'Recording not found' });
@@ -23,9 +23,9 @@ exports.updateTranscript = async (req, res) => {
     try {
         const { id } = req.params;
         const { editedText } = req.body;
-        
-        const transcript = await Transcript.findByIdAndUpdate(
-            id,
+
+        const transcript = await Transcript.findOneAndUpdate(
+            { _id: id, userId: req.user._id },
             { editedText },
             { new: true }
         );

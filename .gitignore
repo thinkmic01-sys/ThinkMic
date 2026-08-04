@@ -65,6 +65,11 @@ web_modules/
 # Yarn Integrity file
 .yarn-integrity
 
+# User-uploaded content and generated files (audio recordings, images, reports) - real
+# user data must never be committed to the repo
+backend/uploads/*
+!backend/uploads/.gitkeep
+
 # dotenv environment variable files
 .env
 .env.*

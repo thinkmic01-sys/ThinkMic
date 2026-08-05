@@ -23,7 +23,13 @@ const getTransporter = () => {
             auth: {
                 user: process.env.SMTP_USER,
                 pass: process.env.SMTP_PASS
-            }
+            },
+            // Without these, a blocked/unreachable SMTP port (common on PaaS platforms that
+            // restrict outbound SMTP) hangs the connection attempt indefinitely, which hangs
+            // the whole HTTP request (e.g. register) since these ports have no OS-level cap.
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 10000
         });
     }
     return transporter;

@@ -26,7 +26,13 @@ const issueAuthSession = (res, user) => {
     res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Strict',
+        // Frontend and backend are on different registrable domains in production
+        // (e.g. vercel.app vs railway.app) - a genuinely cross-site relationship, and
+        // SameSite=Strict blocks the browser from ever attaching the cookie to those
+        // requests at all. None (paired with Secure, already true in production) is
+        // required for cross-site; Strict is kept for local dev where frontend/backend
+        // ports on localhost count as same-site anyway.
+        sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Strict',
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
@@ -450,7 +456,7 @@ exports.logout = (req, res) => {
     res.clearCookie('refreshToken', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Strict'
+        sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Strict'
     });
     res.status(200).json({ message: 'Logged out successfully' });
 };

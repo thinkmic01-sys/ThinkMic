@@ -3,56 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import api from '../../services/api';
 
-// --- MOCK DATA ---
-const featuredCourse = {
-    id: 'featured',
-    status: 'LIVE NOW',
-    tag: 'Artificial Intelligence',
-    time: '90m',
-    title: 'The Future of Generative Models in Academic Synthesis',
-    desc: 'Join Dr. Aris Varga for an exclusive deep-dive into how new LLM architectures are accelerating literature reviews and cross-disciplinary hypothesis generation.',
-    host: 'Dr. Aris Varga',
-    hostTitle: 'Director, Stanford AI Lab',
-    img: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=80&w=1200',
-    bullets: [
-        'The shift from retrieval-augmented generation (RAG) to synthesis-first architectures.',
-        'Handling citation hallucination in long-form academic writing.',
-        'Case studies showing a 40% reduction in literature review times.'
-    ]
-};
-
-const mockCourses = [
-    {
-        id: 1, status: 'UPCOMING', tag: 'Methodology', time: 'Tomorrow, 10:00 AM',
-        title: 'Structuring Qualitative Data for AI Analysis',
-        desc: 'Learn best practices for preparing interview transcripts and field notes for ingestion into specialized LLMs.',
-        host: 'Dr. E. Chen', hostTitle: 'Lead Qualitative Researcher',
-        img: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=600',
-        bullets: ['Data cleaning techniques for messy transcripts.', 'Prompt engineering for thematic extraction.', 'Bias detection in AI analysis.']
-    },
-    {
-        id: 2, status: 'RECORDED', tag: 'Historical Studies', time: '45:20',
-        title: 'Digitizing the Archives: AI in Historiography',
-        desc: 'A case study on using computer vision to transcribe and categorize 18th-century mercantile records.',
-        host: 'Prof. M. Rossi', hostTitle: 'Professor of Digital History',
-        img: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&q=80&w=600',
-        bullets: ['Setting up OCR pipelines for handwritten documents.', 'Training custom vision models on historical scripts.', 'Archival metadata structuring.']
-    },
-    {
-        id: 3, status: 'LIVE', tag: 'Quantum Computing', time: '342 watching',
-        title: 'Quantum Neural Networks: A Primer',
-        desc: 'Live Q&A session discussing the theoretical limits and current practical applications of QNNs.',
-        host: 'Dr. K. Sato', hostTitle: 'Senior Quantum Engineer',
-        img: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&q=80&w=600',
-        bullets: ['Qubit state mapping for neural pathways.', 'Error correction in quantum environments.', 'Current hardware limitations.']
-    }
-];
+// Safe placeholder shape so the drawer can render before any real seminar has been
+// selected - avoids null-checks on every selectedCourse.* reference below.
+const emptyCourse = { id: null, status: '', tag: '', time: '', title: '', desc: '', host: '', hostTitle: '', hostImage: '', img: '', bullets: [] };
 
 export default function CourseLibrary() {
     const navigate = useNavigate();
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [activeFilter, setActiveFilter] = useState('All');
-    const [selectedCourse, setSelectedCourse] = useState(featuredCourse);
+    const [selectedCourse, setSelectedCourse] = useState(emptyCourse);
     const [toast, setToast] = useState(null);
 
     const showToast = (message, type = 'success') => {
@@ -69,42 +28,36 @@ export default function CourseLibrary() {
         const fetchSeminars = async () => {
             try {
                 const response = await api.get('/seminars');
-                
-                let combinedCourses = [...mockCourses]; // Start with dummy data for visual aesthetics
-
                 const seminarsData = response.data;
-                
-                // Also fetch registrations
+
                 try {
                     const regResponse = await api.get('/seminars/registrations');
                     const regData = regResponse.data;
                     setMyRegistrations(regData.map(r => r.seminarId));
                 } catch (e) {}
-                    
-                    // Map seminars to match the Course card format
-                    const mappedSeminars = seminarsData.map(s => ({
-                        id: s._id,
-                        status: s.status === 'live' ? 'LIVE' : s.status === 'scheduled' ? 'UPCOMING' : s.status === 'draft' ? 'DRAFT' : 'RECORDED',
-                        tag: s.category || 'Seminar',
-                        time: s.startTime ? `${s.startTime} - ${s.endTime}` : 'TBA',
-                        title: s.title,
-                        desc: s.abstract || 'No description provided.',
-                        host: s.hostName || 'Guest Speaker',
-                        hostTitle: 'Host',
-                        hostImage: s.hostImageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(s.hostName || 'Guest Speaker')}&background=0D8ABC&color=fff&rounded=true&bold=true`,
-                        img: s.imageUrl || 'https://images.unsplash.com/photo-1540317580384-e5d43616b9aa?auto=format&fit=crop&q=80&w=600',
-                        bullets: s.tags || [],
-                        type: 'seminar',
-                        location: s.location,
-                        hostId: s.hostId
-                    }));
 
-                    combinedCourses = [...mappedSeminars, ...combinedCourses]; // Put new seminars first
-                
-                setCourses(combinedCourses);
+                // Map seminars to match the Course card format
+                const mappedSeminars = seminarsData.map(s => ({
+                    id: s._id,
+                    status: s.status === 'live' ? 'LIVE' : s.status === 'scheduled' ? 'UPCOMING' : s.status === 'draft' ? 'DRAFT' : 'RECORDED',
+                    tag: s.category || 'Seminar',
+                    time: s.startTime ? `${s.startTime} - ${s.endTime}` : 'TBA',
+                    title: s.title,
+                    desc: s.abstract || 'No description provided.',
+                    host: s.hostName || 'Guest Speaker',
+                    hostTitle: 'Host',
+                    hostImage: s.hostImageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(s.hostName || 'Guest Speaker')}&background=0D8ABC&color=fff&rounded=true&bold=true`,
+                    img: s.imageUrl || 'https://images.unsplash.com/photo-1540317580384-e5d43616b9aa?auto=format&fit=crop&q=80&w=600',
+                    bullets: s.tags || [],
+                    type: 'seminar',
+                    location: s.location,
+                    hostId: s.hostId
+                }));
+
+                setCourses(mappedSeminars);
             } catch (error) {
                 console.error("Failed to fetch seminars", error);
-                setCourses(mockCourses); // Fallback to mocks
+                setCourses([]);
             }
         };
         fetchSeminars();
@@ -114,6 +67,10 @@ export default function CourseLibrary() {
     // "My Seminars" filter so a user can see how many seminars they're actually part of.
     const isMine = (course) => (user && course.hostId === user.id) || myRegistrations.includes(course.id);
     const myCount = courses.filter(isMine).length;
+
+    // Featured hero slot now shows whichever seminar is actually live, if any - no
+    // hardcoded placeholder when nothing is live.
+    const featuredLive = courses.find((c) => c.status === 'LIVE') || null;
 
     // Filter Logic
     const filteredCourses = courses.filter(course => {
@@ -249,46 +206,45 @@ export default function CourseLibrary() {
                     </div>
                 </div>
 
-                {/* Hero Banner: Featured Live Session */}
-                <section
-                    className="mb-6 sm:mb-8 rounded-xl overflow-hidden relative shadow-[0_4px_16px_rgba(58,63,143,0.08)] group cursor-pointer border border-[#222777]"
-                    onClick={() => handleCourseClick(featuredCourse)}
-                >
-                    <div className="absolute inset-0 bg-gradient-to-br md:bg-gradient-to-r from-[#222777] to-[#3a3f8f] opacity-95 z-0"></div>
-                    <div className="absolute inset-0 bg-cover bg-center mix-blend-overlay z-0 opacity-30 transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url('${featuredCourse.img}')` }}></div>
+                {/* Hero Banner: whichever seminar is actually live right now, if any */}
+                {featuredLive && (
+                    <section
+                        className="mb-6 sm:mb-8 rounded-xl overflow-hidden relative shadow-[0_4px_16px_rgba(58,63,143,0.08)] group cursor-pointer border border-[#222777]"
+                        onClick={() => handleCourseClick(featuredLive)}
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-br md:bg-gradient-to-r from-[#222777] to-[#3a3f8f] opacity-95 z-0"></div>
+                        <div className="absolute inset-0 bg-cover bg-center mix-blend-overlay z-0 opacity-30 transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url('${featuredLive.img}')` }}></div>
 
-                    <div className="relative z-10 p-5 sm:p-8 lg:p-12 flex flex-col md:flex-row gap-6 sm:gap-8 justify-between items-start md:items-center">
-                        <div className="w-full max-w-2xl text-white">
-                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                                <span className="bg-[#ba1a1a] text-white font-bold text-[9px] sm:text-[10px] px-2 py-1 rounded-sm flex items-center gap-1.5 uppercase tracking-wider shadow-sm">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> LIVE NOW
-                                </span>
-                                <span className="font-mono text-[10px] sm:text-xs text-[#bfc2ff] bg-[#070963]/30 px-2 py-1 rounded-sm border border-[#bfc2ff]/30 flex items-center gap-1">
-                                    <span className="material-symbols-outlined text-[12px] sm:text-[14px]">visibility</span> 1,248 watching
-                                </span>
-                            </div>
-                            <h2 className="text-[24px] sm:text-[32px] md:text-[40px] font-bold mb-2 sm:mb-3 text-white group-hover:text-[#6bf6ff] transition-colors leading-tight">
-                                {featuredCourse.title}
-                            </h2>
-                            <p className="text-[#bfc2ff] text-[14px] sm:text-[16px] mb-6 sm:mb-8 max-w-xl leading-relaxed line-clamp-3 sm:line-clamp-none">
-                                {featuredCourse.desc}
-                            </p>
+                        <div className="relative z-10 p-5 sm:p-8 lg:p-12 flex flex-col md:flex-row gap-6 sm:gap-8 justify-between items-start md:items-center">
+                            <div className="w-full max-w-2xl text-white">
+                                <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                                    <span className="bg-[#ba1a1a] text-white font-bold text-[9px] sm:text-[10px] px-2 py-1 rounded-sm flex items-center gap-1.5 uppercase tracking-wider shadow-sm">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> LIVE NOW
+                                    </span>
+                                </div>
+                                <h2 className="text-[24px] sm:text-[32px] md:text-[40px] font-bold mb-2 sm:mb-3 text-white group-hover:text-[#6bf6ff] transition-colors leading-tight">
+                                    {featuredLive.title}
+                                </h2>
+                                <p className="text-[#bfc2ff] text-[14px] sm:text-[16px] mb-6 sm:mb-8 max-w-xl leading-relaxed line-clamp-3 sm:line-clamp-none">
+                                    {featuredLive.desc}
+                                </p>
 
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-                                <button className="w-full sm:w-auto justify-center bg-[#61f4fd] text-[#002022] font-bold px-6 py-3 sm:py-2.5 rounded-lg hover:bg-[#6bf6ff] transition-colors flex items-center gap-2 shadow-sm">
-                                    <span className="material-symbols-outlined">play_arrow</span> Join Broadcast
-                                </button>
-                                <div className="flex items-center gap-3">
-                                    <img src="https://i.pravatar.cc/150?u=varga" alt="Host" className="w-10 h-10 rounded-full border-2 border-[#3a3f8f]" />
-                                    <div className="text-sm">
-                                        <p className="font-bold text-white leading-tight">{featuredCourse.host}</p>
-                                        <p className="font-mono text-[10px] sm:text-[11px] text-[#bfc2ff]">{featuredCourse.hostTitle}</p>
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+                                    <button className="w-full sm:w-auto justify-center bg-[#61f4fd] text-[#002022] font-bold px-6 py-3 sm:py-2.5 rounded-lg hover:bg-[#6bf6ff] transition-colors flex items-center gap-2 shadow-sm">
+                                        <span className="material-symbols-outlined">play_arrow</span> Join Broadcast
+                                    </button>
+                                    <div className="flex items-center gap-3">
+                                        <img src={featuredLive.hostImage} alt="Host" className="w-10 h-10 rounded-full border-2 border-[#3a3f8f]" />
+                                        <div className="text-sm">
+                                            <p className="font-bold text-white leading-tight">{featuredLive.host}</p>
+                                            <p className="font-mono text-[10px] sm:text-[11px] text-[#bfc2ff]">{featuredLive.hostTitle}</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
+                )}
 
                 {/* Filters Row */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 sm:mb-6 gap-3 sm:gap-4">
@@ -347,7 +303,7 @@ export default function CourseLibrary() {
                                 <p className="text-[13px] sm:text-[14px] text-[#464651] line-clamp-2 mb-4 flex-1">{course.desc}</p>
                                 <div className="p-4 sm:p-5 pt-0 mt-auto">
                                     <div className="flex items-center gap-2 sm:gap-3">
-                                        <img src={course.hostImage || (course.host === 'Dr. E. Chen' ? 'https://i.pravatar.cc/150?u=chen' : course.host === 'Dr. K. Sato' ? 'https://i.pravatar.cc/150?u=sato' : course.host === 'Prof. M. Rossi' ? 'https://i.pravatar.cc/150?u=rossi' : 'https://i.pravatar.cc/150?u=default')} alt="Host" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-[#c7c5d3] object-cover" />
+                                        <img src={course.hostImage || 'https://i.pravatar.cc/150?u=default'} alt="Host" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-[#c7c5d3] object-cover" />
                                         <span className="font-bold text-[12px] sm:text-[13px] text-[#181c22]">{course.host}</span>
                                     </div>
                                 </div>
@@ -401,7 +357,7 @@ export default function CourseLibrary() {
                     <hr className="border-[#e0e2eb]" />
 
                     <div className="flex items-center gap-3 sm:gap-4 py-4 sm:py-5">
-                        <img src={selectedCourse.hostImage || (selectedCourse.host === 'Dr. E. Chen' ? 'https://i.pravatar.cc/150?u=chen' : selectedCourse.host === 'Dr. K. Sato' ? 'https://i.pravatar.cc/150?u=sato' : selectedCourse.host === 'Prof. M. Rossi' ? 'https://i.pravatar.cc/150?u=rossi' : 'https://i.pravatar.cc/150?u=varga')} alt="Host" className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-[#e0e2eb] object-cover shrink-0" />
+                        <img src={selectedCourse.hostImage || 'https://i.pravatar.cc/150?u=default'} alt="Host" className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-[#e0e2eb] object-cover shrink-0" />
                         <div>
                             <p className="font-bold text-[#181c22] text-[14px] sm:text-[15px]">{selectedCourse.host}</p>
                             <p className="font-mono text-[11px] sm:text-[12px] text-[#464651] mt-0.5">{selectedCourse.hostTitle}</p>

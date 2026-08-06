@@ -7,6 +7,7 @@ const Transcript = require('../models/Transcript');
 const coinWalletService = require('../services/coinWalletService');
 const { summarizationQueue } = require('../queues');
 const socket = require('../utils/socket');
+const r2StorageService = require('../services/r2StorageService');
 
 // Reserves `totalRequired` coins from the host into escrow for a seminar's reward campaign.
 // Mutates `seminar.rewardHeldAmount` and notifies the host. Throws InsufficientBalanceError
@@ -128,8 +129,22 @@ exports.createSeminar = async (req, res) => {
 
 exports.getSeminarById = async (req, res) => {
     try {
-        const seminar = await Seminar.findById(req.params.id);
+        const seminar = await Seminar.findById(req.params.id)
+            .populate('recordingId', 'r2Key mimeType durationSeconds')
+            .populate('summaryId', 'summaryText tags')
+            .lean();
         if (!seminar) return res.status(404).json({ message: 'Seminar not found' });
+
+        // Attach a short-lived presigned playback URL so the recorded seminar's audio
+        // streams directly from R2 - same pattern recordingController uses for recordings.
+        if (seminar.recordingId?.r2Key) {
+            try {
+                seminar.recordingId.playbackUrl = await r2StorageService.getR2DownloadPresignedUrl(seminar.recordingId.r2Key);
+            } catch (err) {
+                console.error('Seminar recording playback URL error:', err.message);
+            }
+        }
+
         res.status(200).json(seminar);
     } catch (err) {
         console.error(err);

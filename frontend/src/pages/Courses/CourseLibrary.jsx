@@ -110,15 +110,36 @@ export default function CourseLibrary() {
         fetchSeminars();
     }, [token]);
 
+    // A seminar is "mine" if the user hosts it or registered for it - used by the
+    // "My Seminars" filter so a user can see how many seminars they're actually part of.
+    const isMine = (course) => (user && course.hostId === user.id) || myRegistrations.includes(course.id);
+    const myCount = courses.filter(isMine).length;
+
     // Filter Logic
     const filteredCourses = courses.filter(course => {
+        if (activeFilter === 'Mine') return isMine(course);
         if (activeFilter !== 'All' && course.status !== activeFilter.toUpperCase()) return false;
         return true;
     });
 
-    const handleCourseClick = (course) => {
+    const handleCourseClick = async (course) => {
         setSelectedCourse(course);
         setIsDrawerOpen(true);
+
+        // Recorded seminars need their playback URL + summary, which aren't in the
+        // lightweight list payload - fetch the full detail only when actually opened.
+        if (course.type === 'seminar' && course.status === 'RECORDED') {
+            try {
+                const res = await api.get(`/seminars/${course.id}`);
+                setSelectedCourse(prev => (prev.id === course.id ? {
+                    ...prev,
+                    playbackUrl: res.data.recordingId?.playbackUrl || null,
+                    summaryText: res.data.summaryId?.summaryText || null
+                } : prev));
+            } catch (err) {
+                console.error('Failed to load seminar recording/summary', err);
+            }
+        }
     };
 
     const closeDrawer = () => {
@@ -141,11 +162,23 @@ export default function CourseLibrary() {
         const isHost = user && course.hostId === user.id;
         const isRegistered = myRegistrations.includes(course.id);
 
-        if (isHost) {
+        // Only offer broadcast controls to the host while it's actually startable/live -
+        // once it's completed there's nothing to start, so fall through to the normal
+        // recorded-view button everyone (including the host) sees below.
+        if (isHost && (course.status === 'UPCOMING' || course.status === 'DRAFT')) {
             return (
                 <button onClick={(e) => { e.stopPropagation(); navigate(`/app/courses/broadcast/${course.id}`); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-[#006e73] text-white hover:bg-[#00c2cb]">
                     <span className="material-symbols-outlined text-[14px] sm:text-[16px]">podcasts</span>
                     Start Broadcast
+                </button>
+            );
+        }
+
+        if (isHost && course.status === 'LIVE') {
+            return (
+                <button onClick={(e) => { e.stopPropagation(); navigate(`/app/courses/broadcast/${course.id}`); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-[#ba1a1a] text-white hover:bg-[#93000a]">
+                    <span className="material-symbols-outlined text-[14px] sm:text-[16px]">podcasts</span>
+                    Manage Broadcast
                 </button>
             );
         }
@@ -161,7 +194,7 @@ export default function CourseLibrary() {
         if (course.status === 'RECORDED') {
             return (
                 <button onClick={(e) => { e.stopPropagation(); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-[#f1f3fc] text-[#222777] border border-[#c7c5d3] hover:bg-[#e0e2eb]">
-                    <span className="material-symbols-outlined text-[14px] sm:text-[16px]">play_arrow</span> Resume
+                    <span className="material-symbols-outlined text-[14px] sm:text-[16px]">play_arrow</span> {isHost ? 'View Recording' : 'Resume'}
                 </button>
             );
         }
@@ -261,13 +294,13 @@ export default function CourseLibrary() {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 sm:mb-6 gap-3 sm:gap-4">
                     <div className="flex items-center w-full min-w-0">
                         <div className="flex gap-2 sm:gap-4 overflow-x-auto hide-scrollbar">
-                            {['All', 'Live', 'Upcoming', 'Recorded', 'Draft'].map(tab => (
+                            {['All', 'Mine', 'Live', 'Upcoming', 'Recorded', 'Draft'].map(tab => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveFilter(tab)}
                                     className={`px-4 sm:px-5 py-1.5 rounded-full text-[12px] sm:text-[13px] font-bold whitespace-nowrap transition-colors ${activeFilter === tab ? 'bg-[#222777] text-white shadow-sm' : 'bg-transparent text-[#464651] border border-[#c7c5d3] hover:border-[#222777] hover:text-[#222777]'}`}
                                 >
-                                    {tab === 'Draft' ? 'Drafts' : tab}
+                                    {tab === 'Draft' ? 'Drafts' : tab === 'Mine' ? `My Seminars (${myCount})` : tab}
                                 </button>
                             ))}
                         </div>
@@ -380,12 +413,33 @@ export default function CourseLibrary() {
                     <div className="text-[14px] sm:text-[16px] text-[#464651] leading-[1.6] sm:leading-[1.7] mb-6 sm:mb-8">
                         <p className="mb-5 sm:mb-6">{selectedCourse.desc}</p>
 
-                        <p className="mb-2 sm:mb-3 font-bold text-[#181c22]">In this seminar, we will cover:</p>
-                        <ul className="list-disc pl-5 space-y-1.5 sm:space-y-2 marker:text-[#464651]">
-                            {selectedCourse.bullets.map((bullet, idx) => (
-                                <li key={idx}>{bullet}</li>
-                            ))}
-                        </ul>
+                        {selectedCourse.status === 'RECORDED' ? (
+                            <>
+                                {selectedCourse.playbackUrl && (
+                                    <div className="mb-5 sm:mb-6">
+                                        <p className="mb-2 sm:mb-3 font-bold text-[#181c22]">Recording</p>
+                                        <audio controls className="w-full" src={selectedCourse.playbackUrl}>
+                                            Your browser does not support the audio element.
+                                        </audio>
+                                    </div>
+                                )}
+                                <p className="mb-2 sm:mb-3 font-bold text-[#181c22]">Summary</p>
+                                {selectedCourse.summaryText ? (
+                                    <p className="whitespace-pre-line">{selectedCourse.summaryText}</p>
+                                ) : (
+                                    <p className="text-[#c7c5d3] italic">Summary is still being generated...</p>
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                <p className="mb-2 sm:mb-3 font-bold text-[#181c22]">In this seminar, we will cover:</p>
+                                <ul className="list-disc pl-5 space-y-1.5 sm:space-y-2 marker:text-[#464651]">
+                                    {selectedCourse.bullets.map((bullet, idx) => (
+                                        <li key={idx}>{bullet}</li>
+                                    ))}
+                                </ul>
+                            </>
+                        )}
                     </div>
 
                     {/* Completion Rewards Box */}
@@ -415,15 +469,30 @@ export default function CourseLibrary() {
                         let btnStyle = 'bg-[#f1f3fc] text-[#222777] border-[#c7c5d3] hover:bg-[#e0e2eb]';
                         let onClick = (e) => e.stopPropagation();
 
-                        if (isHost) {
+                        if (isHost && (selectedCourse.status === 'UPCOMING' || selectedCourse.status === 'DRAFT')) {
                             btnText = 'Start Broadcast';
                             icon = 'podcasts';
                             btnStyle = 'bg-[#006e73] text-white border-[#006e73] hover:bg-[#00c2cb]';
+                            onClick = (e) => { e.stopPropagation(); navigate(`/app/courses/broadcast/${selectedCourse.id}`); };
+                        } else if (isHost && selectedCourse.status === 'LIVE') {
+                            btnText = 'Manage Broadcast';
+                            icon = 'podcasts';
+                            btnStyle = 'bg-[#ba1a1a] text-white border-[#ba1a1a] hover:bg-[#93000a]';
                             onClick = (e) => { e.stopPropagation(); navigate(`/app/courses/broadcast/${selectedCourse.id}`); };
                         } else if (selectedCourse.status === 'LIVE' || selectedCourse.status === 'LIVE NOW') {
                             btnText = 'Join Broadcast';
                             icon = 'play_arrow';
                             btnStyle = 'bg-[#61f4fd] text-[#002022] border-[#00696e] hover:bg-[#6bf6ff]';
+                        } else if (selectedCourse.status === 'RECORDED') {
+                            if (selectedCourse.playbackUrl) {
+                                btnText = 'Download Audio';
+                                icon = 'download';
+                                onClick = (e) => { e.stopPropagation(); window.open(selectedCourse.playbackUrl, '_blank'); };
+                            } else {
+                                btnText = 'No Recording Available';
+                                icon = 'block';
+                                btnStyle = 'bg-[#f1f3fc] text-[#c7c5d3] border-[#e0e2eb] cursor-default';
+                            }
                         } else if (selectedCourse.status === 'UPCOMING') {
                             if (isRegistered) {
                                 btnText = 'Registered';

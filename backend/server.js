@@ -14,6 +14,9 @@ connectDB();
 
 const app = express();
 
+// Trust reverse proxy (Railway, Vercel, Cloudflare) for accurate client IP in rate limiting & logs
+app.set('trust proxy', 1);
+
 // Security Middleware
 app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" }

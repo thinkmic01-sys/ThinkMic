@@ -187,10 +187,16 @@ export default function CourseLibrary() {
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-5 sm:mb-6 border-b border-[#e0e2eb] pb-4 gap-4">
                     <div className="w-full sm:w-auto">
-                        <h1 className="text-[24px] sm:text-[28px] md:text-[32px] font-bold text-[#222777] leading-tight tracking-tight">Course Library</h1>
+                        <h1 className="text-[24px] sm:text-[28px] md:text-[32px] font-bold text-[#222777] leading-tight tracking-tight">Seminar Library</h1>
                         <p className="text-[13px] sm:text-[14px] md:text-[15px] text-[#464651] mt-1">Discover live seminars, recorded lectures, and interactive modules.</p>
                     </div>
                     <div className="flex gap-2 sm:gap-3 w-full sm:w-auto overflow-x-auto hide-scrollbar shrink-0">
+                        <button
+                            onClick={() => navigate('/app/projects/create-seminar')}
+                            className="bg-[#222777] text-white px-4 py-2.5 sm:py-2 rounded-lg font-bold text-[13px] hover:bg-[#3a3f8f] transition-colors flex items-center justify-center gap-2 shadow-sm shrink-0 whitespace-nowrap"
+                        >
+                            <span className="material-symbols-outlined text-[18px]">event</span> Create Seminar
+                        </button>
                         <button
                             onClick={() => navigate('/app/courses/seminars')}
                             className="bg-[#e6fbfc] text-[#006e73] border border-[#6bf6ff]/50 px-4 py-2.5 sm:py-2 rounded-lg font-bold text-[13px] hover:bg-[#6bf6ff]/20 transition-colors flex items-center justify-center gap-2 shadow-sm shrink-0 whitespace-nowrap"

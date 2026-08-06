@@ -63,7 +63,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 <NavLink to="/app/dashboard" icon="dashboard" label="Dashboard" />
                 <NavLink to="/app/research" icon="workspaces" label="Projects" />
                 <NavLink to="/app/reports" icon="summarize" label="Reports" />
-                <NavLink to="/app/courses" icon="school" label="Courses" />
+                <NavLink to="/app/courses" icon="school" label="Seminars" />
                 <NavLink to="/app/forms" icon="groups" label="Collaboration" />
                 {role === 'admin' && (
                     <NavLink to="/app/admin/users" icon="admin_panel_settings" label="Management" isManagement />

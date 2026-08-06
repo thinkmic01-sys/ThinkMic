@@ -48,12 +48,6 @@ export default function ProjectsList() {
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto">
                         <button
-                            onClick={() => navigate('/app/projects/create-seminar')}
-                            className="flex-1 sm:flex-none bg-white border border-[#c7c5d3] text-[#222777] px-5 py-2.5 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm hover:bg-[#f9f9ff] transition-colors flex items-center justify-center gap-2 shrink-0"
-                        >
-                            <span className="material-symbols-outlined text-[18px]">event</span> Create Seminar
-                        </button>
-                        <button
                             onClick={() => setIsCreateModalOpen(true)}
                             className="flex-1 sm:flex-none bg-[#222777] text-white px-5 py-2.5 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm hover:bg-[#3a3f8f] transition-colors flex items-center justify-center gap-2 shrink-0"
                         >

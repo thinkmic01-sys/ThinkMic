@@ -136,6 +136,18 @@ export default function Navbar({ onMenuClick }) {
             );
         }
 
+        // If inside the Seminars (Course Library) section - route is still /app/courses/*,
+        // but the section is branded "Seminars" so the breadcrumb shouldn't read "Courses"
+        if (location.pathname.includes('/app/courses')) {
+            return (
+                <div className="flex items-center gap-2 sm:gap-4 text-[13px] sm:text-sm whitespace-nowrap">
+                    <span className="text-gray-500 font-medium hidden sm:inline">ThinkMic</span>
+                    <span className="text-gray-400 hidden sm:inline">/</span>
+                    <span className="text-[#222777] font-bold">Seminars</span>
+                </div>
+            );
+        }
+
         // Default Breadcrumbs for other pages
         const pageName = location.pathname.split('/').pop().charAt(0).toUpperCase() + location.pathname.split('/').pop().slice(1);
         return (

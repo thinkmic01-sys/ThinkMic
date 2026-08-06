@@ -29,7 +29,11 @@ const getTransporter = () => {
             // the whole HTTP request (e.g. register) since these ports have no OS-level cap.
             connectionTimeout: 10000,
             greetingTimeout: 10000,
-            socketTimeout: 10000
+            socketTimeout: 10000,
+            // Railway's containers have no outbound IPv6 route, but Node still resolves
+            // smtp.gmail.com's AAAA record first and tries that address, failing fast with
+            // ENETUNREACH before ever reaching Gmail. Force IPv4 resolution to avoid it.
+            family: 4
         });
     }
     return transporter;

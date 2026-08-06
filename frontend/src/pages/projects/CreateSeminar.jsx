@@ -630,7 +630,7 @@ export default function CreateSeminar() {
                                 <div>
                                     <h4 className="text-[13px] font-bold text-[#181c22] mb-1">Pro Tip</h4>
                                     <p className="text-[12px] text-[#777682] leading-relaxed">
-                                        Live seminars automatically record and add themselves to the course library after completion. Ensure your title is search-friendly.
+                                        Live seminars automatically record and add themselves to the seminar library after completion. Ensure your title is search-friendly.
                                     </p>
                                 </div>
                             </div>

@@ -89,6 +89,11 @@ export default function Auth() {
                 // SUCCESSFUL LOGIN
                 dispatch(login({ ...normalizeUser(data.user), accessToken: data.accessToken }));
                 navigate('/app/dashboard');
+            } else if (data.accessToken) {
+                // Backend auto-verified the account (e.g. SKIP_EMAIL_VERIFICATION) and already
+                // issued a session - log straight in instead of showing a stale OTP screen.
+                dispatch(login({ ...normalizeUser(data.user), accessToken: data.accessToken }));
+                navigate('/app/dashboard');
             } else {
                 // REGISTRATION SUCCEEDED -> MUST VERIFY EMAIL BEFORE ENTERING WORKSPACE
                 setOtp(Array(OTP_LENGTH).fill(''));

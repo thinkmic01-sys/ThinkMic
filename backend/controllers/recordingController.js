@@ -208,7 +208,7 @@ exports.getRecordingById = async (req, res) => {
 // @access  Private
 exports.createRecordingDraft = async (req, res) => {
     try {
-        const { title, mimeType, fileSizeBytes, r2Key, recordingId, projectId } = req.body;
+        const { title, mimeType, fileSizeBytes, r2Key, recordingId, projectId, sttEngine, rawText } = req.body;
 
         const recordingData = {
             userId: req.user._id,
@@ -228,8 +228,33 @@ exports.createRecordingDraft = async (req, res) => {
 
         const recording = await Recording.create(recordingData);
 
-        // Only enqueue transcription once the audio actually exists in R2
-        if (r2Key) {
+        if (r2Key && (sttEngine === 'Browser' || sttEngine === 'Deepgram' || rawText !== undefined)) {
+            // Same bypass as uploadAudioLocal: live-recorded audio already has its
+            // transcript from the browser/Deepgram, so skip Whisper entirely.
+            const transcript = await Transcript.create({
+                recordingId: recording._id,
+                userId: req.user._id,
+                text: rawText || '(No audio detected or transcription empty)',
+                whisperModel: `skipped-via-${sttEngine || 'live-stt'}`
+            });
+
+            await summarizationQueue.add('summarize', {
+                transcriptId: transcript._id,
+                userId: req.user._id,
+                customPrompt: req.body.customPrompt,
+                language: localeToLanguageName(req.body.language),
+                length: req.body.length,
+                style: req.body.style
+            });
+
+            const socket = require('../utils/socket');
+            socket.getIO().to(req.user._id.toString()).emit('transcription_complete', {
+                recordingId: recording._id,
+                transcriptId: transcript._id,
+                text: rawText
+            });
+        } else if (r2Key) {
+            // Only enqueue Whisper transcription once the audio actually exists in R2
             await transcriptionQueue.add('transcribe', {
                 recordingId: recording._id,
                 r2Key,

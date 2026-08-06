@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from 'react-redux';
 import { login, logout } from '../../store/slices/authSlice';
 import api from '../../services/api';
+import axios from 'axios';
 import deepgramService from '../../services/deepgramService';
 import { io } from 'socket.io-client';
 import { API_BASE_URL } from '../../config';
@@ -205,35 +206,70 @@ export default function SpeechWorkspace() {
     }, [recordingIdParam]);
 
     // --- UPLOAD LOGIC TO BACKEND ---
+    // Uploads the audio bytes directly from the browser to R2 (bypassing our backend
+    // entirely for the transfer) so upload speed never degrades as concurrent users or
+    // file size grow - the Express server only ever handles a small JSON finalize call.
+    // Falls back to the old local-multipart route when R2 isn't configured (local dev).
     const uploadAudioToBackend = async (audioBlob, filename, rawText = null, isFileUpload = false) => {
         setIsUploading(true);
-        setUploadProgress(50); // Show intermediate progress
+        setUploadProgress(0);
 
-        const formData = new FormData();
-        formData.append('audio', audioBlob, filename);
-        formData.append('title', filename || 'Live Workspace Recording');
-        
-        if (rawText !== null && rawText !== undefined) {
-            formData.append('rawText', rawText);
-        }
-        if (!isFileUpload) {
-            formData.append('sttEngine', sttEngine);
-        }
-        formData.append('language', language);
-        formData.append('length', summaryLength);
-        formData.append('style', summaryStyle);
-        if (projectId) {
-            formData.append('projectId', projectId);
-        }
+        const mimeType = audioBlob.type || 'audio/webm';
+        const engineForUpload = isFileUpload ? undefined : sttEngine;
+        const onUploadProgress = (evt) => {
+            if (evt.total) setUploadProgress(Math.round((evt.loaded / evt.total) * 100));
+        };
 
         try {
-            const response = await api.post('/recordings', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
+            const { data: presign } = await api.get('/recordings/upload-url', {
+                params: { mimeType }
             });
 
-            const data = response.data;
+            if (presign.storage === 'r2') {
+                // Direct browser -> R2 PUT using the presigned URL. Deliberately uses a
+                // bare axios call (not the `api` instance) so no Authorization header or
+                // credentials are sent to R2 - only the presigned query signature.
+                await axios.put(presign.uploadUrl, audioBlob, {
+                    headers: { 'Content-Type': mimeType },
+                    onUploadProgress
+                });
+
+                await api.post('/recordings/draft', {
+                    title: filename || 'Live Workspace Recording',
+                    mimeType,
+                    fileSizeBytes: audioBlob.size,
+                    r2Key: presign.r2Key,
+                    recordingId: presign.recordingId,
+                    projectId: projectId || undefined,
+                    sttEngine: engineForUpload,
+                    rawText: (rawText !== null && rawText !== undefined) ? rawText : undefined,
+                    language,
+                    length: summaryLength,
+                    style: summaryStyle
+                });
+            } else {
+                // R2 not configured in this environment - fall back to local multipart upload.
+                const formData = new FormData();
+                formData.append('audio', audioBlob, filename);
+                formData.append('title', filename || 'Live Workspace Recording');
+                if (rawText !== null && rawText !== undefined) {
+                    formData.append('rawText', rawText);
+                }
+                if (engineForUpload) {
+                    formData.append('sttEngine', engineForUpload);
+                }
+                formData.append('language', language);
+                formData.append('length', summaryLength);
+                formData.append('style', summaryStyle);
+                if (projectId) {
+                    formData.append('projectId', projectId);
+                }
+
+                await api.post('/recordings', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                    onUploadProgress
+                });
+            }
 
             setUploadProgress(100);
             showToast('Audio saved successfully to the server!', 'success');

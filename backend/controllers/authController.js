@@ -16,6 +16,11 @@ const RESET_CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 const generateOTP = () => crypto.randomInt(0, 1000000).toString().padStart(6, '0');
 
+// Temporary: no verified sending domain yet (Resend can't deliver to real users
+// without one), so skip the OTP gate and auto-verify on registration. Flip this
+// off once a domain is verified in Resend to restore normal email verification.
+const SKIP_EMAIL_VERIFICATION = process.env.SKIP_EMAIL_VERIFICATION === 'true';
+
 // Shared response shape for anything that logs a user in (login, verify-email
 // auto-login, google auth): sets the HttpOnly refresh cookie and returns the
 // access token + public user fields.
@@ -103,6 +108,15 @@ exports.register = async (req, res) => {
         if (referralCode) {
             await referralService.attachReferrer(user, referralCode);
             await referralService.createPendingRewardsForNewUser(user);
+        }
+
+        if (SKIP_EMAIL_VERIFICATION) {
+            user.isEmailVerified = true;
+            user.status = 'active';
+            user.emailVerificationCode = undefined;
+            user.emailVerificationExpires = undefined;
+            await user.save();
+            return res.status(201).json(issueAuthSession(res, user));
         }
 
         try {

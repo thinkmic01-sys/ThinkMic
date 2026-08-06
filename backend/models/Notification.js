@@ -15,7 +15,8 @@ const notificationSchema = new mongoose.Schema({
         enum: [
             'reminder', 'system', 'update',
             'referral_pending', 'referral_approved', 'referral_rejected',
-            'seminar_reward_received', 'seminar_coins_reserved', 'seminar_coins_refunded'
+            'seminar_reward_received', 'seminar_coins_reserved', 'seminar_coins_refunded',
+            'seminar_live'
         ],
         default: 'reminder'
     },

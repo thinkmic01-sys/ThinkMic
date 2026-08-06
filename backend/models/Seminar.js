@@ -79,6 +79,28 @@ const seminarSchema = new mongoose.Schema({
         type: Number,
         default: 0,
         min: 0
+    },
+    // Set when the host starts/ends the live broadcast (POST /seminars/:id/start|end).
+    actualStartTime: {
+        type: Date
+    },
+    actualEndTime: {
+        type: Date
+    },
+    // Linked once the broadcast ends: the finalized audio, its live-transcript text,
+    // and the AI summary generated from it - reuses the same models the recordings
+    // pipeline already uses, rather than duplicating them for seminars.
+    recordingId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Recording'
+    },
+    transcriptId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Transcript'
+    },
+    summaryId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Summary'
     }
 }, { timestamps: true });
 

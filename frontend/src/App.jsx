@@ -32,6 +32,7 @@ import CourseLibrary from "./pages/Courses/CourseLibrary.jsx";
 import MyLearningList from "./pages/Courses/MyLearningList.jsx";
 import CourseWorkbook from "./pages/Courses/CourseWorkbook.jsx";
 import NearbySeminars from "./pages/Courses/NearbySeminars.jsx";
+import SeminarBroadcast from "./pages/Courses/SeminarBroadcast.jsx";
 
 const Placeholder = ({ title }) => (
     <div className="p-8 bg-white rounded-xl shadow-md h-64 flex items-center justify-center border border-gray-100">
@@ -130,6 +131,7 @@ function AppRoutes() {
                             <Route path="courses/my-learning" element={<MyLearningList />} />
                             <Route path="courses/workbook" element={<CourseWorkbook />} />
                             <Route path="courses/seminars" element={<NearbySeminars />} />
+                            <Route path="courses/broadcast/:seminarId" element={<SeminarBroadcast />} />
 
                             <Route path="forms" element={<Collaboration />} />
 

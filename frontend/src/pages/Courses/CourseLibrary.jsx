@@ -143,7 +143,7 @@ export default function CourseLibrary() {
 
         if (isHost) {
             return (
-                <button onClick={(e) => { e.stopPropagation(); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-[#006e73] text-white hover:bg-[#00c2cb]">
+                <button onClick={(e) => { e.stopPropagation(); navigate(`/app/courses/broadcast/${course.id}`); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-[#006e73] text-white hover:bg-[#00c2cb]">
                     <span className="material-symbols-outlined text-[14px] sm:text-[16px]">podcasts</span>
                     Start Broadcast
                 </button>
@@ -419,6 +419,7 @@ export default function CourseLibrary() {
                             btnText = 'Start Broadcast';
                             icon = 'podcasts';
                             btnStyle = 'bg-[#006e73] text-white border-[#006e73] hover:bg-[#00c2cb]';
+                            onClick = (e) => { e.stopPropagation(); navigate(`/app/courses/broadcast/${selectedCourse.id}`); };
                         } else if (selectedCourse.status === 'LIVE' || selectedCourse.status === 'LIVE NOW') {
                             btnText = 'Join Broadcast';
                             icon = 'play_arrow';

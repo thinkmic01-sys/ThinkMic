@@ -2,7 +2,11 @@ const mongoose = require('mongoose');
 const Seminar = require('../models/Seminar');
 const Registration = require('../models/Registration');
 const Notification = require('../models/Notification');
+const Recording = require('../models/Recording');
+const Transcript = require('../models/Transcript');
 const coinWalletService = require('../services/coinWalletService');
+const { summarizationQueue } = require('../queues');
+const socket = require('../utils/socket');
 
 // Reserves `totalRequired` coins from the host into escrow for a seminar's reward campaign.
 // Mutates `seminar.rewardHeldAmount` and notifies the host. Throws InsufficientBalanceError
@@ -116,6 +120,17 @@ exports.createSeminar = async (req, res) => {
 
         const savedSeminar = await newSeminar.save();
         res.status(201).json(savedSeminar);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+exports.getSeminarById = async (req, res) => {
+    try {
+        const seminar = await Seminar.findById(req.params.id);
+        if (!seminar) return res.status(404).json({ message: 'Seminar not found' });
+        res.status(200).json(seminar);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });
@@ -277,6 +292,118 @@ exports.getRegistrations = async (req, res) => {
     try {
         const registrations = await Registration.find({ userId: req.user.id });
         res.status(200).json(registrations);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// @desc    Host starts the live broadcast - flips status to 'live' and notifies
+//          every registered attendee in real time (socket) and durably (Notification).
+// @route   POST /api/v1/seminars/:id/start
+// @access  Private (host only)
+exports.startSeminar = async (req, res) => {
+    try {
+        const seminar = await Seminar.findOne({ _id: req.params.id, hostId: req.user.id });
+        if (!seminar) {
+            return res.status(404).json({ message: 'Seminar not found or unauthorized' });
+        }
+        if (seminar.status === 'live') {
+            return res.status(400).json({ message: 'Seminar is already live' });
+        }
+        if (['completed', 'cancelled'].includes(seminar.status)) {
+            return res.status(400).json({ message: 'This seminar has already ended' });
+        }
+
+        seminar.status = 'live';
+        seminar.actualStartTime = new Date();
+        await seminar.save();
+
+        const registrations = await Registration.find({ seminarId: seminar._id }).select('userId');
+
+        if (registrations.length > 0) {
+            await Notification.insertMany(registrations.map((r) => ({
+                userId: r.userId,
+                type: 'seminar_live',
+                message: `"${seminar.title}" is live now!`,
+                link: '/app/courses/seminars'
+            })));
+        }
+
+        const io = socket.getIO();
+        registrations.forEach((r) => {
+            io.to(r.userId.toString()).emit('seminar_live', {
+                seminarId: seminar._id.toString(),
+                title: seminar.title
+            });
+        });
+
+        res.status(200).json(seminar);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// @desc    Host ends the live broadcast - finalizes the recording/transcript from the
+//          accumulated live speech-to-text and kicks off summarization. No Whisper call
+//          needed: the text already came from the host's live Deepgram session, same
+//          bypass pattern used for live/Deepgram-sourced recordings elsewhere.
+// @route   POST /api/v1/seminars/:id/end
+// @access  Private (host only)
+exports.endSeminar = async (req, res) => {
+    try {
+        const seminar = await Seminar.findOne({ _id: req.params.id, hostId: req.user.id });
+        if (!seminar) {
+            return res.status(404).json({ message: 'Seminar not found or unauthorized' });
+        }
+        if (seminar.status !== 'live') {
+            return res.status(400).json({ message: 'Seminar is not currently live' });
+        }
+
+        const { rawText, r2Key, mimeType, fileSizeBytes } = req.body;
+
+        const recording = await Recording.create({
+            userId: req.user.id,
+            title: seminar.title,
+            mimeType: mimeType || 'audio/webm',
+            fileSizeBytes: fileSizeBytes || 0,
+            // r2Key is the durable reference once uploaded - mirrors createRecordingDraft's
+            // fallback for the case where the audio upload hasn't finished landing yet.
+            s3Key: r2Key || `pending-${Date.now()}`,
+            r2Key: r2Key || undefined,
+            status: 'uploaded'
+        });
+
+        const transcript = await Transcript.create({
+            recordingId: recording._id,
+            userId: req.user.id,
+            text: rawText || '(No audio detected or transcription empty)',
+            whisperModel: 'skipped-via-Deepgram-live'
+        });
+
+        recording.transcriptId = transcript._id;
+        await recording.save();
+
+        seminar.status = 'completed';
+        seminar.actualEndTime = new Date();
+        seminar.recordingId = recording._id;
+        seminar.transcriptId = transcript._id;
+
+        await refundUnusedHold(seminar, req.user.id, req.user.role);
+        await seminar.save();
+
+        await summarizationQueue.add('summarize', {
+            transcriptId: transcript._id,
+            userId: req.user.id,
+            // Not yet consumed by the worker - reserved for the fan-out-to-all-attendees
+            // step, which will emit summary_complete/Notifications to every Registration
+            // for this seminar instead of just the host.
+            seminarId: seminar._id,
+            language: 'English'
+        });
+
+        res.status(200).json(seminar);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });

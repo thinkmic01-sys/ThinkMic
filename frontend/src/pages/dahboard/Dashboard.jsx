@@ -6,17 +6,23 @@ import api from '../../services/api';
 export default function Dashboard() {
     const navigate = useNavigate();
     const accessToken = useSelector((state) => state.auth?.accessToken);
-    const userName = useSelector((state) => state.auth?.name || 'User');
-    const [currentDate, setCurrentDate] = useState('');
+    const userName = useSelector((state) => state.auth?.user?.name || 'User');
+    const firstName = userName.split(' ')[0];
+    const [currentDate] = useState(() => {
+        const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+        return new Date().toLocaleDateString('en-US', options);
+    });
+    const [greeting] = useState(() => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Good morning';
+        if (hour < 18) return 'Good afternoon';
+        return 'Good evening';
+    });
     const [stats, setStats] = useState({ recordings: 0, reports: 0, searchesRun: 0 });
     const [timelineActivity, setTimelineActivity] = useState([]);
     const [chartData, setChartData] = useState([]);
 
     useEffect(() => {
-        const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
-        // Moved to avoid synchronous update in effect, or simply set it
-        setCurrentDate(new Date().toLocaleDateString('en-US', options));
-
         if (!accessToken) return;
 
         const fetchData = async () => {
@@ -91,7 +97,7 @@ export default function Dashboard() {
                 {/* Welcome Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end">
                     <div>
-                        <h2 className="text-[32px] text-[#222777] font-bold mb-1 tracking-tight">Good morning, {userName}</h2>
+                        <h2 className="text-[32px] text-[#222777] font-bold mb-1 tracking-tight">{greeting}, {firstName}</h2>
                         <p className="font-mono text-[12px] text-[#777682] uppercase tracking-wider">{currentDate}</p>
                     </div>
                     <div className="mt-4 md:mt-0 flex gap-3">

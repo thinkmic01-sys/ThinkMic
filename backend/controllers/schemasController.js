@@ -1,4 +1,7 @@
 const FieldSchema = require('../models/FieldSchema');
+const User = require('../models/User');
+const Notification = require('../models/Notification');
+const socket = require('../utils/socket');
 
 exports.listSchemas = async (req, res) => {
     try {
@@ -94,8 +97,35 @@ exports.publishSchema = async (req, res) => {
         );
 
         if (!schema) return res.status(404).json({ message: 'Schema not found' });
-        
+
         res.status(200).json({ schema, version: schema.version });
+
+        // Notify every user this form is targeted at, same matching rule listPublishedForms
+        // uses to decide who can see it ('all', or their Title matched case-insensitively).
+        try {
+            const userQuery = schema.targetRole === 'all'
+                ? {}
+                : { title: { $regex: `^${schema.targetRole.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } };
+            const recipients = await User.find(userQuery).select('_id');
+
+            if (recipients.length > 0) {
+                const notifDocs = await Notification.insertMany(recipients.map((u) => ({
+                    userId: u._id,
+                    type: 'form_published',
+                    message: `A new form "${schema.name}" is available for you to fill out.`,
+                    link: '/app/forms'
+                })));
+
+                const io = socket.getIO();
+                recipients.forEach((u, i) => {
+                    io.to(u._id.toString()).emit('new_notification', { notification: notifDocs[i] });
+                });
+            }
+        } catch (notifyError) {
+            // The schema is already published and the response already sent - a notification
+            // failure here shouldn't be reported as a publish failure to the admin.
+            console.error('Failed to notify users of published schema:', notifyError);
+        }
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }

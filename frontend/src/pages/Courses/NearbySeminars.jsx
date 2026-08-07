@@ -136,7 +136,7 @@ export default function NearbySeminars() {
             {/* Top Toolbar */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[#e0e2eb] bg-white shrink-0 shadow-sm z-20 gap-3 sm:gap-0">
                 <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
-                    <button onClick={() => navigate('/app/courses/my-learning')} className="text-[#777682] hover:text-[#222777] transition-colors w-8 h-8 rounded-full hover:bg-[#f1f3fc] flex items-center justify-center shrink-0">
+                    <button onClick={() => navigate('/app/courses')} className="text-[#777682] hover:text-[#222777] transition-colors w-8 h-8 rounded-full hover:bg-[#f1f3fc] flex items-center justify-center shrink-0">
                         <span className="material-symbols-outlined text-[20px] sm:text-[24px]">arrow_back</span>
                     </button>
                     <h1 className="text-[20px] sm:text-[24px] md:text-[28px] font-bold text-[#222777] truncate">Nearby Seminars</h1>

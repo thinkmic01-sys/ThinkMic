@@ -14,6 +14,9 @@ export default function MyLearningList() {
             `}</style>
 
             <div className="max-w-[1280px] mx-auto p-4 sm:p-6 md:p-8 pb-12 sm:pb-8 animate-in fade-in duration-300">
+                <button onClick={() => navigate('/app/courses')} className="text-[#777682] hover:text-[#222777] flex items-center gap-1 text-[12px] sm:text-[13px] font-bold mb-3 sm:mb-4 transition-colors w-fit">
+                    <span className="material-symbols-outlined text-[16px] sm:text-[18px]">arrow_back</span> <span className="hidden sm:inline">Back to</span> Seminar Library
+                </button>
                 <header className="mb-6 sm:mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6">
                     <div>
                         <h1 className="text-[28px] sm:text-[32px] md:text-[40px] font-bold text-[#222777] leading-[1.2] tracking-tight sm:tracking-[-0.02em]">My Learning List</h1>
@@ -41,39 +44,19 @@ export default function MyLearningList() {
                         <p className="text-[14px] sm:text-[16px] text-[#464651]">3 of 4 hours completed</p>
                     </div>
 
-                    <div className="col-span-1 lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        {/* Active Courses Stats */}
-                        <div className="bg-white shadow-[0_1px_4px_rgba(58,63,143,0.08)] rounded-xl p-5 sm:p-6 border border-[#e0e2eb] flex flex-col justify-between">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="p-2 bg-[#e0e0ff] rounded-lg text-[#222777]">
-                                    <span className="material-symbols-outlined text-[20px] sm:text-[24px]">menu_book</span>
-                                </div>
-                                <span className="text-[12px] sm:text-[14px] font-medium text-[#00696e] bg-[#E6FBFC] px-2 py-0.5 rounded border border-[#61f4fd]/30">Active</span>
+                    {/* Active Courses Stats - the "Seminars / Find nearby events" shortcut card that
+                        used to sit beside this was removed; Nearby Seminars is reached from the
+                        Seminar Library header instead, so it isn't duplicated here. */}
+                    <div className="col-span-1 lg:col-span-2 bg-white shadow-[0_1px_4px_rgba(58,63,143,0.08)] rounded-xl p-5 sm:p-6 border border-[#e0e2eb] flex flex-col justify-between">
+                        <div className="flex items-start justify-between mb-4">
+                            <div className="p-2 bg-[#e0e0ff] rounded-lg text-[#222777]">
+                                <span className="material-symbols-outlined text-[20px] sm:text-[24px]">menu_book</span>
                             </div>
-                            <div>
-                                <p className="text-[28px] sm:text-[32px] font-bold text-[#222777] leading-[1.2] tracking-[-0.02em]">4</p>
-                                <p className="text-[14px] sm:text-[16px] text-[#464651] mt-1 sm:mt-0">Courses In Progress</p>
-                            </div>
+                            <span className="text-[12px] sm:text-[14px] font-medium text-[#00696e] bg-[#E6FBFC] px-2 py-0.5 rounded border border-[#61f4fd]/30">Active</span>
                         </div>
-
-                        {/* NAVIGATES TO THE MAP SCREEN */}
-                        <div className="bg-white shadow-[0_1px_4px_rgba(58,63,143,0.08)] rounded-xl p-5 sm:p-6 border border-[#e0e2eb] flex flex-col justify-between relative overflow-hidden group cursor-pointer hover:border-[#222777] transition-colors" onClick={() => navigate('/app/courses/seminars')}>
-                            <div className="absolute -right-4 -top-4 sm:-right-6 sm:-top-6 text-[#e0e2eb] opacity-50 transform rotate-12 group-hover:scale-110 transition-transform">
-                                <span className="material-symbols-outlined text-[100px] sm:text-[120px]" style={{ fontVariationSettings: "'FILL' 1" }}>map</span>
-                            </div>
-                            <div className="relative z-10 flex flex-col h-full justify-between">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="p-2 bg-[#e6fbfc] rounded-lg text-[#006e73]">
-                                        <span className="material-symbols-outlined text-[20px] sm:text-[24px]">location_on</span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <p className="text-[24px] sm:text-[32px] font-bold text-[#222777] leading-[1.2] tracking-[-0.02em]">Seminars</p>
-                                    <p className="text-[13px] sm:text-[16px] font-medium text-[#00c2cb] group-hover:text-[#222777] flex items-center gap-1 transition-colors mt-1 sm:mt-0">
-                                        Find nearby events <span className="material-symbols-outlined text-[16px] sm:text-[18px]">arrow_forward</span>
-                                    </p>
-                                </div>
-                            </div>
+                        <div>
+                            <p className="text-[28px] sm:text-[32px] font-bold text-[#222777] leading-[1.2] tracking-[-0.02em]">4</p>
+                            <p className="text-[14px] sm:text-[16px] text-[#464651] mt-1 sm:mt-0">Courses In Progress</p>
                         </div>
                     </div>
                 </div>

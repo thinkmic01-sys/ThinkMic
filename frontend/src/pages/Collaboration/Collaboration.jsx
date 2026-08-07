@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
+import QRCode from 'qrcode';
 import VoiceRecorder from '../../components/VoiceRecorder';
 import api from '../../services/api';
 
@@ -58,6 +59,25 @@ export default function Collaboration() {
     const [isCopied, setIsCopied] = useState(false);
     const referralCode = user.referralCode || 'welcome';
     const referralLink = typeof window !== 'undefined' ? `${window.location.origin}/join?ref=${referralCode}` : `https://thinkmic.com/join?ref=${referralCode}`;
+    const qrCanvasRef = useRef(null);
+
+    useEffect(() => {
+        if (qrCanvasRef.current) {
+            QRCode.toCanvas(qrCanvasRef.current, referralLink, {
+                width: 256,
+                margin: 1,
+                color: { dark: '#222777', light: '#f1f3fc' }
+            });
+        }
+    }, [referralLink]);
+
+    const handleDownloadQr = () => {
+        if (!qrCanvasRef.current) return;
+        const link = document.createElement('a');
+        link.download = `thinkmic-referral-${referralCode}.png`;
+        link.href = qrCanvasRef.current.toDataURL('image/png');
+        link.click();
+    };
     const [stats, setStats] = useState({
         totalReferrals: 0, l1Count: 0, l2Count: 0, l3Count: 0,
         pendingCoins: 0, approvedCoins: 0, rejectedCoins: 0,
@@ -374,12 +394,11 @@ export default function Collaboration() {
 
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-5 sm:p-6 lg:p-8 flex flex-col items-center justify-center text-center">
                         <h3 className="text-[18px] sm:text-[20px] font-bold text-[#222777] mb-4 sm:mb-6">Quick Scan</h3>
-                        <div className="w-24 h-24 sm:w-32 sm:h-32 bg-[#f1f3fc] border border-[#e0e2eb] rounded-lg mb-4 p-2 grid grid-cols-2 gap-2">
-                            <div className="bg-[#222777]/80 rounded-sm"></div><div className="bg-[#222777]/80 rounded-sm"></div>
-                            <div className="bg-[#222777]/80 rounded-sm"></div><div className="flex gap-1"><div className="w-1/2 bg-[#00c2cb] rounded-sm"></div><div className="w-1/2 bg-[#222777]/80 rounded-sm"></div></div>
+                        <div className="w-24 h-24 sm:w-32 sm:h-32 bg-[#f1f3fc] border border-[#e0e2eb] rounded-lg mb-4 p-2 flex items-center justify-center">
+                            <canvas ref={qrCanvasRef} className="w-full h-full" />
                         </div>
                         <p className="text-[11px] sm:text-[12px] font-bold text-[#777682] mb-3 sm:mb-4">Let colleagues scan to join instantly.</p>
-                        <button className="text-[#222777] text-[13px] sm:text-[14px] font-bold hover:text-[#00c2cb] transition-colors flex items-center justify-center w-full sm:w-auto gap-1">
+                        <button onClick={handleDownloadQr} className="text-[#222777] text-[13px] sm:text-[14px] font-bold hover:text-[#00c2cb] transition-colors flex items-center justify-center w-full sm:w-auto gap-1">
                             <span className="material-symbols-outlined text-[18px]">download</span> Download PNG
                         </button>
                     </div>

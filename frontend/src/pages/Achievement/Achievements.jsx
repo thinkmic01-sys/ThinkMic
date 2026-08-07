@@ -22,9 +22,8 @@ export default function Achievements() {
 
     // Dynamic data arrays (Ready for backend integration)
     const waysToEarn = [
-        { id: 1, title: 'Complete a seminar', desc: 'Finish any verified academic video module.', amount: 50, icon: 'school', path: '/app/courses/seminars' },
-        { id: 2, title: 'Publish AI notes', desc: 'Share your synthesized notes with the community.', amount: 100, icon: 'edit_document', path: '/app/research' },
-        { id: 3, title: 'Invite a peer', desc: 'Refer a colleague to join ThinkMic.', amount: 200, icon: 'group_add', path: '/app/forms' },
+        { id: 1, title: 'Complete a seminar', desc: 'Finish any verified academic video module.', icon: 'school', path: '/app/courses/seminars' },
+        { id: 3, title: 'Invite a peer', desc: 'Refer a colleague to join ThinkMic.', icon: 'group_add', path: '/app/forms' },
     ];
 
     const [transactions, setTransactions] = useState([]);
@@ -160,10 +159,7 @@ export default function Achievements() {
                                             <p className="text-[11px] sm:text-xs text-[#777682] line-clamp-1 sm:line-clamp-none">{item.desc}</p>
                                         </div>
                                     </div>
-                                    <div className="bg-[#e6fbfc] px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-[#00c2cb]/30 flex items-center gap-0.5 sm:gap-1 shrink-0">
-                                        <span className="material-symbols-outlined text-[#006e73] text-[12px] sm:text-[14px]">add</span>
-                                        <span className="text-[#006e73] font-bold text-[12px] sm:text-sm">{item.amount}</span>
-                                    </div>
+                                    <span className="material-symbols-outlined text-[#c7c5d3] group-hover:text-[#222777] transition-colors shrink-0">arrow_forward</span>
                                 </div>
                             ))}
                         </div>

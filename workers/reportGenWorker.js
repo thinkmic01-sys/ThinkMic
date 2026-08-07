@@ -10,6 +10,7 @@ const Summary = require('../backend/models/Summary');
 const Transcript = require('../backend/models/Transcript');
 const Recording = require('../backend/models/Recording');
 const SearchResult = require('../backend/models/SearchResult');
+const TimelineEvent = require('../backend/models/TimelineEvent');
 const socketUtil = require('../backend/utils/socket');
 
 const formatTimestamp = (seconds) => {
@@ -142,6 +143,19 @@ const worker = new Worker('report-generation', async (job) => {
 
         // 7. Emit success to user
         io.to(userId).emit('report_complete', { reportId, status: 'completed' });
+
+        // 8. My Timeline entry
+        await TimelineEvent.create({
+            userId,
+            type: 'Reports',
+            title: 'Report Generated',
+            description: `"${report.title || 'Untitled Report'}" was synthesized and is ready to view.`,
+            icon: 'description',
+            color: 'text-[#222777]',
+            borderColor: 'border-[#222777]',
+            hasLink: true,
+            link: `/app/reports/${reportId}`
+        });
 
         console.log(`[Worker] Finished report generation for report ${reportId}`);
         return { reportId };

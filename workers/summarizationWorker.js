@@ -11,6 +11,7 @@ const Recording = require('../backend/models/Recording');
 const Notification = require('../backend/models/Notification');
 const Seminar = require('../backend/models/Seminar');
 const Registration = require('../backend/models/Registration');
+const TimelineEvent = require('../backend/models/TimelineEvent');
 const socketUtil = require('../backend/utils/socket');
 
 const worker = new Worker('summarization', async (job) => {
@@ -76,6 +77,23 @@ const worker = new Worker('summarization', async (job) => {
         });
         io.to(userId).emit('new_notification', { notification: notif });
 
+        // 5b. My Timeline entry - only for standalone recordings. Seminar completions log
+        // their own "Seminars" entry below instead, so hosting one doesn't also produce a
+        // duplicate generic "Recording" entry for the same job.
+        if (!seminarId) {
+            await TimelineEvent.create({
+                userId,
+                type: 'Recording',
+                title: 'Recording Synthesized',
+                description: `"${recTitle}" was transcribed and summarized.`,
+                icon: 'mic',
+                color: 'text-[#00c2cb]',
+                borderColor: 'border-[#00c2cb]',
+                hasLink: true,
+                link: sessionLink
+            });
+        }
+
         // 6. Emit Success to User
         io.to(userId).emit('summarization_complete', {
             recordingId: recording?._id,
@@ -92,14 +110,36 @@ const worker = new Worker('summarization', async (job) => {
         if (seminarId) {
             const seminar = await Seminar.findByIdAndUpdate(seminarId, { summaryId: summary._id }, { new: true }).select('title hostId');
             const registrations = await Registration.find({ seminarId }).select('userId');
+            const seminarTitle = seminar?.title || recTitle;
+
+            // Host's own timeline entry - userId here is the host, since only the host
+            // can end a seminar broadcast (enforced in seminarsController.endSeminar)
+            await TimelineEvent.create({
+                userId,
+                type: 'Seminars',
+                title: 'Seminar Synthesized',
+                description: `"${seminarTitle}" finished broadcasting and its summary is ready.`,
+                icon: 'record_voice_over',
+                color: 'text-[#3f4378]',
+                borderColor: 'border-[#3f4378]'
+            });
 
             if (registrations.length > 0) {
-                const seminarTitle = seminar?.title || recTitle;
                 const notifDocs = await Notification.insertMany(registrations.map((r) => ({
                     userId: r.userId,
                     type: 'update',
                     message: `The summary for "${seminarTitle}" you attended is ready!`,
                     link: '/app/courses/seminars'
+                })));
+
+                await TimelineEvent.insertMany(registrations.map((r) => ({
+                    userId: r.userId,
+                    type: 'Seminars',
+                    title: 'Seminar Completed',
+                    description: `You attended "${seminarTitle}" and its summary is ready.`,
+                    icon: 'record_voice_over',
+                    color: 'text-[#3f4378]',
+                    borderColor: 'border-[#3f4378]'
                 })));
 
                 registrations.forEach((r, i) => {

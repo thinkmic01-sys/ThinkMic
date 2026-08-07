@@ -1,4 +1,5 @@
 const Note = require('../models/Note');
+const TimelineEvent = require('../models/TimelineEvent');
 
 // Get all notes for the authenticated user
 exports.getNotes = async (req, res) => {
@@ -30,6 +31,20 @@ exports.createNote = async (req, res) => {
         });
 
         const savedNote = await newNote.save();
+
+        // My Timeline entry
+        await TimelineEvent.create({
+            userId: req.user.id,
+            type: 'Notes',
+            title: 'Note Created',
+            description: `"${savedNote.title || 'Untitled Note'}" was added to your notes.`,
+            icon: 'edit_note',
+            color: 'text-[#00C2CB]',
+            borderColor: 'border-[#00C2CB]',
+            hasLink: !!savedNote.projectId,
+            link: savedNote.projectId ? `/app/projects/${savedNote.projectId}` : ''
+        });
+
         res.status(201).json(savedNote);
     } catch (err) {
         console.error(err);

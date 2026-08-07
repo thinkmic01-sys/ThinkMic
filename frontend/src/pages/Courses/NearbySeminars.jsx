@@ -7,20 +7,6 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
 // --- CUSTOM MAP ICONS ---
-const mainSeminarIcon = L.divIcon({
-    className: 'bg-transparent border-none',
-    html: `
-        <div class="flex flex-col items-center cursor-pointer transition-transform hover:scale-105" style="transform: translate(-50%, -100%); margin-top: 10px;">
-            <div class="bg-white px-3 py-2 rounded shadow-md mb-2 whitespace-nowrap border border-[#e0e2eb]">
-                <p class="text-[14px] font-bold text-[#222777] mb-0.5">Applied NLP in Clinic</p>
-                <p class="text-[10px] font-mono text-[#777682] font-semibold tracking-wide">1.2 km away • Today</p>
-            </div>
-            <div class="w-5 h-5 bg-[#61f4fd] rounded-full border-2 border-white shadow-md"></div>
-        </div>
-    `,
-    iconSize: [0, 0]
-});
-
 const userLocationIcon = L.divIcon({
     className: 'bg-transparent border-none',
     html: `
@@ -32,25 +18,35 @@ const userLocationIcon = L.divIcon({
     iconSize: [0, 0]
 });
 
-const backgroundPinIcon = L.divIcon({
+// Built per-seminar so the pin's label always shows that seminar's real title/distance
+const seminarMarkerIcon = (title, distanceLabel) => L.divIcon({
     className: 'bg-transparent border-none',
     html: `
-        <div style="transform: translate(-50%, -50%);">
-            <div class="w-4 h-4 bg-[#3a3f8f] rounded-full border-2 border-white shadow-sm opacity-80"></div>
+        <div class="flex flex-col items-center cursor-pointer transition-transform hover:scale-105" style="transform: translate(-50%, -100%); margin-top: 10px;">
+            <div class="bg-white px-3 py-2 rounded shadow-md mb-2 whitespace-nowrap border border-[#e0e2eb]">
+                <p class="text-[14px] font-bold text-[#222777] mb-0.5">${title}</p>
+                ${distanceLabel ? `<p class="text-[10px] font-mono text-[#777682] font-semibold tracking-wide">${distanceLabel}</p>` : ''}
+            </div>
+            <div class="w-5 h-5 bg-[#61f4fd] rounded-full border-2 border-white shadow-md"></div>
         </div>
     `,
     iconSize: [0, 0]
 });
 
+// Fallback map center only used while the user's real location hasn't loaded/was denied
+const DEFAULT_CENTER = [42.3601, -71.0589];
+
 // --- CUSTOM MAP CONTROLS COMPONENT ---
-const CustomMapControls = () => {
+const CustomMapControls = ({ userLocation }) => {
     const map = useMap();
 
     return (
         <div className="absolute top-4 right-4 flex flex-col gap-3 z-[1000]">
             <button
-                onClick={() => map.flyTo([42.355, -71.060], 14)}
-                className="w-10 h-10 bg-white rounded shadow-sm flex items-center justify-center text-[#464651] hover:text-[#181c22] transition-colors"
+                onClick={() => userLocation && map.flyTo(userLocation, 14)}
+                disabled={!userLocation}
+                title={userLocation ? 'Recenter on my location' : 'Location not available'}
+                className="w-10 h-10 bg-white rounded shadow-sm flex items-center justify-center text-[#464651] hover:text-[#181c22] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
                 <span className="material-symbols-outlined">my_location</span>
             </button>
@@ -72,11 +68,35 @@ const CustomMapControls = () => {
     );
 };
 
+// Only seminars created via the map-pin picker store "lat, lng" in their location field
+// (stream links/addresses won't match) - those are the only ones we can actually place on
+// the map or compute a real distance for.
+const parseLatLng = (locationStr) => {
+    if (!locationStr) return null;
+    const match = String(locationStr).match(/^\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*$/);
+    if (!match) return null;
+    const lat = parseFloat(match[1]);
+    const lng = parseFloat(match[2]);
+    if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+    return [lat, lng];
+};
+
+const haversineDistanceKm = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+const formatDistance = (km) => km < 1 ? `${Math.round(km * 1000)} m away` : `${km.toFixed(1)} km away`;
+
 export default function NearbySeminars() {
     const navigate = useNavigate();
     const token = useSelector(state => state.auth?.accessToken);
     const [seminars, setSeminars] = useState([]);
     const [topicFilter, setTopicFilter] = useState('All Topics');
+    const [distanceFilter, setDistanceFilter] = useState('Any Distance');
     const [registeredIds, setRegisteredIds] = useState(new Set());
     const [registeringId, setRegisteringId] = useState(null);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -84,6 +104,29 @@ export default function NearbySeminars() {
         setToast({ show: true, message, type });
         setTimeout(() => setToast(prev => ({ ...prev, show: false })), 4000);
     };
+
+    // --- REAL BROWSER GEOLOCATION ---
+    const [userLocation, setUserLocation] = useState(null);
+    // requesting/unsupported is knowable synchronously, so it's the lazy initial state
+    // rather than a setState call inside the effect; granted/denied come from the async
+    // getCurrentPosition callbacks below.
+    const [locationStatus, setLocationStatus] = useState(() => (
+        typeof navigator !== 'undefined' && navigator.geolocation ? 'requesting' : 'unsupported'
+    ));
+
+    useEffect(() => {
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setUserLocation([pos.coords.latitude, pos.coords.longitude]);
+                setLocationStatus('granted');
+            },
+            () => {
+                setLocationStatus('denied');
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    }, []);
 
     useEffect(() => {
         const fetchSeminars = async () => {
@@ -124,6 +167,29 @@ export default function NearbySeminars() {
         }
     };
 
+    // Enrich each seminar with real coordinates + real distance from the user, when available
+    const enrichedSeminars = seminars.map((s) => {
+        const coords = parseLatLng(s.location);
+        const distanceKm = (coords && userLocation)
+            ? haversineDistanceKm(userLocation[0], userLocation[1], coords[0], coords[1])
+            : null;
+        return { ...s, coords, distanceKm };
+    });
+
+    const distanceThresholdKm = distanceFilter === '< 5 km' ? 5 : distanceFilter === '< 10 km' ? 10 : null;
+
+    const filteredSeminars = enrichedSeminars
+        .filter((s) => topicFilter === 'All Topics' || s.category === topicFilter)
+        .filter((s) => distanceThresholdKm === null || (s.distanceKm !== null && s.distanceKm < distanceThresholdKm))
+        .sort((a, b) => {
+            if (a.distanceKm === null && b.distanceKm === null) return 0;
+            if (a.distanceKm === null) return 1;
+            if (b.distanceKm === null) return -1;
+            return a.distanceKm - b.distanceKm;
+        });
+
+    const seminarsWithCoords = enrichedSeminars.filter((s) => s.coords);
+
     return (
         <div className="flex flex-col h-[calc(100vh-64px)] w-full bg-[#f9f9ff] font-sans">
 
@@ -153,7 +219,7 @@ export default function NearbySeminars() {
                         <span className="material-symbols-outlined absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none text-[18px]">expand_more</span>
                     </div>
                     <div className="relative flex-1 sm:flex-none">
-                        <select className="w-full appearance-none bg-[#f9f9ff] sm:bg-white border border-[#e0e2eb] sm:border-[#c7c5d3] rounded text-[#181c22] px-3 sm:px-4 py-2 pr-8 sm:pr-10 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#222777] cursor-pointer">
+                        <select value={distanceFilter} onChange={(e) => setDistanceFilter(e.target.value)} className="w-full appearance-none bg-[#f9f9ff] sm:bg-white border border-[#e0e2eb] sm:border-[#c7c5d3] rounded text-[#181c22] px-3 sm:px-4 py-2 pr-8 sm:pr-10 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#222777] cursor-pointer">
                             <option>Any Distance</option>
                             <option>&lt; 5 km</option>
                             <option>&lt; 10 km</option>
@@ -163,6 +229,16 @@ export default function NearbySeminars() {
                 </div>
             </div>
 
+            {/* Location permission notice - only shown when we couldn't get real location */}
+            {(locationStatus === 'denied' || locationStatus === 'unsupported') && (
+                <div className="flex items-center gap-2 px-4 sm:px-6 py-2 bg-[#fff8e1] border-b border-[#e0e2eb] text-[#8a6d00] text-[12px] sm:text-[13px] font-semibold shrink-0">
+                    <span className="material-symbols-outlined text-[16px] sm:text-[18px]">location_off</span>
+                    {locationStatus === 'unsupported'
+                        ? "Your browser doesn't support location services - distances can't be shown."
+                        : 'Location access denied - enable it in your browser to see distances to nearby seminars.'}
+                </div>
+            )}
+
             {/* Changed to flex-col on mobile, flex-row on desktop */}
             <div className="flex flex-col md:flex-row flex-1 overflow-hidden relative">
 
@@ -170,11 +246,7 @@ export default function NearbySeminars() {
                 <div className="w-full md:w-[360px] lg:w-[420px] h-[50vh] md:h-full border-b md:border-b-0 md:border-r border-[#e0e2eb] bg-[#f9f9ff] overflow-y-auto p-4 sm:p-5 space-y-4 shrink-0 shadow-[2px_0_10px_rgba(0,0,0,0.03)] z-10 custom-scrollbar pb-6 md:pb-20">
 
                     {/* Dynamic Cards */}
-                    {(() => {
-                        const filteredSeminars = topicFilter === 'All Topics'
-                            ? seminars
-                            : seminars.filter(s => s.category === topicFilter);
-                        return filteredSeminars.length === 0 ? (
+                    {filteredSeminars.length === 0 ? (
                         <div className="text-center py-10 text-[#777682] text-[14px]">No seminars found.</div>
                     ) : (
                         filteredSeminars.map((seminar, idx) => (
@@ -184,22 +256,22 @@ export default function NearbySeminars() {
                                     <span className="bg-[#e6fbfc] text-[#006e73] font-mono text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 uppercase">
                                         <span className="material-symbols-outlined text-[12px] sm:text-[14px]">{seminar.format === 'Live Broadcast' ? 'sensors' : seminar.format === 'In-Person' ? 'location_on' : 'videocam'}</span> {seminar.format}
                                     </span>
-                                    {seminar.format === 'In-Person' && (
+                                    {seminar.distanceKm !== null && (
                                         <span className="text-[11px] sm:text-[12px] font-mono font-bold text-[#00c2cb] flex items-center gap-1">
-                                            <span className="material-symbols-outlined text-[12px] sm:text-[14px]">location_on</span> Near you
+                                            <span className="material-symbols-outlined text-[12px] sm:text-[14px]">location_on</span> {formatDistance(seminar.distanceKm)}
                                         </span>
                                     )}
                                 </div>
                                 <h3 className="text-[16px] sm:text-[18px] font-bold text-[#181c22] mb-1.5 sm:mb-2 leading-snug pl-2">{seminar.title}</h3>
                                 <p className="text-[13px] sm:text-[14px] text-[#464651] line-clamp-2 mb-4 sm:mb-5 pl-2 leading-relaxed">{seminar.abstract || 'No description provided.'}</p>
-                                
+
                                 {seminar.location && (
                                     <div className="text-[12px] sm:text-[13px] text-[#222777] font-semibold mb-3 pl-2 flex items-center gap-1">
                                         <span className="material-symbols-outlined text-[16px]">link</span>
                                         <span className="truncate">{seminar.location}</span>
                                     </div>
                                 )}
-                                
+
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3 sm:pt-4 border-t border-[#e0e2eb] pl-2 gap-3 sm:gap-0">
                                     <div className="flex items-center gap-1.5 font-mono text-[10px] sm:text-[11px] font-semibold text-[#777682]">
                                         <span className="material-symbols-outlined text-[14px]">calendar_today</span> {new Date(seminar.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • {seminar.startTime} - {seminar.endTime}
@@ -218,14 +290,13 @@ export default function NearbySeminars() {
                                 </div>
                             </div>
                         ))
-                    );
-                    })()}
+                    )}
                 </div>
 
                 {/* Map Area: flex-1 ensures it takes the remaining height on mobile and width on desktop */}
                 <div className="flex flex-1 relative overflow-hidden bg-[#d7dae2] min-h-[300px] md:min-h-0">
                     <MapContainer
-                        center={[42.3601, -71.0589]}
+                        center={userLocation || DEFAULT_CENTER}
                         zoom={14}
                         zoomControl={false}
                         style={{ height: '100%', width: '100%', zIndex: 0 }}
@@ -236,15 +307,19 @@ export default function NearbySeminars() {
                         />
 
                         {/* Custom Controls */}
-                        <CustomMapControls />
+                        <CustomMapControls userLocation={userLocation} />
 
-                        {/* Interactive Pins */}
-                        <Marker position={[42.365, -71.050]} icon={mainSeminarIcon} />
-                        <Marker position={[42.355, -71.060]} icon={userLocationIcon} />
+                        {/* Real user location, once granted */}
+                        {userLocation && <Marker position={userLocation} icon={userLocationIcon} />}
 
-                        {/* Background Pins */}
-                        <Marker position={[42.375, -71.030]} icon={backgroundPinIcon} />
-                        <Marker position={[42.345, -71.080]} icon={backgroundPinIcon} />
+                        {/* Real seminar pins - only seminars with actual parseable coordinates */}
+                        {seminarsWithCoords.map((seminar) => (
+                            <Marker
+                                key={seminar._id}
+                                position={seminar.coords}
+                                icon={seminarMarkerIcon(seminar.title, seminar.distanceKm !== null ? formatDistance(seminar.distanceKm) : null)}
+                            />
+                        ))}
                     </MapContainer>
 
                     {/* Area Activity Overlay Chart */}

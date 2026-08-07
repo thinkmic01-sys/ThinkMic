@@ -67,6 +67,14 @@ export default function Collaboration() {
                 width: 256,
                 margin: 1,
                 color: { dark: '#222777', light: '#f1f3fc' }
+            }).then(() => {
+                // QRCode.toCanvas sets inline width/height styles matching the pixel
+                // buffer size (256px) - override them so the canvas still scales down
+                // to fit its small container instead of overflowing it.
+                if (qrCanvasRef.current) {
+                    qrCanvasRef.current.style.width = '100%';
+                    qrCanvasRef.current.style.height = '100%';
+                }
             });
         }
     }, [referralLink]);

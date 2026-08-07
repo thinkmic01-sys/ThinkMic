@@ -28,6 +28,11 @@ export default function UserManagement() {
     const [inviteEmails, setInviteEmails] = useState('');
     const [inviteRole, setInviteRole] = useState('user');
 
+    // Edit Role Modal State
+    const [editingUser, setEditingUser] = useState(null);
+    const [editRole, setEditRole] = useState('user');
+    const [isSavingRole, setIsSavingRole] = useState(false);
+
     const timeAgo = (dateString) => {
         if (!dateString) return 'Never';
         const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
@@ -122,6 +127,21 @@ export default function UserManagement() {
             }
         } catch (err) {
             showToast(`Failed to update user status`, "error");
+        }
+    };
+
+    const handleSaveRole = async () => {
+        if (!accessToken || !editingUser) return;
+        setIsSavingRole(true);
+        try {
+            await api.patch(`/admin/users/${editingUser.id}`, { role: editRole });
+            showToast('Role updated successfully!', 'success');
+            setEditingUser(null);
+            await fetchUsers();
+        } catch (err) {
+            showToast(err.response?.data?.message || 'Failed to update role', 'error');
+        } finally {
+            setIsSavingRole(false);
         }
     };
 
@@ -344,8 +364,12 @@ export default function UserManagement() {
                                                 </button>
                                             ) : (
                                                 <div className="flex items-center justify-end gap-1">
-                                                    <button className="text-[#c7c5d3] hover:text-[#222777] transition-colors p-1" title={user.status === 'invited' ? 'Resend' : 'Edit'}>
-                                                        <span className="material-symbols-outlined text-[18px]">{user.status === 'invited' ? 'send' : 'edit'}</span>
+                                                    <button
+                                                        onClick={() => { setEditingUser(user); setEditRole(user.role); }}
+                                                        className="text-[#c7c5d3] hover:text-[#222777] transition-colors p-1"
+                                                        title="Change Role"
+                                                    >
+                                                        <span className="material-symbols-outlined text-[18px]">edit</span>
                                                     </button>
                                                     <button onClick={() => handleUpdateStatus(user.id, 'inactive')} className="text-[#c7c5d3] hover:text-[#ba1a1a] transition-colors p-1" title={user.status === 'invited' ? 'Cancel' : 'Deactivate'}>
                                                         <span className="material-symbols-outlined text-[18px]">{user.status === 'invited' ? 'close' : 'block'}</span>
@@ -485,7 +509,72 @@ export default function UserManagement() {
                     </div>
                 </div>
             )}
-            
+
+            {/* Edit Role Modal Overlay */}
+            {editingUser && (
+                <div className="fixed inset-0 bg-[#181c22]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+
+                        <div className="flex justify-between items-center border-b border-[#e0e2eb] px-5 sm:px-6 py-4 sm:py-5 bg-[#f9f9ff]">
+                            <h3 className="text-[18px] sm:text-2xl font-bold text-[#181c22]">Change Role</h3>
+                            <button
+                                onClick={() => setEditingUser(null)}
+                                disabled={isSavingRole}
+                                className="text-[#777682] hover:text-[#ba1a1a] transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-white border border-transparent hover:border-[#e0e2eb] disabled:opacity-50"
+                            >
+                                <span className="material-symbols-outlined text-[20px]">close</span>
+                            </button>
+                        </div>
+
+                        <div className="p-5 sm:p-6 flex flex-col gap-5 sm:gap-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-[#222777] text-white flex items-center justify-center text-[13px] font-bold shrink-0">
+                                    {editingUser.initials}
+                                </div>
+                                <div>
+                                    <p className="font-semibold text-[#181c22] capitalize">{editingUser.name}</p>
+                                    <p className="font-mono text-[11px] sm:text-xs text-[#777682]">{editingUser.email}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <label className="text-[11px] sm:text-xs font-bold text-[#464651] uppercase tracking-wider">Role</label>
+                                <div className="relative">
+                                    <select
+                                        value={editRole}
+                                        onChange={(e) => setEditRole(e.target.value)}
+                                        className="w-full appearance-none bg-[#f9f9ff] border border-[#c7c5d3] rounded-lg py-2.5 sm:py-3 pl-3 pr-8 text-[13px] sm:text-sm focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none cursor-pointer text-[#181c22]"
+                                    >
+                                        <option value="user">User (Standard Access)</option>
+                                        <option value="manager">Manager (Can manage projects)</option>
+                                        <option value="admin">Admin (Full system access)</option>
+                                    </select>
+                                    <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none">expand_more</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end gap-3 px-5 sm:px-6 py-4 border-t border-[#e0e2eb] bg-[#f9f9ff]">
+                            <button
+                                onClick={() => setEditingUser(null)}
+                                disabled={isSavingRole}
+                                className="px-4 sm:px-5 py-2 rounded-lg text-[13px] sm:text-sm font-bold text-[#464651] hover:bg-[#e0e2eb] transition-colors border border-transparent disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSaveRole}
+                                disabled={isSavingRole || editRole === editingUser.role}
+                                className="bg-[#222777] text-white px-5 sm:px-6 py-2 rounded-lg text-[13px] sm:text-sm font-bold hover:bg-[#3a3f8f] transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <span className="material-symbols-outlined text-[16px] sm:text-[18px]">check</span> {isSavingRole ? 'Saving...' : 'Save Role'}
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            )}
+
             {/* --- CUSTOM TOAST NOTIFICATION --- */}
             <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
                 <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#e6fbfc] border-[#00c2cb] text-[#006e73]'}`}>

@@ -61,7 +61,14 @@ exports.updateUserRoleStatus = async (req, res) => {
     try {
         const { id } = req.params;
         const { role, status } = req.body;
-        
+
+        // An admin editing their own role/status here could lock themselves out
+        // (e.g. accidental self-demotion or self-deactivation) with no one left
+        // to undo it - block self-targeting entirely for this endpoint.
+        if (id === req.user._id.toString()) {
+            return res.status(400).json({ message: 'You cannot change your own role or status.' });
+        }
+
         const updateData = {};
         if (role) updateData.role = role;
         if (status) updateData.status = status;
@@ -75,6 +82,9 @@ exports.updateUserRoleStatus = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
     try {
+        if (req.params.id === req.user._id.toString()) {
+            return res.status(400).json({ message: 'You cannot delete your own account.' });
+        }
         await User.findByIdAndDelete(req.params.id);
         res.status(204).send();
     } catch (error) {

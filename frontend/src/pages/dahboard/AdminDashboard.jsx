@@ -2,42 +2,124 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import api from '../../services/api';
 
+const AVATAR_COLORS = ['bg-[#222777]', 'bg-[#3a3f8f]', 'bg-[#5156a7]', 'bg-[#181c22]'];
+const DAY_OPTIONS = [7, 30, 90];
+
+function downsampleCounts(series, buckets) {
+    if (series.length === 0) return Array(buckets).fill(0);
+    if (series.length <= buckets) return series.map((d) => d.count);
+    const result = [];
+    const size = series.length / buckets;
+    for (let i = 0; i < buckets; i++) {
+        const slice = series.slice(Math.floor(i * size), Math.floor((i + 1) * size));
+        result.push(slice.reduce((s, d) => s + d.count, 0));
+    }
+    return result;
+}
+
+function sampleSeries(series, count) {
+    if (series.length <= count) return series;
+    const step = (series.length - 1) / (count - 1);
+    return Array.from({ length: count }, (_, i) => series[Math.round(i * step)]);
+}
+
+function downloadCsv(filename, headers, rows) {
+    const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const csv = [headers.map(escape).join(','), ...rows.map((r) => r.map(escape).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+}
+
 export default function AdminDashboard() {
     const accessToken = useSelector((state) => state.auth?.accessToken);
-    const [kpis, setKpis] = useState({ submissions: 0, recordings: 0, reports: 0, activeUsers: 0, searchesRun: 0 });
+    const [filters, setFilters] = useState({ days: 30, userId: '' });
+    const [filterUsers, setFilterUsers] = useState([]);
+    const [analytics, setAnalytics] = useState(null);
+    const [activitySearch, setActivitySearch] = useState('');
+
+    useEffect(() => {
+        if (!accessToken) return;
+        api.get('/admin/users')
+            .then((res) => setFilterUsers(res.data.users || []))
+            .catch((err) => console.error('Failed to fetch users for filter:', err));
+    }, [accessToken]);
 
     useEffect(() => {
         if (!accessToken) return;
         const fetchAnalytics = async () => {
             try {
-                const res = await api.get('/analytics/usage');
-                const data = res.data;
-                if (data.kpis) setKpis(data.kpis);
+                const res = await api.get('/analytics/submissions', {
+                    params: { days: filters.days, ...(filters.userId ? { userId: filters.userId } : {}) }
+                });
+                setAnalytics(res.data);
             } catch (err) {
-                console.error("Failed to fetch analytics:", err);
+                console.error('Failed to fetch analytics:', err);
             }
         };
         fetchAnalytics();
-    }, [accessToken]);
-    const topUsers = [
-        { id: 1, name: "Dr. Alan Grant", submissions: 142, initials: "AG", color: "bg-[#222777]" },
-        { id: 2, name: "Ellie Sattler", submissions: 118, initials: "ES", color: "bg-[#3a3f8f]" },
-        { id: 3, name: "Ian Malcolm", submissions: 95, initials: "IM", color: "bg-[#5156a7]" },
-        { id: 4, name: "John Hammond", submissions: 74, initials: "JH", color: "bg-[#181c22]" }
-    ];
+    }, [accessToken, filters]);
 
-    const fieldCompletions = [
-        { label: "Methodology Text", percentage: 98 },
-        { label: "Data Set Attachment", percentage: 85 },
-        { label: "Hypothesis Summary", percentage: 72 },
-        { label: "Peer Review Notes", percentage: 45 }
-    ];
+    const kpis = analytics?.kpis || {
+        submissions: { total: 0, deltaPct: 0, trend: [] },
+        recordings: { total: 0, deltaPct: 0, trend: [] },
+        reports: { total: 0, deltaPct: 0, trend: [] },
+        activeUsers: { total: 0, deltaPct: 0, trend: [] },
+        searchesRun: { total: 0, deltaPct: 0, trend: [] }
+    };
+    const completionByForm = analytics?.completionByForm || [];
+    const fieldCompletions = analytics?.fieldCompletions || [];
+    const topUsers = analytics?.topUsers || [];
+    const recentActivity = analytics?.recentActivity || [];
+    const range = analytics?.range;
 
-    const recentActivityTable = [
-        { id: 1, user: "Dr. Alan Grant", email: "grant.a@thinkmic.edu", form: "Paleontology Field Report V2", submittedAt: "2023-10-31 14:22:05", status: "Submitted", initials: "AG", color: "bg-[#222777]" },
-        { id: 2, user: "Ellie Sattler", email: "sattler.e@thinkmic.edu", form: "Botany Specimen Analysis", submittedAt: "2023-10-31 11:05:12", status: "Draft", initials: "ES", color: "bg-[#3a3f8f]" },
-        { id: 3, user: "Ian Malcolm", email: "malcolm.i@thinkmic.edu", form: "Chaos Theory Modeling", submittedAt: "2023-10-29 09:15:00", status: "Overdue", initials: "IM", color: "bg-[#5156a7]" }
-    ];
+    const filteredActivity = recentActivity.filter((a) =>
+        !activitySearch ||
+        a.user.toLowerCase().includes(activitySearch.toLowerCase()) ||
+        a.email.toLowerCase().includes(activitySearch.toLowerCase()) ||
+        a.form.toLowerCase().includes(activitySearch.toLowerCase())
+    );
+
+    // --- Submissions Trend chart geometry (same point/path approach as the regular
+    // Dashboard's Recording Activity chart) ---
+    const trend = kpis.submissions.trend;
+    const trendRawMax = Math.max(0, ...trend.map((d) => d.count));
+    const trendNiceMax = trendRawMax === 0 ? 0 : trendRawMax <= 5 ? trendRawMax : Math.ceil(trendRawMax / 5) * 5;
+    const trendPoints = trend.map((d, i) => ({
+        ...d,
+        x: trend.length > 1 ? (i * 100) / (trend.length - 1) : 0,
+        y: trendNiceMax > 0 ? 95 - (d.count / trendNiceMax) * 85 : 95
+    }));
+    const trendLinePath = trendPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+    const trendAreaPath = trendPoints.length > 0 ? `${trendLinePath} L100,100 L0,100 Z` : '';
+    const trendXLabels = sampleSeries(trend, 5);
+
+    const renderDelta = (deltaPct) => {
+        if (deltaPct > 0) return <span className="text-[11px] sm:text-[12px] font-bold text-[#00c2cb] mb-0.5 sm:mb-1">↑{deltaPct}%</span>;
+        if (deltaPct < 0) return <span className="text-[11px] sm:text-[12px] font-bold text-[#ba1a1a] mb-0.5 sm:mb-1">↓{Math.abs(deltaPct)}%</span>;
+        return <span className="text-[11px] sm:text-[12px] font-bold text-[#c7c5d3] mb-0.5 sm:mb-1">—0%</span>;
+    };
+
+    const renderSparkline = (metric) => {
+        const bars = downsampleCounts(metric.trend, 6);
+        const max = Math.max(...bars, 1);
+        return (
+            <div className="flex items-end gap-1 h-6 sm:h-8 mt-1 sm:mt-2">
+                {bars.map((v, i) => (
+                    <div key={i} className="flex-1 bg-[#61f4fd] rounded-t-sm" style={{ height: `${Math.max((v / max) * 100, 4)}%` }}></div>
+                ))}
+            </div>
+        );
+    };
+
+    const handleExportTrendCsv = () => downloadCsv('submissions-trend.csv', ['Date', 'Submissions'], trend.map((d) => [d.date, d.count]));
+    const handleExportCompletionCsv = () => downloadCsv('completion-rate.csv', ['Form', 'Completion %', 'Total Submissions'], completionByForm.map((c) => [c.name, c.percentage, c.totalSubmissions]));
+    const handleExportTopUsersCsv = () => downloadCsv('top-users.csv', ['User', 'Submissions'], topUsers.map((u) => [u.name, u.submissions]));
+    const handleExportActivityCsv = () => downloadCsv('recent-activity.csv', ['User', 'Email', 'Form', 'Submitted At', 'Status'], filteredActivity.map((a) => [a.user, a.email, a.form, a.submittedAt, a.status]));
 
     return (
         <div className="w-full h-[calc(100vh-64px)] overflow-y-auto bg-[#f9f9ff] font-sans custom-scrollbar">
@@ -54,30 +136,40 @@ export default function AdminDashboard() {
                 <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 sm:gap-6">
                     <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-2 items-start sm:items-center w-full xl:w-auto">
                         <div className="flex gap-2">
-                            <button className="px-3 sm:px-4 py-1.5 rounded-md bg-[#eef0f9] text-[#464651] text-[12px] sm:text-[13px] font-bold hover:bg-[#e0e2eb] transition-colors">7D</button>
-                            <button className="px-3 sm:px-4 py-1.5 rounded-md bg-[#eef0f9] text-[#464651] text-[12px] sm:text-[13px] font-bold hover:bg-[#e0e2eb] transition-colors">30D</button>
-                            <button className="px-3 sm:px-4 py-1.5 rounded-md bg-[#eef0f9] text-[#464651] text-[12px] sm:text-[13px] font-bold hover:bg-[#e0e2eb] transition-colors">90D</button>
+                            {DAY_OPTIONS.map((d) => (
+                                <button
+                                    key={d}
+                                    onClick={() => setFilters((prev) => ({ ...prev, days: d }))}
+                                    className={`px-3 sm:px-4 py-1.5 rounded-md text-[12px] sm:text-[13px] font-bold transition-colors ${filters.days === d ? 'bg-[#222777] text-white' : 'bg-[#eef0f9] text-[#464651] hover:bg-[#e0e2eb]'}`}
+                                >
+                                    {d}D
+                                </button>
+                            ))}
                         </div>
                         <div className="flex items-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-md overflow-hidden border border-[#c7c5d3] w-full sm:w-auto mt-1 sm:mt-0">
-                            <div className="bg-[#222777] text-white px-3 sm:px-4 py-2 sm:py-1.5 text-[12px] sm:text-[13px] font-bold tracking-wide">Custom</div>
+                            <div className="bg-[#222777] text-white px-3 sm:px-4 py-2 sm:py-1.5 text-[12px] sm:text-[13px] font-bold tracking-wide">Range</div>
                             <div className="bg-white text-[#181c22] px-3 py-2 sm:py-1.5 flex items-center gap-1.5 sm:gap-2 flex-1 sm:flex-none">
-                                <span className="font-mono text-[12px] sm:text-[13px] font-bold">2023-10-01</span>
+                                <span className="font-mono text-[12px] sm:text-[13px] font-bold">{range?.startDate || '-'}</span>
                                 <span className="text-[#c7c5d3]">-</span>
-                                <span className="font-mono text-[12px] sm:text-[13px] font-bold">2023-10-31</span>
-                                <span className="material-symbols-outlined text-[#777682] ml-auto sm:ml-1 cursor-pointer text-[16px]">calendar_today</span>
+                                <span className="font-mono text-[12px] sm:text-[13px] font-bold">{range?.endDate || '-'}</span>
                             </div>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-3 w-full xl:w-auto pt-2 xl:pt-0 border-t border-[#e0e2eb] xl:border-0">
-                        <span className="text-[12px] sm:text-[13px] font-bold text-[#464651]">Filter by Users:</span>
-                        <div className="flex items-center">
-                            <div className="w-8 h-8 rounded-full bg-[#222777] border-2 border-white flex items-center justify-center text-white text-[10px] font-bold shadow-sm z-30">AG</div>
-                            <div className="w-8 h-8 rounded-full bg-[#3a3f8f] border-2 border-white flex items-center justify-center text-white text-[10px] font-bold shadow-sm -ml-2 z-20">ES</div>
-                            <div className="w-8 h-8 rounded-full bg-[#5156a7] border-2 border-white flex items-center justify-center text-white text-[10px] font-bold shadow-sm -ml-2 z-10">IM</div>
-                            <button className="w-8 h-8 rounded-full bg-[#f1f3fc] border-2 border-white flex items-center justify-center text-[#464651] hover:bg-[#e0e2eb] transition-colors shadow-sm -ml-2 z-0">
-                                <span className="material-symbols-outlined text-[16px]">add</span>
-                            </button>
+                        <span className="text-[12px] sm:text-[13px] font-bold text-[#464651] whitespace-nowrap">Filter by User:</span>
+                        <div className="relative w-full sm:w-auto">
+                            <select
+                                value={filters.userId}
+                                onChange={(e) => setFilters((prev) => ({ ...prev, userId: e.target.value }))}
+                                className="w-full sm:w-auto appearance-none bg-white border border-[#c7c5d3] rounded-md pl-3 pr-8 py-1.5 text-[12px] sm:text-[13px] font-bold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none cursor-pointer shadow-sm"
+                            >
+                                <option value="">All Users</option>
+                                {filterUsers.map((u) => (
+                                    <option key={u._id} value={u._id}>{u.fullName}</option>
+                                ))}
+                            </select>
+                            <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[16px] text-[#777682] pointer-events-none">expand_more</span>
                         </div>
                     </div>
                 </div>
@@ -86,28 +178,28 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-4 sm:p-5 flex flex-col gap-3 sm:gap-4">
                         <div className="flex justify-between items-center"><span className="text-[11px] sm:text-[13px] font-bold text-[#464651]">Submissions</span><span className="material-symbols-outlined text-[#c7c5d3] text-[16px] sm:text-[18px]">description</span></div>
-                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">{kpis.submissions}</span><span className="text-[11px] sm:text-[12px] font-bold text-[#00c2cb] mb-0.5 sm:mb-1">↑12%</span></div>
-                        <div className="flex items-end gap-1 h-6 sm:h-8 mt-1 sm:mt-2"><div className="flex-1 bg-[#61f4fd] h-[20%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[30%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[45%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[35%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[80%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[100%] rounded-t-sm"></div></div>
+                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">{kpis.submissions.total}</span>{renderDelta(kpis.submissions.deltaPct)}</div>
+                        {renderSparkline(kpis.submissions)}
                     </div>
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-4 sm:p-5 flex flex-col gap-3 sm:gap-4">
                         <div className="flex justify-between items-center"><span className="text-[11px] sm:text-[13px] font-bold text-[#464651]">Recordings</span><span className="material-symbols-outlined text-[#c7c5d3] text-[16px] sm:text-[18px]">mic</span></div>
-                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">{kpis.recordings}</span><span className="text-[11px] sm:text-[12px] font-bold text-[#ba1a1a] mb-0.5 sm:mb-1">↓3%</span></div>
-                        <div className="flex items-end gap-1 h-6 sm:h-8 mt-1 sm:mt-2"><div className="flex-1 bg-[#61f4fd] h-[100%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[70%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[85%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[50%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[30%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[40%] rounded-t-sm"></div></div>
+                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">{kpis.recordings.total}</span>{renderDelta(kpis.recordings.deltaPct)}</div>
+                        {renderSparkline(kpis.recordings)}
                     </div>
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-4 sm:p-5 flex flex-col gap-3 sm:gap-4">
                         <div className="flex justify-between items-center"><span className="text-[11px] sm:text-[13px] font-bold text-[#464651]">Reports</span><span className="material-symbols-outlined text-[#c7c5d3] text-[16px] sm:text-[18px]">analytics</span></div>
-                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">{kpis.reports}</span><span className="text-[11px] sm:text-[12px] font-bold text-[#00c2cb] mb-0.5 sm:mb-1">↑24%</span></div>
-                        <div className="flex items-end gap-1 h-6 sm:h-8 mt-1 sm:mt-2"><div className="flex-1 bg-[#61f4fd] h-[15%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[25%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[30%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[45%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[70%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[90%] rounded-t-sm"></div></div>
+                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">{kpis.reports.total}</span>{renderDelta(kpis.reports.deltaPct)}</div>
+                        {renderSparkline(kpis.reports)}
                     </div>
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-4 sm:p-5 flex flex-col gap-3 sm:gap-4">
                         <div className="flex justify-between items-center"><span className="text-[11px] sm:text-[13px] font-bold text-[#464651]">Active Users</span><span className="material-symbols-outlined text-[#c7c5d3] text-[16px] sm:text-[18px]">group</span></div>
-                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">{kpis.activeUsers}</span><span className="text-[11px] sm:text-[12px] font-bold text-[#00c2cb] mb-0.5 sm:mb-1">↑8%</span></div>
-                        <div className="flex items-end gap-1 h-6 sm:h-8 mt-1 sm:mt-2"><div className="flex-1 bg-[#61f4fd] h-[60%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[75%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[65%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[80%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[100%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[85%] rounded-t-sm"></div></div>
+                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">{kpis.activeUsers.total}</span>{renderDelta(kpis.activeUsers.deltaPct)}</div>
+                        {renderSparkline(kpis.activeUsers)}
                     </div>
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-4 sm:p-5 flex flex-col gap-3 sm:gap-4 sm:col-span-3 lg:col-span-1">
                         <div className="flex justify-between items-center"><span className="text-[11px] sm:text-[13px] font-bold text-[#464651]">Searches Run</span><span className="material-symbols-outlined text-[#c7c5d3] text-[16px] sm:text-[18px]">search</span></div>
-                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">{kpis.searchesRun}</span><span className="text-[11px] sm:text-[12px] font-bold text-[#c7c5d3] mb-0.5 sm:mb-1">—0%</span></div>
-                        <div className="flex items-end gap-1 h-6 sm:h-8 mt-1 sm:mt-2"><div className="flex-1 bg-[#61f4fd] h-[30%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[25%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[40%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[35%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[20%] rounded-t-sm"></div><div className="flex-1 bg-[#61f4fd] h-[35%] rounded-t-sm"></div></div>
+                        <div className="flex items-end gap-1 sm:gap-2"><span className="text-2xl sm:text-3xl font-bold text-[#181c22]">{kpis.searchesRun.total}</span>{renderDelta(kpis.searchesRun.deltaPct)}</div>
+                        {renderSparkline(kpis.searchesRun)}
                     </div>
                 </div>
 
@@ -116,49 +208,55 @@ export default function AdminDashboard() {
                     <div className="shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] rounded-xl bg-white p-5 sm:p-6 flex flex-col h-64 sm:h-80">
                         <div className="flex justify-between items-center mb-4 sm:mb-6">
                             <h3 className="text-[16px] sm:text-lg font-bold text-[#181c22]">Submissions Trend</h3>
-                            <button className="text-[#464651] hover:text-[#222777] text-[11px] sm:text-[13px] font-bold flex items-center gap-1 transition-colors">
+                            <button onClick={handleExportTrendCsv} className="text-[#464651] hover:text-[#222777] text-[11px] sm:text-[13px] font-bold flex items-center gap-1 transition-colors">
                                 Export CSV <span className="material-symbols-outlined text-[14px] sm:text-[16px]">download</span>
                             </button>
                         </div>
-                        <div className="flex-1 relative border-l border-b border-[#e0e2eb] pb-5 sm:pb-6 pl-3 sm:pl-4 flex flex-col justify-between">
-                            <div className="absolute left-[-20px] sm:left-[-24px] top-0 bottom-5 sm:bottom-6 flex flex-col justify-between text-[9px] sm:text-[10px] font-mono font-bold text-[#c7c5d3]">
-                                <span>150</span><span>100</span><span>50</span><span>0</span>
+                        {trendPoints.length > 0 ? (
+                            <div className="flex-1 relative border-l border-b border-[#e0e2eb] pb-5 sm:pb-6 pl-3 sm:pl-4 flex flex-col justify-between">
+                                <div className="absolute left-[-20px] sm:left-[-24px] top-0 bottom-5 sm:bottom-6 flex flex-col justify-between text-[9px] sm:text-[10px] font-mono font-bold text-[#c7c5d3]">
+                                    <span>{trendNiceMax}</span><span>{Math.round(trendNiceMax * 2 / 3)}</span><span>{Math.round(trendNiceMax / 3)}</span><span>0</span>
+                                </div>
+                                <div className="absolute left-3 sm:left-4 right-0 bottom-[-20px] sm:bottom-[-24px] flex justify-between text-[9px] sm:text-[10px] font-mono font-bold text-[#c7c5d3]">
+                                    {trendXLabels.map((d) => <span key={d.date}>{d.label}</span>)}
+                                </div>
+                                <div className="absolute inset-0 top-2 bottom-0 left-0 right-0 overflow-hidden">
+                                    <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+                                        <defs>
+                                            <linearGradient id="areaGradient2" x1="0%" x2="0%" y1="0%" y2="100%">
+                                                <stop offset="0%" stopColor="#61f4fd" stopOpacity="0.4"></stop>
+                                                <stop offset="100%" stopColor="#61f4fd" stopOpacity="0"></stop>
+                                            </linearGradient>
+                                        </defs>
+                                        <path d={trendAreaPath} fill="url(#areaGradient2)"></path>
+                                        <path d={trendLinePath} fill="none" stroke="#222777" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"></path>
+                                    </svg>
+                                </div>
                             </div>
-                            <div className="absolute left-3 sm:left-4 right-0 bottom-[-20px] sm:bottom-[-24px] flex justify-between text-[9px] sm:text-[10px] font-mono font-bold text-[#c7c5d3]">
-                                <span>Oct 1</span><span>Oct 8</span><span>Oct 15</span><span>Oct 22</span><span>Oct 31</span>
-                            </div>
-                            <div className="absolute inset-0 top-2 bottom-0 left-0 right-0 overflow-hidden flex items-end">
-                                <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
-                                    <defs>
-                                        <linearGradient id="areaGradient2" x1="0%" x2="0%" y1="0%" y2="100%">
-                                            <stop offset="0%" stopColor="#61f4fd" stopOpacity="0.4"></stop>
-                                            <stop offset="100%" stopColor="#61f4fd" stopOpacity="0"></stop>
-                                        </linearGradient>
-                                    </defs>
-                                    <path d="M0,80 C20,50 40,30 50,40 C60,50 70,70 80,20 C90,-10 100,20 100,20 L100,100 L0,100 Z" fill="url(#areaGradient2)"></path>
-                                    <path d="M0,80 C20,50 40,30 50,40 C60,50 70,70 80,20 C90,-10 100,20 100,20" fill="none" stroke="#222777" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"></path>
-                                </svg>
-                            </div>
-                        </div>
+                        ) : (
+                            <div className="flex-1 flex items-center justify-center text-[13px] font-bold text-[#777682]">No submissions in this range.</div>
+                        )}
                     </div>
 
                     <div className="shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] rounded-xl bg-white p-5 sm:p-6 flex flex-col h-64 sm:h-80">
                         <div className="flex justify-between items-center mb-4 sm:mb-6">
                             <h3 className="text-[16px] sm:text-lg font-bold text-[#181c22]">Completion Rate</h3>
-                            <button className="text-[#464651] hover:text-[#222777] text-[11px] sm:text-[13px] font-bold flex items-center gap-1 transition-colors">
+                            <button onClick={handleExportCompletionCsv} className="text-[#464651] hover:text-[#222777] text-[11px] sm:text-[13px] font-bold flex items-center gap-1 transition-colors">
                                 Export CSV <span className="material-symbols-outlined text-[14px] sm:text-[16px]">download</span>
                             </button>
                         </div>
-                        <div className="flex-1 relative border-l border-b border-[#e0e2eb] pb-5 sm:pb-6 pl-2 sm:pl-4 flex items-end justify-around gap-2 sm:gap-4 px-2 sm:px-4">
-                            <div className="absolute left-2 sm:left-4 right-0 bottom-[-20px] sm:bottom-[-24px] flex justify-around text-[8px] sm:text-[10px] font-mono font-bold text-[#c7c5d3]">
-                                <span className="truncate">Form A</span><span className="truncate">Form B</span><span className="truncate">Form C</span><span className="truncate">Form D</span><span className="truncate">Form E</span>
+                        {completionByForm.length > 0 ? (
+                            <div className="flex-1 relative border-l border-b border-[#e0e2eb] pb-5 sm:pb-6 pl-2 sm:pl-4 flex items-end justify-around gap-2 sm:gap-4 px-2 sm:px-4">
+                                <div className="absolute left-2 sm:left-4 right-0 bottom-[-20px] sm:bottom-[-24px] flex justify-around text-[8px] sm:text-[10px] font-mono font-bold text-[#c7c5d3]">
+                                    {completionByForm.map((f) => <span key={f.schemaId} className="truncate max-w-[60px]">{f.name}</span>)}
+                                </div>
+                                {completionByForm.map((f) => (
+                                    <div key={f.schemaId} title={`${f.percentage}%`} className="w-full bg-[#3a3f8f] hover:bg-[#5156a7] transition-colors rounded-t-sm" style={{ height: `${Math.max(f.percentage, 3)}%` }}></div>
+                                ))}
                             </div>
-                            <div className="w-full bg-[#3a3f8f] hover:bg-[#5156a7] transition-colors rounded-t-sm h-[70%]"></div>
-                            <div className="w-full bg-[#3a3f8f] hover:bg-[#5156a7] transition-colors rounded-t-sm h-[55%]"></div>
-                            <div className="w-full bg-[#3a3f8f] hover:bg-[#5156a7] transition-colors rounded-t-sm h-[85%]"></div>
-                            <div className="w-full bg-[#3a3f8f] hover:bg-[#5156a7] transition-colors rounded-t-sm h-[40%]"></div>
-                            <div className="w-full bg-[#3a3f8f] hover:bg-[#5156a7] transition-colors rounded-t-sm h-[65%]"></div>
-                        </div>
+                        ) : (
+                            <div className="flex-1 flex items-center justify-center text-[13px] font-bold text-[#777682]">No forms submitted in this range.</div>
+                        )}
                     </div>
                 </div>
 
@@ -167,57 +265,60 @@ export default function AdminDashboard() {
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-5 sm:p-6 flex flex-col">
                         <div className="flex justify-between items-center mb-4 sm:mb-6">
                             <h3 className="text-[16px] sm:text-lg font-bold text-[#181c22]">Top Users</h3>
-                            <button className="text-[#464651] hover:text-[#222777] text-[11px] sm:text-[13px] font-bold flex items-center gap-1 transition-colors">
+                            <button onClick={handleExportTopUsersCsv} className="text-[#464651] hover:text-[#222777] text-[11px] sm:text-[13px] font-bold flex items-center gap-1 transition-colors">
                                 Export CSV <span className="material-symbols-outlined text-[14px] sm:text-[16px]">download</span>
                             </button>
                         </div>
-                        <div className="flex-1 overflow-x-auto custom-scrollbar">
-                            <table className="w-full text-left min-w-[300px]">
-                                <thead>
-                                <tr className="border-b border-[#e0e2eb] text-[#777682] text-[11px] sm:text-[12px] font-bold uppercase tracking-wider">
-                                    <th className="pb-2 sm:pb-3 flex items-center gap-1 font-mono whitespace-nowrap">User <span className="material-symbols-outlined text-[14px]">unfold_more</span></th>
-                                    <th className="pb-2 sm:pb-3 text-right font-mono whitespace-nowrap">
-                                        <div className="flex items-center justify-end gap-1">Submissions <span className="material-symbols-outlined text-[14px]">unfold_more</span></div>
-                                    </th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {topUsers.map((user, idx) => (
-                                    <tr key={user.id} className={idx !== topUsers.length - 1 ? "border-b border-[#f1f3fc]" : ""}>
-                                        <td className="py-3 sm:py-4 flex items-center gap-2 sm:gap-3 whitespace-nowrap">
-                                            <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full ${user.color} flex items-center justify-center text-white text-[10px] sm:text-[11px] font-bold shadow-sm`}>{user.initials}</div>
-                                            <span className="font-semibold text-[#181c22] text-[13px] sm:text-[14px]">{user.name}</span>
-                                        </td>
-                                        <td className="py-3 sm:py-4 text-right">
-                                            <span className="font-mono text-[13px] sm:text-[14px] font-bold text-[#464651]">{user.submissions}</span>
-                                        </td>
+                        {topUsers.length > 0 ? (
+                            <div className="flex-1 overflow-x-auto custom-scrollbar">
+                                <table className="w-full text-left min-w-[300px]">
+                                    <thead>
+                                    <tr className="border-b border-[#e0e2eb] text-[#777682] text-[11px] sm:text-[12px] font-bold uppercase tracking-wider">
+                                        <th className="pb-2 sm:pb-3 font-mono whitespace-nowrap">User</th>
+                                        <th className="pb-2 sm:pb-3 text-right font-mono whitespace-nowrap">Submissions</th>
                                     </tr>
-                                ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody>
+                                    {topUsers.map((user, idx) => (
+                                        <tr key={user.userId} className={idx !== topUsers.length - 1 ? "border-b border-[#f1f3fc]" : ""}>
+                                            <td className="py-3 sm:py-4 flex items-center gap-2 sm:gap-3 whitespace-nowrap">
+                                                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full ${AVATAR_COLORS[idx % AVATAR_COLORS.length]} flex items-center justify-center text-white text-[10px] sm:text-[11px] font-bold shadow-sm`}>{user.initials}</div>
+                                                <span className="font-semibold text-[#181c22] text-[13px] sm:text-[14px]">{user.name}</span>
+                                            </td>
+                                            <td className="py-3 sm:py-4 text-right">
+                                                <span className="font-mono text-[13px] sm:text-[14px] font-bold text-[#464651]">{user.submissions}</span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="flex-1 flex items-center justify-center text-[13px] font-bold text-[#777682] py-6">No submissions in this range.</div>
+                        )}
                     </div>
 
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-5 sm:p-6 flex flex-col">
                         <div className="flex justify-between items-center mb-4 sm:mb-6">
                             <h3 className="text-[16px] sm:text-lg font-bold text-[#181c22]">Per-field Completion</h3>
-                            <button className="text-[#464651] hover:text-[#222777] text-[11px] sm:text-[13px] font-bold flex items-center gap-1 transition-colors">
-                                Export CSV <span className="material-symbols-outlined text-[14px] sm:text-[16px]">download</span>
-                            </button>
                         </div>
-                        <div className="flex flex-col gap-4 sm:gap-6 mt-1 sm:mt-2">
-                            {fieldCompletions.map((field, idx) => (
-                                <div key={idx} className="flex flex-col gap-1.5 sm:gap-2">
-                                    <div className="flex justify-between items-center text-[11px] sm:text-[12px] font-mono font-bold text-[#464651]">
-                                        <span>{field.label}</span>
-                                        <span>{field.percentage}%</span>
+                        {fieldCompletions.length > 0 ? (
+                            <div className="flex flex-col gap-4 sm:gap-6 mt-1 sm:mt-2">
+                                {fieldCompletions.map((field) => (
+                                    <div key={field.label} className="flex flex-col gap-1.5 sm:gap-2">
+                                        <div className="flex justify-between items-center text-[11px] sm:text-[12px] font-mono font-bold text-[#464651]">
+                                            <span>{field.label}</span>
+                                            <span>{field.percentage}%</span>
+                                        </div>
+                                        <div className="w-full h-1.5 sm:h-2 bg-[#e0e2eb] rounded-full overflow-hidden">
+                                            <div className="h-full bg-[#61f4fd] rounded-full" style={{ width: `${field.percentage}%` }}></div>
+                                        </div>
                                     </div>
-                                    <div className="w-full h-1.5 sm:h-2 bg-[#e0e2eb] rounded-full overflow-hidden">
-                                        <div className="h-full bg-[#61f4fd] rounded-full" style={{ width: `${field.percentage}%` }}></div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex-1 flex items-center justify-center text-[13px] font-bold text-[#777682] py-6">No data for this range.</div>
+                        )}
                     </div>
                 </div>
 
@@ -228,10 +329,15 @@ export default function AdminDashboard() {
                         <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
                             <div className="relative flex items-center w-full sm:w-auto">
                                 <span className="material-symbols-outlined absolute left-3 text-[#777682] text-[16px] sm:text-[18px]">search</span>
-                                <input type="text" placeholder="Search rows..." className="pl-8 sm:pl-9 pr-4 py-2 bg-[#f9f9ff] border border-[#e0e2eb] rounded-md text-[12px] sm:text-[13px] font-mono text-[#464651] focus:outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777] w-full sm:w-64 placeholder:text-[#c7c5d3]"/>
+                                <input
+                                    type="text" placeholder="Search rows..."
+                                    value={activitySearch}
+                                    onChange={(e) => setActivitySearch(e.target.value)}
+                                    className="pl-8 sm:pl-9 pr-4 py-2 bg-[#f9f9ff] border border-[#e0e2eb] rounded-md text-[12px] sm:text-[13px] font-mono text-[#464651] focus:outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777] w-full sm:w-64 placeholder:text-[#c7c5d3]"
+                                />
                             </div>
-                            <button className="w-9 h-9 flex items-center justify-center border border-[#e0e2eb] rounded-md text-[#464651] hover:bg-[#f1f3fc] transition-colors shrink-0">
-                                <span className="material-symbols-outlined text-[18px] sm:text-[20px]">filter_list</span>
+                            <button onClick={handleExportActivityCsv} className="text-[#464651] hover:text-[#222777] text-[11px] sm:text-[13px] font-bold flex items-center gap-1 transition-colors shrink-0">
+                                Export CSV <span className="material-symbols-outlined text-[14px] sm:text-[16px]">download</span>
                             </button>
                         </div>
                     </div>
@@ -244,21 +350,22 @@ export default function AdminDashboard() {
                                 <th className="p-3 sm:p-4 font-mono w-1/4 whitespace-nowrap">Form</th>
                                 <th className="p-3 sm:p-4 font-mono w-1/5 whitespace-nowrap">Submitted At</th>
                                 <th className="p-3 sm:p-4 font-mono w-1/6 whitespace-nowrap">Status</th>
-                                <th className="p-3 sm:p-4 pr-4 sm:pr-6 font-mono text-right whitespace-nowrap">Actions</th>
                             </tr>
                             </thead>
                             <tbody className="text-[13px] sm:text-[14px]">
-                            {recentActivityTable.map((activity) => (
+                            {filteredActivity.length === 0 ? (
+                                <tr><td colSpan={4} className="p-8 text-center text-[#777682] text-[13px]">No activity found.</td></tr>
+                            ) : filteredActivity.map((activity, idx) => (
                                 <tr key={activity.id} className="border-b border-[#e0e2eb] hover:bg-[#f1f3fc] transition-colors">
                                     <td className="p-3 sm:p-4 pl-4 sm:pl-6 flex items-center gap-2 sm:gap-3">
-                                        <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full ${activity.color} flex items-center justify-center text-white text-[10px] sm:text-[11px] font-bold shadow-sm shrink-0`}>{activity.initials}</div>
+                                        <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full ${AVATAR_COLORS[idx % AVATAR_COLORS.length]} flex items-center justify-center text-white text-[10px] sm:text-[11px] font-bold shadow-sm shrink-0`}>{activity.initials}</div>
                                         <div className="flex flex-col min-w-0">
                                             <span className="font-bold text-[#181c22] truncate">{activity.user}</span>
                                             <span className="font-mono text-[10px] sm:text-[11px] font-bold text-[#777682] truncate">{activity.email}</span>
                                         </div>
                                     </td>
                                     <td className="p-3 sm:p-4 text-[#464651] font-semibold whitespace-nowrap">{activity.form}</td>
-                                    <td className="p-3 sm:p-4 font-mono text-[11px] sm:text-[12px] font-bold text-[#777682] whitespace-nowrap">{activity.submittedAt}</td>
+                                    <td className="p-3 sm:p-4 font-mono text-[11px] sm:text-[12px] font-bold text-[#777682] whitespace-nowrap">{new Date(activity.submittedAt).toLocaleString()}</td>
                                     <td className="p-3 sm:p-4 whitespace-nowrap">
                                             <span className={`px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 w-fit border
                                                 ${activity.status === 'Submitted' ? 'bg-[#e6fbfc] text-[#006e73] border-[#b2f0f4]' : ''}
@@ -272,9 +379,6 @@ export default function AdminDashboard() {
                                                 </span>
                                                 {activity.status}
                                             </span>
-                                    </td>
-                                    <td className="p-3 sm:p-4 pr-4 sm:pr-6 text-right">
-                                        <button className="text-[#c7c5d3] hover:text-[#222777] transition-colors p-1"><span className="material-symbols-outlined text-[18px] sm:text-[20px]">more_vert</span></button>
                                     </td>
                                 </tr>
                             ))}

@@ -111,11 +111,10 @@ export default function ReportExport() {
 
     const handleDownload = async (type) => {
         try {
-            const res = await api.get(`/reports/${id}/export`, {
-                params: { type, title, subtitle }
-            });
-            if (res.data.url) {
-                window.open(`${API_BASE_URL}${res.data.url}`, '_blank');
+            const res = await api.get(`/reports/${id}/status`);
+            const url = type === 'pdf' ? res.data.pdfUrl : res.data.docxUrl;
+            if (url) {
+                window.open(url.startsWith('http') ? url : `${API_BASE_URL}${url}`, '_blank');
             }
         } catch (error) {
             console.error("Failed to download", error);

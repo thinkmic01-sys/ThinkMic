@@ -32,9 +32,11 @@ const FieldSchemaSchema = new mongoose.Schema({
         unique: true
     },
     description: String,
+    // Either the literal 'all' (visible to everyone) or a User.title value (professional
+    // title, e.g. "Cardiologist") matched case-insensitively - not an access-role enum
+    // anymore, so no fixed enum constraint here.
     targetRole: {
         type: String,
-        enum: ['user', 'manager', 'all'],
         required: true
     },
     fields: [FieldDefSchema],

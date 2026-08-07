@@ -1,6 +1,17 @@
 const User = require('../models/User');
 const crypto = require('crypto');
 
+// Distinct Professional Title values currently in use - backs the Schema Builder's
+// "Target Title" picker so an admin can only target titles that real users actually have.
+exports.getDistinctTitles = async (req, res) => {
+    try {
+        const titles = await User.distinct('title', { title: { $nin: [null, ''] } });
+        res.status(200).json({ titles: titles.map((t) => t.trim()).sort((a, b) => a.localeCompare(b)) });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
 exports.listUsers = async (req, res) => {
     try {
         const { role, status, page = 1, search } = req.query;

@@ -20,12 +20,21 @@ export default function SchemaBuilder() {
     const accessToken = useSelector((state) => state.auth?.accessToken);
     const [schemaName, setSchemaName] = useState(`New Form ${Math.floor(Math.random() * 10000)}`);
     const [schemaId, setSchemaId] = useState(null);
-    const [targetRole, setTargetRole] = useState('user');
+    const [targetRole, setTargetRole] = useState('all');
+    const [availableTitles, setAvailableTitles] = useState([]);
     const { id } = useParams();
-    
+
     // --- STATE MANAGEMENT ---
     const [fields, setFields] = useState([]);
     const activeField = fields.find(f => f.active);
+
+    // Populate the "Target Title" picker from the professional Titles real users actually have
+    useEffect(() => {
+        if (!accessToken) return;
+        api.get('/admin/users/titles')
+            .then(res => setAvailableTitles(res.data.titles || []))
+            .catch(console.error);
+    }, [accessToken]);
 
     useEffect(() => {
         if (id && accessToken) {
@@ -238,15 +247,21 @@ export default function SchemaBuilder() {
                 </div>
                 <div className="flex items-center gap-2 sm:gap-6">
                     <div className="hidden sm:flex items-center gap-2">
-                        <span className="text-[12px] font-bold text-[#777682]">Target Role:</span>
-                        <select 
+                        <span className="text-[12px] font-bold text-[#777682]">Target Title:</span>
+                        <select
                             value={targetRole}
                             onChange={(e) => setTargetRole(e.target.value)}
                             className="border border-[#c7c5d3] rounded-md py-1 px-2 bg-[#f9f9ff] text-[#181c22] focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none text-[12px] sm:text-sm font-semibold"
                         >
-                            <option value="user">User</option>
-                            <option value="manager">Manager</option>
-                            <option value="all">All Roles</option>
+                            <option value="all">Everyone</option>
+                            {/* Preserve an old role-based or since-removed title value as its own option so
+                                editing an existing schema doesn't silently lose/reinterpret it */}
+                            {targetRole !== 'all' && !availableTitles.some(t => t.toLowerCase() === targetRole.toLowerCase()) && (
+                                <option value={targetRole}>{targetRole} (not a current title)</option>
+                            )}
+                            {availableTitles.map((t) => (
+                                <option key={t} value={t}>{t}</option>
+                            ))}
                         </select>
                     </div>
                     <div className="px-2 sm:px-3 py-1 rounded-full bg-[#ffdad6] text-[#93000a] text-[10px] sm:text-[12px] font-bold flex items-center gap-1.5 shadow-sm border border-[#ffdad6] shrink-0">
@@ -562,7 +577,7 @@ export default function SchemaBuilder() {
                         <div className="bg-[#222777] text-white px-6 sm:px-8 py-5 sm:py-6 flex justify-between items-center shrink-0 shadow-md z-10 relative">
                             <div>
                                 <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-1">{schemaName}</h2>
-                                <p className="text-[#c7c5d3] text-xs sm:text-sm font-semibold">Previewing as {targetRole}</p>
+                                <p className="text-[#c7c5d3] text-xs sm:text-sm font-semibold">Previewing as {targetRole === 'all' ? 'Everyone' : targetRole}</p>
                             </div>
                             <button
                                 onClick={() => setIsPreviewOpen(false)}

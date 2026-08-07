@@ -103,13 +103,20 @@ exports.publishSchema = async (req, res) => {
 
 exports.listPublishedForms = async (req, res) => {
     try {
-        // Users can only see active forms
-        // Depending on role, we might filter by targetRole, but assuming user sees targetRole: 'user' or 'all'
-        const forms = await FieldSchema.find({ 
+        // Users only see active forms targeted at 'all' or at their own professional Title
+        // (case-insensitive, since Title is free text with no enforced casing).
+        const userTitle = (req.user.title || '').trim();
+        const orConditions = [{ targetRole: 'all' }];
+        if (userTitle) {
+            const escapedTitle = userTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            orConditions.push({ targetRole: { $regex: `^${escapedTitle}$`, $options: 'i' } });
+        }
+
+        const forms = await FieldSchema.find({
             status: 'active',
-            targetRole: { $in: [req.user.role, 'all'] }
+            $or: orConditions
         }).sort({ createdAt: -1 });
-        
+
         res.status(200).json({ forms });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });

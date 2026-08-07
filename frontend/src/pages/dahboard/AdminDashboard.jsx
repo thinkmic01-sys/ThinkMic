@@ -88,7 +88,9 @@ export default function AdminDashboard() {
     // Dashboard's Recording Activity chart) ---
     const trend = kpis.submissions.trend;
     const trendRawMax = Math.max(0, ...trend.map((d) => d.count));
-    const trendNiceMax = trendRawMax === 0 ? 0 : trendRawMax <= 5 ? trendRawMax : Math.ceil(trendRawMax / 5) * 5;
+    // Always a multiple of 3 so the axis's 1/3 and 2/3 tick labels are distinct integers -
+    // otherwise small maxes (e.g. 2) round to duplicate ticks like "0, 1, 1, 2".
+    const trendNiceMax = trendRawMax === 0 ? 0 : Math.max(3, Math.ceil(trendRawMax / 3) * 3);
     const trendPoints = trend.map((d, i) => ({
         ...d,
         x: trend.length > 1 ? (i * 100) / (trend.length - 1) : 0,
@@ -212,7 +214,7 @@ export default function AdminDashboard() {
                                 Export CSV <span className="material-symbols-outlined text-[14px] sm:text-[16px]">download</span>
                             </button>
                         </div>
-                        {trendPoints.length > 0 ? (
+                        {trendRawMax > 0 ? (
                             <div className="flex-1 relative border-l border-b border-[#e0e2eb] pb-5 sm:pb-6 pl-3 sm:pl-4 flex flex-col justify-between">
                                 <div className="absolute left-[-20px] sm:left-[-24px] top-0 bottom-5 sm:bottom-6 flex flex-col justify-between text-[9px] sm:text-[10px] font-mono font-bold text-[#c7c5d3]">
                                     <span>{trendNiceMax}</span><span>{Math.round(trendNiceMax * 2 / 3)}</span><span>{Math.round(trendNiceMax / 3)}</span><span>0</span>

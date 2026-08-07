@@ -72,7 +72,9 @@ export default function Dashboard() {
     // the points out with straight segments across the same 0-100 viewBox.
     const rawMax = Math.max(0, ...chartData.map((d) => d.count));
     const hasActivity = rawMax > 0;
-    const niceMax = rawMax === 0 ? 0 : rawMax <= 5 ? rawMax : Math.ceil(rawMax / 5) * 5;
+    // Always a multiple of 3 so the axis's 1/3 and 2/3 tick labels are distinct integers -
+    // otherwise small maxes (e.g. 2) round to duplicate ticks like "0, 1, 1, 2".
+    const niceMax = rawMax === 0 ? 0 : Math.max(3, Math.ceil(rawMax / 3) * 3);
     const chartPoints = chartData.map((d, i) => ({
         ...d,
         x: chartData.length > 1 ? (i * 100) / (chartData.length - 1) : 0,

@@ -4,6 +4,25 @@ import { useSelector } from 'react-redux';
 import VoiceRecorder from '../../components/VoiceRecorder';
 import api from '../../services/api';
 
+const STATUS_BADGE = {
+    draft: { classes: 'bg-[#ffdad6] text-[#93000a] border-[#ffdad6]', dot: 'bg-[#ba1a1a]', label: 'Draft' },
+    active: { classes: 'bg-[#e6fbfc] text-[#006e73] border-[#6bf6ff]/50', dot: 'bg-[#00c2cb]', label: 'Active' },
+    archived: { classes: 'bg-[#f1f3fc] text-[#464651] border-[#e0e2eb]', dot: 'bg-[#777682]', label: 'Archived' }
+};
+
+function timeAgo(dateString) {
+    if (!dateString) return 'Not saved yet';
+    const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
+    if (seconds < 5) return 'just now';
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} min${minutes === 1 ? '' : 's'} ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+    const days = Math.floor(hours / 24);
+    return `${days} day${days === 1 ? '' : 's'} ago`;
+}
+
 const ICON_BY_TYPE = {
     'Text': 'short_text',
     'Long Text': 'notes',
@@ -20,6 +39,10 @@ export default function SchemaBuilder() {
     const accessToken = useSelector((state) => state.auth?.accessToken);
     const [schemaName, setSchemaName] = useState(`New Form ${Math.floor(Math.random() * 10000)}`);
     const [schemaId, setSchemaId] = useState(null);
+    const [schemaDescription, setSchemaDescription] = useState('');
+    const [schemaStatus, setSchemaStatus] = useState('draft');
+    const [schemaVersion, setSchemaVersion] = useState(1);
+    const [lastSavedAt, setLastSavedAt] = useState(null);
     const [targetRole, setTargetRole] = useState('all');
     const [availableTitles, setAvailableTitles] = useState([]);
     const { id } = useParams();
@@ -44,6 +67,10 @@ export default function SchemaBuilder() {
                 const data = res.data;
                 if (data.schema) {
                     setSchemaName(data.schema.name);
+                    setSchemaDescription(data.schema.description || '');
+                    setSchemaStatus(data.schema.status || 'draft');
+                    setSchemaVersion(data.schema.version || 1);
+                    setLastSavedAt(data.schema.updatedAt || null);
                     setTargetRole(data.schema.targetRole);
                     const mapTypeFromDB = (dbType) => {
                         const t = dbType.toLowerCase();
@@ -178,7 +205,7 @@ export default function SchemaBuilder() {
                 url: endpoint,
                 data: {
                     name: schemaName,
-                    description: "Custom built schema",
+                    description: schemaDescription,
                     targetRole: targetRole,
                     fields: fields.map(f => ({
                         id: f.id || Math.random().toString(),
@@ -194,15 +221,20 @@ export default function SchemaBuilder() {
             
             const data = res.data;
             if (!schemaId) setSchemaId(data.schema._id);
-            
+            setLastSavedAt(data.schema.updatedAt || new Date().toISOString());
+
             if (isActive) {
                 const pubRes = await api.post(`/schemas/${data.schema._id}/publish`);
                 if (pubRes.status === 200 || pubRes.status === 201) {
+                    setSchemaStatus(pubRes.data.schema?.status || 'active');
+                    setSchemaVersion(pubRes.data.version || schemaVersion);
+                    setLastSavedAt(pubRes.data.schema?.updatedAt || new Date().toISOString());
                     showToast("Schema Published Successfully!", "success");
                 } else {
                     showToast("Draft saved, but failed to publish", "error");
                 }
             } else {
+                setSchemaStatus(data.schema.status || 'draft');
                 showToast("Draft saved!", "success");
             }
         } catch (err) {
@@ -242,7 +274,13 @@ export default function SchemaBuilder() {
                         <span className="material-symbols-outlined text-[#777682] group-hover:text-[#222777] transition-colors text-[16px] sm:text-[20px]">edit</span>
                     </div>
                     <div className="hidden lg:flex items-center gap-4 text-[#464651] font-mono text-[13px] font-bold">
-                        <span>Clinical standard data collection</span>
+                        <input
+                            type="text"
+                            value={schemaDescription}
+                            onChange={(e) => setSchemaDescription(e.target.value)}
+                            placeholder="Add a description..."
+                            className="bg-transparent outline-none border-b border-transparent focus:border-[#c7c5d3] transition-colors font-mono text-[13px] font-bold text-[#464651] placeholder:text-[#c7c5d3] placeholder:font-normal max-w-[260px]"
+                        />
                     </div>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-6">
@@ -264,9 +302,9 @@ export default function SchemaBuilder() {
                             ))}
                         </select>
                     </div>
-                    <div className="px-2 sm:px-3 py-1 rounded-full bg-[#ffdad6] text-[#93000a] text-[10px] sm:text-[12px] font-bold flex items-center gap-1.5 shadow-sm border border-[#ffdad6] shrink-0">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#ba1a1a]"></span>
-                        Draft
+                    <div className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-[12px] font-bold flex items-center gap-1.5 shadow-sm border shrink-0 ${(STATUS_BADGE[schemaStatus] || STATUS_BADGE.draft).classes}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${(STATUS_BADGE[schemaStatus] || STATUS_BADGE.draft).dot}`}></span>
+                        {(STATUS_BADGE[schemaStatus] || STATUS_BADGE.draft).label}
                     </div>
                 </div>
             </header>
@@ -533,7 +571,7 @@ export default function SchemaBuilder() {
             {/* Bottom Action Bar */}
             <footer className="h-auto md:h-16 py-3 md:py-0 border-t border-[#c7c5d3] bg-white flex flex-col md:flex-row items-center justify-between px-4 sm:px-8 shrink-0 z-20 gap-3 md:gap-0 absolute md:static bottom-0 w-full">
                 <div className="font-mono text-[10px] sm:text-[11px] md:text-[12px] font-bold text-[#777682] text-center md:text-left w-full md:w-auto">
-                    Version 1 (Draft) • Last saved 2 mins ago
+                    Version {schemaVersion} ({(STATUS_BADGE[schemaStatus] || STATUS_BADGE.draft).label}) • {lastSavedAt ? `Last saved ${timeAgo(lastSavedAt)}` : 'Not saved yet'}
                 </div>
                 <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 sm:gap-4 w-full md:w-auto">
                     <button

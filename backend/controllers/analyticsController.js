@@ -9,13 +9,37 @@ exports.getUsageKPIs = async (req, res) => {
         // Admins see platform-wide totals (used by AdminDashboard); regular users see their own (used by Dashboard).
         const scope = req.user.role === 'admin' ? {} : { userId: req.user._id };
 
-        const [recordings, reports, searchesRun, submissions, activeUsers] = await Promise.all([
+        // Rolling 7-day window (today + 6 prior days), computed in UTC so the
+        // MongoDB $dateToString grouping and the JS day loop agree on day boundaries.
+        const now = new Date();
+        const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        const startUTC = new Date(todayUTC);
+        startUTC.setUTCDate(startUTC.getUTCDate() - 6);
+
+        const [recordings, reports, searchesRun, submissions, activeUsers, dailyCounts] = await Promise.all([
             Recording.countDocuments(scope),
             Report.countDocuments(scope),
             SearchResult.countDocuments(scope),
             Submission.countDocuments(scope),
-            User.countDocuments({ lastLoginAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } })
+            User.countDocuments({ lastLoginAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } }),
+            Recording.aggregate([
+                { $match: { ...scope, createdAt: { $gte: startUTC } } },
+                { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt', timezone: 'UTC' } }, count: { $sum: 1 } } }
+            ])
         ]);
+
+        const countsByDate = Object.fromEntries(dailyCounts.map((d) => [d._id, d.count]));
+        const chartData = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(todayUTC);
+            d.setUTCDate(d.getUTCDate() - i);
+            const dateStr = d.toISOString().slice(0, 10);
+            chartData.push({
+                date: dateStr,
+                label: d.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' }),
+                count: countsByDate[dateStr] || 0
+            });
+        }
 
         res.status(200).json({
             kpis: {
@@ -25,7 +49,7 @@ exports.getUsageKPIs = async (req, res) => {
                 activeUsers,
                 searchesRun
             },
-            chartData: []
+            chartData
         });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });

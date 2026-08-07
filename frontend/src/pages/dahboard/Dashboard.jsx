@@ -10,6 +10,7 @@ export default function Dashboard() {
     const [currentDate, setCurrentDate] = useState('');
     const [stats, setStats] = useState({ recordings: 0, reports: 0, searchesRun: 0 });
     const [timelineActivity, setTimelineActivity] = useState([]);
+    const [chartData, setChartData] = useState([]);
 
     useEffect(() => {
         const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
@@ -36,6 +37,10 @@ export default function Dashboard() {
                     });
                 }
 
+                if (kpiData.chartData) {
+                    setChartData(kpiData.chartData);
+                }
+
                 if (recData.recordings) {
                     const activity = recData.recordings.map((rec, index) => ({
                         id: rec._id,
@@ -55,6 +60,20 @@ export default function Dashboard() {
 
         fetchData();
     }, [accessToken]);
+
+    // Derive the 7-day recording activity chart from real chartData rather than
+    // hardcoded points - rounds the y-axis max to a friendlier number and lays
+    // the points out with straight segments across the same 0-100 viewBox.
+    const rawMax = Math.max(0, ...chartData.map((d) => d.count));
+    const hasActivity = rawMax > 0;
+    const niceMax = rawMax === 0 ? 0 : rawMax <= 5 ? rawMax : Math.ceil(rawMax / 5) * 5;
+    const chartPoints = chartData.map((d, i) => ({
+        ...d,
+        x: chartData.length > 1 ? (i * 100) / (chartData.length - 1) : 0,
+        y: niceMax > 0 ? 95 - (d.count / niceMax) * 85 : 95
+    }));
+    const chartLinePath = chartPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+    const chartAreaPath = chartPoints.length > 0 ? `${chartLinePath} L100,100 L0,100 Z` : '';
 
     return (
         <div className="h-[calc(100vh-64px)] overflow-y-auto bg-[#f9f9ff] w-full relative">
@@ -147,35 +166,45 @@ export default function Dashboard() {
                         <div className="bg-white shadow-card rounded-lg p-8 border border-[#e0e2eb] h-[390px] flex flex-col">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-[20px] font-bold text-[#181c22]">Recording Activity (7 Days)</h3>
-                                <button className="text-[#777682] hover:text-[#222777] transition-colors"><span className="material-symbols-outlined">more_vert</span></button>
+                                <button onClick={() => navigate('/app/research')} className="text-[#777682] hover:text-[#222777] transition-colors" title="Start a new recording">
+                                    <span className="material-symbols-outlined">add_circle</span>
+                                </button>
                             </div>
-                            <div className="flex-1 relative w-full border-l border-b border-[#e0e2eb] pb-6 pl-4 flex flex-col justify-between">
-                                <div className="absolute left-[-28px] top-0 bottom-6  flex flex-col justify-between items-end text-[11px] font-mono font-bold text-[#777682]">
-                                    <span>450</span><span>300</span><span>150</span><span>0</span>
+                            {hasActivity ? (
+                                <div className="flex-1 relative w-full border-l border-b border-[#e0e2eb] pb-6 pl-4 flex flex-col justify-between">
+                                    <div className="absolute left-[-28px] top-0 bottom-6  flex flex-col justify-between items-end text-[11px] font-mono font-bold text-[#777682]">
+                                        <span>{niceMax}</span><span>{Math.round(niceMax * 2 / 3)}</span><span>{Math.round(niceMax / 3)}</span><span>0</span>
+                                    </div>
+                                    <div className="absolute left-4 right-0 bottom-[-24px] flex justify-between text-[12px] font-bold text-[#777682]">
+                                        {chartData.map((d) => <span key={d.date}>{d.label}</span>)}
+                                    </div>
+                                    <div className="absolute inset-0 top-2 bottom-0 left-0 right-0 overflow-hidden">
+                                        <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+                                            <defs>
+                                                <linearGradient id="chartGradient" x1="0%" x2="0%" y1="0%" y2="100%">
+                                                    <stop offset="0%" stopColor="#3a3f8f" stopOpacity="0.2"></stop>
+                                                    <stop offset="100%" stopColor="#3a3f8f" stopOpacity="0"></stop>
+                                                </linearGradient>
+                                            </defs>
+                                            <path d={chartAreaPath} fill="url(#chartGradient)"></path>
+                                            <path d={chartLinePath} fill="none" stroke="#3a3f8f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"></path>
+                                            {chartPoints.map((p) => (
+                                                <circle key={p.date} cx={p.x} cy={p.y} r="1.5" fill="#00c2cb" stroke="#ffffff" strokeWidth="0.5">
+                                                    <title>{p.label} ({p.date}): {p.count} recording{p.count === 1 ? '' : 's'}</title>
+                                                </circle>
+                                            ))}
+                                        </svg>
+                                    </div>
                                 </div>
-                                <div className="absolute left-4 right-0 bottom-[-24px] flex justify-between text-[12px] font-bold text-[#777682]">
-                                    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                            ) : (
+                                <div className="flex-1 flex flex-col items-center justify-center text-center gap-2">
+                                    <span className="material-symbols-outlined text-[#c7c5d3] text-[40px]">mic_off</span>
+                                    <p className="text-[13px] font-bold text-[#777682]">No recordings in the last 7 days.</p>
+                                    <button onClick={() => navigate('/app/research')} className="text-[#222777] text-[13px] font-bold hover:text-[#00c2cb] transition-colors">
+                                        Start your first recording
+                                    </button>
                                 </div>
-                                <div className="absolute inset-0 top-2 bottom-0 left-0 right-0 overflow-hidden">
-                                    <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
-                                        <defs>
-                                            <linearGradient id="chartGradient" x1="0%" x2="0%" y1="0%" y2="100%">
-                                                <stop offset="0%" stopColor="#3a3f8f" stopOpacity="0.2"></stop>
-                                                <stop offset="100%" stopColor="#3a3f8f" stopOpacity="0"></stop>
-                                            </linearGradient>
-                                        </defs>
-                                        <path d="M0,73 C10,65 16.6,57 16.6,57 C25,45 33.3,33 33.3,33 C41.6,40 50,44 50,44 C58.3,25 66.6,6 66.6,6 C75,33 83.3,60 83.3,60 C91.6,56 100,53 100,53 L100,100 L0,100 Z" fill="url(#chartGradient)"></path>
-                                        <path d="M0,73 C10,65 16.6,57 16.6,57 C25,45 33.3,33 33.3,33 C41.6,40 50,44 50,44 C58.3,25 66.6,6 66.6,6 C75,33 83.3,60 83.3,60 C91.6,56 100,53 100,53" fill="none" stroke="#3a3f8f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
-                                        <circle cx="0" cy="73" r="1.5" fill="#00c2cb" stroke="#ffffff" strokeWidth="0.5"/>
-                                        <circle cx="16.6" cy="57" r="1.5" fill="#00c2cb" stroke="#ffffff" strokeWidth="0.5"/>
-                                        <circle cx="33.3" cy="33" r="1.5" fill="#00c2cb" stroke="#ffffff" strokeWidth="0.5"/>
-                                        <circle cx="50" cy="44" r="1.5" fill="#00c2cb" stroke="#ffffff" strokeWidth="0.5"/>
-                                        <circle cx="66.6" cy="6" r="1.5" fill="#00c2cb" stroke="#ffffff" strokeWidth="0.5"/>
-                                        <circle cx="83.3" cy="60" r="1.5" fill="#00c2cb" stroke="#ffffff" strokeWidth="0.5"/>
-                                        <circle cx="100" cy="53" r="1.5" fill="#00c2cb" stroke="#ffffff" strokeWidth="0.5"/>
-                                    </svg>
-                                </div>
-                            </div>
+                            )}
                         </div>
 
                         {/* Storage */}

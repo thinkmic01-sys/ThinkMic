@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 
 const NavLink = ({ to, icon, label, isManagement }) => {
     const location = useLocation();
@@ -44,6 +45,7 @@ const NavLink = ({ to, icon, label, isManagement }) => {
 
 export default function Sidebar({ isOpen, setIsOpen }) {
     const role = useSelector((state) => state.auth?.user?.role);
+    const { t } = useTranslation();
 
     return (
         <aside className={`w-[280px] h-screen bg-[#222777] flex flex-col fixed left-0 top-0 text-white z-50 border-r border-[#181c22]/20 transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
@@ -55,8 +57,8 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                         <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>mic</span>
                     </div>
                     <div>
-                        <h1 className="font-bold text-[22px] leading-none tracking-tight text-white">ThinkMic</h1>
-                        <p className="text-[11px] text-[#6bf6ff] opacity-90 uppercase tracking-widest font-mono mt-1">AI Research Hub</p>
+                        <h1 className="font-bold text-[22px] leading-none tracking-tight text-white">{t('common.brand')}</h1>
+                        <p className="text-[11px] text-[#6bf6ff] opacity-90 uppercase tracking-widest font-mono mt-1">{t('sidebar.tagline')}</p>
                     </div>
                 </div>
                 <button className="lg:hidden text-[#c7c5d3] hover:text-white transition-colors" onClick={() => setIsOpen(false)}>
@@ -66,31 +68,31 @@ export default function Sidebar({ isOpen, setIsOpen }) {
 
             {/* Main Nav Links */}
             <nav className="flex flex-col gap-1 overflow-y-auto custom-scrollbar">
-                <NavLink to="/app/dashboard" icon="dashboard" label="Dashboard" />
-                <NavLink to="/app/research" icon="workspaces" label="Projects" />
-                <NavLink to="/app/reports" icon="summarize" label="Reports" />
-                <NavLink to="/app/courses" icon="school" label="Seminars" />
-                <NavLink to="/app/forms" icon="groups" label="Collaboration" />
+                <NavLink to="/app/dashboard" icon="dashboard" label={t('sidebar.dashboard')} />
+                <NavLink to="/app/research" icon="workspaces" label={t('sidebar.projects')} />
+                <NavLink to="/app/reports" icon="summarize" label={t('sidebar.reports')} />
+                <NavLink to="/app/courses" icon="school" label={t('sidebar.seminars')} />
+                <NavLink to="/app/forms" icon="groups" label={t('sidebar.collaboration')} />
                 {role === 'admin' && (
-                    <NavLink to="/app/admin/users" icon="admin_panel_settings" label="Management" isManagement />
+                    <NavLink to="/app/admin/users" icon="admin_panel_settings" label={t('sidebar.management')} isManagement />
                 )}
-                <NavLink to="/app/achievements" icon="military_tech" label="Achievements" />
+                <NavLink to="/app/achievements" icon="military_tech" label={t('sidebar.achievements')} />
             </nav>
 
             {/* Footer Area (Configure Mic + Settings/Support) */}
             <div className="mt-auto flex flex-col pb-4 pt-4 shrink-0">
                 <div className="px-6 mb-4">
                     <button className="w-full bg-[#6bf6ff] text-[#002022] font-bold text-[14px] py-3 rounded-md hover:bg-[#61f4fd] transition-colors shadow-sm">
-                        Configure Mic
+                        {t('sidebar.configureMic')}
                     </button>
                 </div>
 
                 <nav className="flex flex-col gap-1">
-                    <NavLink to="/app/settings" icon="settings" label="Settings" />
+                    <NavLink to="/app/settings" icon="settings" label={t('sidebar.settings')} />
                     {role === 'admin' || role === 'manager' ? (
-                        <NavLink to="/app/admin/support" icon="support_agent" label="Support Inbox" />
+                        <NavLink to="/app/admin/support" icon="support_agent" label={t('sidebar.supportInbox')} />
                     ) : (
-                        <NavLink to="/app/support" icon="help_outline" label="Support" />
+                        <NavLink to="/app/support" icon="help_outline" label={t('sidebar.support')} />
                     )}
                 </nav>
             </div>

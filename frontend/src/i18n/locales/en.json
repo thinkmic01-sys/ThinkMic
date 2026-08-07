@@ -1,0 +1,71 @@
+{
+    "common": {
+        "brand": "ThinkMic"
+    },
+    "sidebar": {
+        "tagline": "AI Research Hub",
+        "dashboard": "Dashboard",
+        "projects": "Projects",
+        "reports": "Reports",
+        "seminars": "Seminars",
+        "collaboration": "Collaboration",
+        "management": "Management",
+        "achievements": "Achievements",
+        "configureMic": "Configure Mic",
+        "settings": "Settings",
+        "supportInbox": "Support Inbox",
+        "support": "Support"
+    },
+    "navbar": {
+        "aiResearchWizard": "AI Research Wizard",
+        "projectsHub": "Projects Hub",
+        "rewards": "Rewards",
+        "myTimeline": "My Timeline",
+        "users": "Users",
+        "schemas": "Schemas",
+        "notificationsPanelTitle": "Notifications",
+        "noNotifications": "No notifications yet.",
+        "userProfileAlt": "User profile",
+        "logIn": "Log In",
+        "notificationTypes": {
+            "reminder": "Reminder",
+            "system": "System",
+            "update": "Update",
+            "referral_pending": "Referral Pending",
+            "referral_approved": "Referral Approved",
+            "referral_rejected": "Referral Rejected",
+            "seminar_reward_received": "Reward Received",
+            "seminar_coins_reserved": "Coins Reserved",
+            "seminar_coins_refunded": "Coins Refunded",
+            "default": "Notification"
+        }
+    },
+    "layout": {
+        "summaryReadyTitle": "AI Summary Ready",
+        "defaultRecordingTitle": "Your research audio",
+        "summaryReadyBody": "Your research summary for \"{{title}}\" is ready to explore.",
+        "openSession": "Open Session"
+    },
+    "dashboard": {
+        "greetingMorning": "Good morning",
+        "greetingAfternoon": "Good afternoon",
+        "greetingEvening": "Good evening",
+        "newSession": "New Session",
+        "newResearch": "New Research",
+        "viewReports": "View Reports",
+        "totalRecordings": "Total Recordings",
+        "reportsGenerated": "Reports Generated",
+        "searchesRun": "Searches Run",
+        "storageUsed": "Storage Used",
+        "recentActivity": "Recent Activity",
+        "recordingActivity": "Recording Activity (7 Days)",
+        "startNewRecordingTitle": "Start a new recording",
+        "noActivity": "No recordings in the last 7 days.",
+        "startFirstRecording": "Start your first recording",
+        "storageAllocation": "Storage Allocation",
+        "storageUsedSuffix": "Used. Upgrade for more capacity.",
+        "recordingSaved": "Recording \"{{title}}\" saved.",
+        "recordingCount_one": "{{count}} recording",
+        "recordingCount_other": "{{count}} recordings"
+    }
+}

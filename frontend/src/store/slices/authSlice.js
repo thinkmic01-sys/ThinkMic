@@ -21,6 +21,10 @@ export function normalizeUser(rawUser) {
         email: rawUser.email,
         role: rawUser.role,
         title: rawUser.title,
+        // UI locale code ('en'/'ur') - preferredLanguage may also hold older free-text
+        // values (e.g. "English (US)") from before the Settings language selector was
+        // wired to real i18n, so anything that isn't a recognized code falls back to 'en'.
+        language: rawUser.preferredLanguage === 'ur' ? 'ur' : 'en',
         coins: rawUser.coins || 0,
         referralCode: rawUser.referralCode,
         avatar: rawUser.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(rawUser.fullName || '')}&background=222777&color=fff`

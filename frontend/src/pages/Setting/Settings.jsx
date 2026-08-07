@@ -3,7 +3,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout, updateUser, normalizeUser } from '../../store/slices/authSlice';
 import api from '../../services/api';
-import i18n from '../../i18n';
 
 // Mirrors NOTIFICATION_META in components/Navbar.jsx so notification cards look identical in both places
 const NOTIFICATION_META = {
@@ -49,7 +48,7 @@ export default function Settings() {
         fullName: user?.name || '',
         title: '',
         email: user?.email || '',
-        language: 'en',
+        language: 'English (US)',
         avatar: user?.avatar || "https://i.pravatar.cc/150?u=aria"
     });
     const [avatarFile, setAvatarFile] = useState(null);
@@ -71,7 +70,7 @@ export default function Settings() {
                 fullName: u.fullName || prev.fullName,
                 title: u.title || '',
                 email: u.email || prev.email,
-                language: u.preferredLanguage === 'ur' ? 'ur' : 'en',
+                language: u.preferredLanguage || 'English (US)',
                 avatar: u.avatarUrl || prev.avatar
             }));
             // Undefined/missing prefs default to true; only an explicit false is honored
@@ -100,12 +99,6 @@ export default function Settings() {
     const handleProfileChange = (e) => {
         const { name, value } = e.target;
         setProfileData(prev => ({ ...prev, [name]: value }));
-        // Live-preview the UI language immediately; handleSaveProfile persists it below
-        if (name === 'language') {
-            i18n.changeLanguage(value);
-            document.documentElement.lang = value;
-            document.documentElement.dir = value === 'ur' ? 'rtl' : 'ltr';
-        }
     };
 
     // Handle Clicking the Avatar Box
@@ -377,8 +370,9 @@ export default function Settings() {
                                                 name="language" value={profileData.language} onChange={handleProfileChange}
                                                 className="w-full appearance-none bg-[#f9f9ff] rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2.5 px-3 pr-8 text-[14px] outline-none transition-shadow cursor-pointer"
                                             >
-                                                <option value="en">English</option>
-                                                <option value="ur">اردو (Urdu)</option>
+                                                <option>English (US)</option>
+                                                <option>Spanish (ES)</option>
+                                                <option>French (FR)</option>
                                             </select>
                                             <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[16px] text-[#777682] pointer-events-none">expand_more</span>
                                         </div>

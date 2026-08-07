@@ -1,28 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { io } from 'socket.io-client';
 import api from '../services/api';
 import { API_BASE_URL } from '../config';
 
-// Icon/color per notification type; the display title is translated via
-// navbar.notificationTypes.<type> (falls back to navbar.notificationTypes.default)
 const NOTIFICATION_META = {
-    reminder: { icon: 'schedule', color: 'text-[#222777] bg-[#eef0f9]' },
-    system: { icon: 'info', color: 'text-[#464651] bg-[#f1f3fc]' },
-    update: { icon: 'auto_awesome', color: 'text-[#00c2cb] bg-[#e6fbfc]' },
-    referral_pending: { icon: 'hourglass_empty', color: 'text-[#b45309] bg-[#fff8e1]' },
-    referral_approved: { icon: 'check_circle', color: 'text-[#006e73] bg-[#e6fbfc]' },
-    referral_rejected: { icon: 'cancel', color: 'text-[#ba1a1a] bg-[#ffdad6]' },
-    seminar_reward_received: { icon: 'redeem', color: 'text-[#006e73] bg-[#e6fbfc]' },
-    seminar_coins_reserved: { icon: 'lock_clock', color: 'text-[#222777] bg-[#eef0f9]' },
-    seminar_coins_refunded: { icon: 'replay', color: 'text-[#006e73] bg-[#e6fbfc]' }
+    reminder: { icon: 'schedule', color: 'text-[#222777] bg-[#eef0f9]', title: 'Reminder' },
+    system: { icon: 'info', color: 'text-[#464651] bg-[#f1f3fc]', title: 'System' },
+    update: { icon: 'auto_awesome', color: 'text-[#00c2cb] bg-[#e6fbfc]', title: 'Update' },
+    referral_pending: { icon: 'hourglass_empty', color: 'text-[#b45309] bg-[#fff8e1]', title: 'Referral Pending' },
+    referral_approved: { icon: 'check_circle', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Referral Approved' },
+    referral_rejected: { icon: 'cancel', color: 'text-[#ba1a1a] bg-[#ffdad6]', title: 'Referral Rejected' },
+    seminar_reward_received: { icon: 'redeem', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Reward Received' },
+    seminar_coins_reserved: { icon: 'lock_clock', color: 'text-[#222777] bg-[#eef0f9]', title: 'Coins Reserved' },
+    seminar_coins_refunded: { icon: 'replay', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Coins Refunded' }
 };
-const DEFAULT_NOTIFICATION_META = { icon: 'notifications', color: 'text-[#777682] bg-[#f1f3fc]' };
+const DEFAULT_NOTIFICATION_META = { icon: 'notifications', color: 'text-[#777682] bg-[#f1f3fc]', title: 'Notification' };
 
 export default function Navbar({ onMenuClick }) {
-    const { t } = useTranslation();
     const { user, isAuthenticated, accessToken } = useSelector((state) => state.auth);
     const location = useLocation();
     const navigate = useNavigate();
@@ -100,9 +96,9 @@ export default function Navbar({ onMenuClick }) {
         if (location.pathname.startsWith('/app/projects/create-seminar')) {
             return (
                 <div className="flex items-center gap-2 sm:gap-4 text-[13px] sm:text-sm whitespace-nowrap">
-                    <span className="text-gray-500 font-medium hidden sm:inline">{t('common.brand')}</span>
+                    <span className="text-gray-500 font-medium hidden sm:inline">ThinkMic</span>
                     <span className="text-gray-400 hidden sm:inline">/</span>
-                    <span className="text-[#222777] font-bold">{t('sidebar.seminars')}</span>
+                    <span className="text-[#222777] font-bold">Seminars</span>
                 </div>
             );
         }
@@ -112,10 +108,10 @@ export default function Navbar({ onMenuClick }) {
             return (
                 <div className="flex space-x-4 sm:space-x-6 h-full items-center overflow-x-auto hide-scrollbar">
                     <Link to="/app/research" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/research') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
-                        {t('navbar.aiResearchWizard')}
+                        AI Research Wizard
                     </Link>
                     <Link to="/app/projects" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/projects') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
-                        {t('navbar.projectsHub')}
+                        Projects Hub
                     </Link>
                 </div>
             );
@@ -126,10 +122,10 @@ export default function Navbar({ onMenuClick }) {
             return (
                 <div className="flex space-x-4 sm:space-x-6 h-full items-center overflow-x-auto hide-scrollbar">
                     <Link to="/app/achievements" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${location.pathname === '/app/achievements' ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
-                        {t('navbar.rewards')}
+                        Rewards
                     </Link>
                     <Link to="/app/achievements/timeline" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${location.pathname.includes('timeline') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
-                        {t('navbar.myTimeline')}
+                        My Timeline
                     </Link>
                 </div>
             );
@@ -140,13 +136,13 @@ export default function Navbar({ onMenuClick }) {
             return (
                 <div className="flex space-x-4 sm:space-x-6 h-full items-center overflow-x-auto hide-scrollbar">
                     <Link to="/app/admin/users" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/admin/users') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
-                        {t('navbar.users')}
+                        Users
                     </Link>
                     <Link to="/app/admin/schemas" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/admin/schemas') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
-                        {t('navbar.schemas')}
+                        Schemas
                     </Link>
                     <Link to="/app/admin/rewards" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/admin/rewards') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
-                        {t('navbar.rewards')}
+                        Rewards
                     </Link>
                 </div>
             );
@@ -157,19 +153,18 @@ export default function Navbar({ onMenuClick }) {
         if (location.pathname.includes('/app/courses')) {
             return (
                 <div className="flex items-center gap-2 sm:gap-4 text-[13px] sm:text-sm whitespace-nowrap">
-                    <span className="text-gray-500 font-medium hidden sm:inline">{t('common.brand')}</span>
+                    <span className="text-gray-500 font-medium hidden sm:inline">ThinkMic</span>
                     <span className="text-gray-400 hidden sm:inline">/</span>
-                    <span className="text-[#222777] font-bold">{t('sidebar.seminars')}</span>
+                    <span className="text-[#222777] font-bold">Seminars</span>
                 </div>
             );
         }
 
-        // Default Breadcrumbs for other pages - the page name itself is derived from the
-        // URL segment, so it isn't translated in this pass (see plan: only chrome + Dashboard)
+        // Default Breadcrumbs for other pages
         const pageName = location.pathname.split('/').pop().charAt(0).toUpperCase() + location.pathname.split('/').pop().slice(1);
         return (
             <div className="flex items-center gap-2 sm:gap-4 text-[13px] sm:text-sm whitespace-nowrap">
-                <span className="text-gray-500 font-medium hidden sm:inline">{t('common.brand')}</span>
+                <span className="text-gray-500 font-medium hidden sm:inline">ThinkMic</span>
                 <span className="text-gray-400 hidden sm:inline">/</span>
                 <span className="text-[#222777] font-bold">{pageName}</span>
             </div>
@@ -215,22 +210,21 @@ export default function Navbar({ onMenuClick }) {
                             {isNotifOpen && (
                                 <div className="absolute top-full right-0 mt-2 w-72 sm:w-80 bg-white border border-[#e0e2eb] rounded-xl shadow-lg z-50 overflow-hidden flex flex-col max-h-96">
                                     <div className="p-3 border-b border-[#e0e2eb] bg-[#f9f9ff]">
-                                        <h3 className="font-bold text-[#181c22] text-[14px]">{t('navbar.notificationsPanelTitle')}</h3>
+                                        <h3 className="font-bold text-[#181c22] text-[14px]">Notifications</h3>
                                     </div>
                                     <div className="overflow-y-auto flex-1">
                                         {notifications.length === 0 ? (
-                                            <p className="p-4 text-center text-[13px] text-[#777682]">{t('navbar.noNotifications')}</p>
+                                            <p className="p-4 text-center text-[13px] text-[#777682]">No notifications yet.</p>
                                         ) : (
                                             notifications.map(n => {
                                                 const meta = NOTIFICATION_META[n.type] || DEFAULT_NOTIFICATION_META;
-                                                const title = t(`navbar.notificationTypes.${n.type}`, { defaultValue: t('navbar.notificationTypes.default') });
                                                 return (
                                                     <div key={n._id} onClick={() => handleNotificationItemClick(n)} className={`p-3 border-b border-[#e0e2eb] last:border-b-0 hover:bg-[#f1f3fc] transition-colors cursor-pointer flex gap-2.5 ${!n.isRead ? 'bg-blue-50/50' : ''}`}>
                                                         <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${meta.color}`}>
                                                             <span className="material-symbols-outlined text-[15px]">{meta.icon}</span>
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <p className="text-[12px] font-bold text-[#181c22] leading-tight mb-0.5">{title}</p>
+                                                            <p className="text-[12px] font-bold text-[#181c22] leading-tight mb-0.5">{meta.title}</p>
                                                             <p className="text-[13px] text-[#464651] leading-tight mb-1">{n.message}</p>
                                                             <span className="text-[10px] text-[#777682] font-mono">{new Date(n.createdAt).toLocaleDateString()}</span>
                                                         </div>
@@ -255,12 +249,12 @@ export default function Navbar({ onMenuClick }) {
                                 <span className="text-[12px] text-[#777682] font-semibold">{user.role}</span>
                             </div>
                             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#f1f3fc] overflow-hidden ring-2 ring-[#6bf6ff] ring-offset-1 sm:ring-offset-2 shrink-0">
-                                <img src={user.avatar} alt={t('navbar.userProfileAlt')} className="w-full h-full object-cover" />
+                                <img src={user.avatar} alt="User profile" className="w-full h-full object-cover" />
                             </div>
                         </div>
                     ) : (
                         <button className="bg-[#222777] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-[12px] sm:text-[13px] font-bold shadow-sm shrink-0">
-                            {t('navbar.logIn')}
+                            Log In
                         </button>
                     )}
                 </div>

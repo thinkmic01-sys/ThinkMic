@@ -7,6 +7,14 @@ export default function SchemaLibrary() {
     const accessToken = useSelector((state) => state.auth?.accessToken);
     const [schemas, setSchemas] = useState([]);
 
+    const [viewingSchema, setViewingSchema] = useState(null);
+    const [submissions, setSubmissions] = useState([]);
+    const [submissionsLoading, setSubmissionsLoading] = useState(false);
+    const [submissionsPage, setSubmissionsPage] = useState(1);
+    const [submissionsPages, setSubmissionsPages] = useState(1);
+    const [submissionsTotal, setSubmissionsTotal] = useState(0);
+    const [expandedId, setExpandedId] = useState(null);
+
     useEffect(() => {
         if (!accessToken) return;
         const fetchSchemas = async () => {
@@ -17,6 +25,7 @@ export default function SchemaLibrary() {
                     setSchemas(data.schemas.map(s => ({
                         id: s._id,
                         name: s.name,
+                        fields: s.fields || [],
                         submissions: s.submissions || 0,
                         status: s.status ? s.status.charAt(0).toUpperCase() + s.status.slice(1) : 'Unknown',
                         lastUpdated: new Date(s.updatedAt).toLocaleDateString()
@@ -28,6 +37,42 @@ export default function SchemaLibrary() {
         };
         fetchSchemas();
     }, [accessToken]);
+
+    useEffect(() => {
+        if (!viewingSchema) return;
+        let cancelled = false;
+        const fetchSubmissions = async () => {
+            setSubmissionsLoading(true);
+            try {
+                const res = await api.get('/submissions', {
+                    params: { schemaId: viewingSchema.id, page: submissionsPage }
+                });
+                if (cancelled) return;
+                setSubmissions(res.data.submissions || []);
+                setSubmissionsPages(res.data.pages || 1);
+                setSubmissionsTotal(res.data.total || 0);
+            } catch (err) {
+                console.error(err);
+                if (!cancelled) { setSubmissions([]); setSubmissionsPages(1); setSubmissionsTotal(0); }
+            } finally {
+                if (!cancelled) setSubmissionsLoading(false);
+            }
+        };
+        fetchSubmissions();
+        return () => { cancelled = true; };
+    }, [viewingSchema, submissionsPage]);
+
+    const openSubmissions = (schema) => {
+        setExpandedId(null);
+        setSubmissionsPage(1);
+        setViewingSchema(schema);
+    };
+
+    const closeSubmissions = () => {
+        setViewingSchema(null);
+        setSubmissions([]);
+        setExpandedId(null);
+    };
 
     return (
         <div className="p-4 sm:p-6 md:p-8 w-full max-w-[1280px] mx-auto font-sans">
@@ -73,7 +118,19 @@ export default function SchemaLibrary() {
                         ) : schemas.map((schema) => (
                             <tr key={schema.id} className="border-b border-[#e0e2eb] hover:bg-[#f1f3fc] transition-colors group">
                                 <td className="p-3 sm:p-4 pl-4 sm:pl-6 font-bold text-[#181c22] whitespace-nowrap">{schema.name}</td>
-                                <td className="p-3 sm:p-4 font-mono font-bold text-[#464651]">{schema.submissions}</td>
+                                <td className="p-3 sm:p-4">
+                                    {schema.submissions > 0 ? (
+                                        <button
+                                            onClick={() => openSubmissions(schema)}
+                                            className="font-mono font-bold text-[#3a3f8f] hover:text-[#222777] underline decoration-dotted underline-offset-2 transition-colors"
+                                            title="View submitted results"
+                                        >
+                                            {schema.submissions}
+                                        </button>
+                                    ) : (
+                                        <span className="font-mono font-bold text-[#464651]">{schema.submissions}</span>
+                                    )}
+                                </td>
                                 <td className="p-3 sm:p-4 whitespace-nowrap">
                                         <span className={`inline-flex px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider
                                             ${schema.status === 'Active' ? 'bg-[#e6fbfc] text-[#006e73]' : ''}
@@ -85,6 +142,15 @@ export default function SchemaLibrary() {
                                 </td>
                                 <td className="p-3 sm:p-4 text-[#777682] font-semibold whitespace-nowrap">{schema.lastUpdated}</td>
                                 <td className="p-3 sm:p-4 text-right pr-4 sm:pr-6">
+                                    {schema.submissions > 0 && (
+                                        <button
+                                            onClick={() => openSubmissions(schema)}
+                                            title="View submitted results"
+                                            className="text-[#3a3f8f] hover:text-[#222777] transition-colors p-1.5 rounded-md hover:bg-[#e0e2eb] inline-flex items-center justify-center mr-1"
+                                        >
+                                            <span className="material-symbols-outlined text-[18px] sm:text-[20px]">visibility</span>
+                                        </button>
+                                    )}
                                     {schema.status === 'Draft' ? (
                                         <Link to={`/app/admin/schemas/edit/${schema.id}`} className="text-[#3a3f8f] hover:text-[#222777] transition-colors p-1.5 rounded-md hover:bg-[#e0e2eb] inline-flex items-center justify-center ml-auto">
                                             <span className="material-symbols-outlined text-[18px] sm:text-[20px]">edit</span>
@@ -101,6 +167,109 @@ export default function SchemaLibrary() {
                     </table>
                 </div>
             </div>
+
+            {viewingSchema && (
+                <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={closeSubmissions}>
+                    <div
+                        className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-start justify-between p-4 sm:p-5 border-b border-[#e0e2eb]">
+                            <div>
+                                <h2 className="text-lg font-bold text-[#222777]">{viewingSchema.name}</h2>
+                                <p className="text-[12px] font-semibold text-[#777682] mt-0.5">
+                                    {submissionsTotal} submitted result{submissionsTotal === 1 ? '' : 's'}
+                                </p>
+                            </div>
+                            <button onClick={closeSubmissions} className="text-[#777682] hover:text-[#181c22] p-1 rounded-md hover:bg-[#f1f3fc]">
+                                <span className="material-symbols-outlined text-[20px]">close</span>
+                            </button>
+                        </div>
+
+                        <div className="overflow-y-auto flex-1 p-4 sm:p-5 space-y-3">
+                            {submissionsLoading ? (
+                                <p className="text-center text-[13px] font-semibold text-[#777682] py-8">Loading submissions…</p>
+                            ) : submissions.length === 0 ? (
+                                <p className="text-center text-[13px] font-semibold text-[#777682] py-8">No submissions found.</p>
+                            ) : submissions.map((sub) => {
+                                const isExpanded = expandedId === sub._id;
+                                const submitter = sub.userId?.fullName || sub.userId?.email || 'Unknown user';
+                                const when = sub.submittedAt || sub.createdAt;
+                                return (
+                                    <div key={sub._id} className="border border-[#e0e2eb] rounded-md overflow-hidden">
+                                        <button
+                                            onClick={() => setExpandedId(isExpanded ? null : sub._id)}
+                                            className="w-full flex items-center justify-between gap-3 p-3 hover:bg-[#f9f9ff] transition-colors text-left"
+                                        >
+                                            <div className="min-w-0">
+                                                <p className="font-bold text-[#181c22] text-[13px] truncate">{submitter}</p>
+                                                <p className="text-[11px] text-[#777682] font-semibold">
+                                                    {when ? new Date(when).toLocaleString() : '—'}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider
+                                                    ${sub.status === 'submitted' ? 'bg-[#e6fbfc] text-[#006e73]' : 'bg-[#ffdad6] text-[#93000a]'}`}>
+                                                    {sub.status}
+                                                </span>
+                                                <span className="material-symbols-outlined text-[18px] text-[#777682]">
+                                                    {isExpanded ? 'expand_less' : 'expand_more'}
+                                                </span>
+                                            </div>
+                                        </button>
+                                        {isExpanded && (
+                                            <div className="border-t border-[#e0e2eb] bg-[#f9f9ff] p-3 space-y-2.5">
+                                                {viewingSchema.fields.length === 0 ? (
+                                                    <p className="text-[12px] text-[#777682] font-semibold">This form has no fields defined.</p>
+                                                ) : viewingSchema.fields.map((field) => {
+                                                    const answer = sub.answers ? sub.answers[field.id] : null;
+                                                    return (
+                                                        <div key={field.id}>
+                                                            <p className="text-[11px] font-bold uppercase tracking-wider text-[#464651]">{field.label}</p>
+                                                            {!answer ? (
+                                                                <p className="text-[13px] text-[#c7c5d3] italic">No answer</p>
+                                                            ) : answer.type === 'voice' ? (
+                                                                <p className="text-[13px] text-[#181c22]">
+                                                                    {answer.value || '[Voice response]'}
+                                                                    <span className="ml-1 text-[11px] text-[#777682]">(voice)</span>
+                                                                </p>
+                                                            ) : (
+                                                                <p className="text-[13px] text-[#181c22] whitespace-pre-wrap break-words">{answer.value || '—'}</p>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {submissionsPages > 1 && (
+                            <div className="flex items-center justify-between p-3 sm:p-4 border-t border-[#e0e2eb]">
+                                <button
+                                    onClick={() => setSubmissionsPage((p) => Math.max(1, p - 1))}
+                                    disabled={submissionsPage <= 1}
+                                    className="text-[12px] font-bold text-[#3a3f8f] disabled:text-[#c7c5d3] disabled:cursor-not-allowed px-3 py-1.5 rounded-md hover:bg-[#f1f3fc]"
+                                >
+                                    Previous
+                                </button>
+                                <span className="text-[12px] font-semibold text-[#777682]">
+                                    Page {submissionsPage} of {submissionsPages}
+                                </span>
+                                <button
+                                    onClick={() => setSubmissionsPage((p) => Math.min(submissionsPages, p + 1))}
+                                    disabled={submissionsPage >= submissionsPages}
+                                    className="text-[12px] font-bold text-[#3a3f8f] disabled:text-[#c7c5d3] disabled:cursor-not-allowed px-3 py-1.5 rounded-md hover:bg-[#f1f3fc]"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
         </div>
     );

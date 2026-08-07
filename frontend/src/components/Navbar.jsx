@@ -91,6 +91,18 @@ export default function Navbar({ onMenuClick }) {
 
     // Dynamic Top Navigation Logic based on System Design
     const renderTopNav = () => {
+        // Create Seminar's route is still under /app/projects/* for now, but it's reached
+        // from and belongs to the Seminars section, not Projects Hub
+        if (location.pathname.startsWith('/app/projects/create-seminar')) {
+            return (
+                <div className="flex items-center gap-2 sm:gap-4 text-[13px] sm:text-sm whitespace-nowrap">
+                    <span className="text-gray-500 font-medium hidden sm:inline">ThinkMic</span>
+                    <span className="text-gray-400 hidden sm:inline">/</span>
+                    <span className="text-[#222777] font-bold">Seminars</span>
+                </div>
+            );
+        }
+
         // If inside the Projects/Research workflow
         if (location.pathname.includes('/app/projects') || location.pathname.includes('/app/research')) {
             return (

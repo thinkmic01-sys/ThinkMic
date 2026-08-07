@@ -238,6 +238,9 @@ export default function CreateSeminar() {
                 {/* Page Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[#e0e2eb] pb-6 gap-4">
                     <div className="w-full md:w-auto">
+                        <button onClick={() => navigate('/app/courses')} className="text-[#777682] hover:text-[#222777] flex items-center gap-1 text-[12px] sm:text-[13px] font-bold mb-3 transition-colors w-fit">
+                            <span className="material-symbols-outlined text-[16px] sm:text-[18px]">arrow_back</span> <span className="hidden sm:inline">Back to</span> Seminar Library
+                        </button>
                         <h1 className="text-[28px] sm:text-[32px] font-bold text-[#222777] tracking-tight mb-1 sm:mb-2">Create a Seminar</h1>
                         <p className="text-[14px] sm:text-[15px] text-[#464651]">Schedule a new academic session or lecture for the community.</p>
                     </div>

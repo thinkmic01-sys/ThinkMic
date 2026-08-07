@@ -4,13 +4,19 @@ import { useSelector } from 'react-redux';
 
 const NavLink = ({ to, icon, label, isManagement }) => {
     const location = useLocation();
+    // Create Seminar's route is still under /app/projects/* for now, but it belongs to
+    // the Seminars section (reached from the Seminar Library), not Projects
+    const isCreateSeminar = location.pathname.startsWith('/app/projects/create-seminar');
 
     // Determine active state
     let isActive = location.pathname === to || location.pathname.startsWith(to + '/');
 
     // Projects/Research active state grouping
     if (to === '/app/research') {
-        isActive = location.pathname.startsWith('/app/projects') || location.pathname.startsWith('/app/research');
+        isActive = (location.pathname.startsWith('/app/projects') || location.pathname.startsWith('/app/research')) && !isCreateSeminar;
+    }
+    if (to === '/app/courses' && isCreateSeminar) {
+        isActive = true;
     }
     // Management active state grouping
     if (isManagement) {

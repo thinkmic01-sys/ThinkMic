@@ -59,11 +59,50 @@ export default function ReferralCoinManagement() {
         }
     };
 
-    // Manual coin adjustment mini-form
+    // Manual coin adjustment mini-form - user is picked via name/email search rather than
+    // typed as a raw ObjectId, since there was previously no way for the admin to find one.
     const [adjustUserId, setAdjustUserId] = useState('');
+    const [userQuery, setUserQuery] = useState('');
+    const [userResults, setUserResults] = useState([]);
+    const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
     const [adjustAmount, setAdjustAmount] = useState('');
     const [adjustReason, setAdjustReason] = useState('');
     const [adjustLoading, setAdjustLoading] = useState(false);
+
+    // Debounced name/email search - skipped once a user is already selected (adjustUserId
+    // set) so re-rendering the query into the input as "Name (email)" doesn't re-trigger it.
+    useEffect(() => {
+        if (!accessToken || adjustUserId || userQuery.trim().length < 2) {
+            return; // too short to search yet; clearing is handled synchronously in the input's onChange below
+        }
+        const timer = setTimeout(async () => {
+            try {
+                const res = await api.get('/admin/users', { params: { search: userQuery.trim() } });
+                setUserResults(res.data.users || []);
+                setIsUserDropdownOpen(true);
+            } catch (err) {
+                console.error(err);
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [accessToken, userQuery, adjustUserId]);
+
+    const handleUserQueryChange = (e) => {
+        const value = e.target.value;
+        setUserQuery(value);
+        setAdjustUserId(''); // typing again invalidates the previous selection
+        if (value.trim().length < 2) {
+            setUserResults([]);
+            setIsUserDropdownOpen(false);
+        }
+    };
+
+    const handleSelectUser = (user) => {
+        setAdjustUserId(user._id);
+        setUserQuery(`${user.fullName} (${user.email})`);
+        setUserResults([]);
+        setIsUserDropdownOpen(false);
+    };
 
     const handleAdjustCoins = async () => {
         if (!adjustUserId || !adjustAmount) return;
@@ -74,7 +113,7 @@ export default function ReferralCoinManagement() {
                 reason: adjustReason
             });
             showToast('Coin balance adjusted!', 'success');
-            setAdjustUserId(''); setAdjustAmount(''); setAdjustReason('');
+            setAdjustUserId(''); setUserQuery(''); setAdjustAmount(''); setAdjustReason('');
         } catch (err) {
             showToast(errMsg(err, 'Failed to adjust coins'), 'error');
         } finally {
@@ -238,9 +277,34 @@ export default function ReferralCoinManagement() {
                         <div className="bg-white p-5 sm:p-6 rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb]">
                             <h3 className="text-[16px] sm:text-[18px] font-bold text-[#222777] mb-4">Manual Coin Adjustment</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div>
-                                    <label className="block text-[11px] font-bold text-[#464651] mb-2 uppercase tracking-wider">User ID</label>
-                                    <input type="text" value={adjustUserId} onChange={(e) => setAdjustUserId(e.target.value)} placeholder="User ObjectId" className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[13px] font-mono outline-none focus:border-[#222777]" />
+                                <div className="relative">
+                                    <label className="block text-[11px] font-bold text-[#464651] mb-2 uppercase tracking-wider">User</label>
+                                    <input
+                                        type="text"
+                                        value={userQuery}
+                                        onChange={handleUserQueryChange}
+                                        onFocus={() => userResults.length > 0 && setIsUserDropdownOpen(true)}
+                                        onBlur={() => setTimeout(() => setIsUserDropdownOpen(false), 150)}
+                                        placeholder="Search by name or email..."
+                                        autoComplete="off"
+                                        className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[13px] outline-none focus:border-[#222777]"
+                                    />
+                                    {isUserDropdownOpen && userResults.length > 0 && (
+                                        <div className="absolute z-10 mt-1 w-full bg-white border border-[#c7c5d3] rounded-md shadow-lg max-h-48 overflow-y-auto">
+                                            {userResults.map((u) => (
+                                                <button
+                                                    key={u._id}
+                                                    type="button"
+                                                    onMouseDown={() => handleSelectUser(u)}
+                                                    className="w-full text-left px-3 py-2 text-[13px] hover:bg-[#f1f3fc] transition-colors border-b border-[#f1f3fc] last:border-0"
+                                                >
+                                                    <div className="font-semibold text-[#181c22]">{u.fullName}</div>
+                                                    <div className="text-[11px] text-[#777682] font-mono">{u.email}</div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {adjustUserId && <p className="text-[10px] text-[#00c2cb] font-bold mt-1.5">✓ User selected</p>}
                                 </div>
                                 <div>
                                     <label className="block text-[11px] font-bold text-[#464651] mb-2 uppercase tracking-wider">Amount (+/-)</label>

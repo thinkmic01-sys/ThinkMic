@@ -365,17 +365,10 @@ export default function Settings() {
                                     </div>
                                     <div>
                                         <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Preferred Language</label>
-                                        <div className="relative">
-                                            <select
-                                                name="language" value={profileData.language} onChange={handleProfileChange}
-                                                className="w-full appearance-none bg-[#f9f9ff] rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2.5 px-3 pr-8 text-[14px] outline-none transition-shadow cursor-pointer"
-                                            >
-                                                <option>English (US)</option>
-                                                <option>Spanish (ES)</option>
-                                                <option>French (FR)</option>
-                                            </select>
-                                            <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[16px] text-[#777682] pointer-events-none">expand_more</span>
-                                        </div>
+                                        <input
+                                            type="text" value="English" disabled
+                                            className="w-full bg-gray-100 rounded-md border border-gray-200 text-gray-500 py-2.5 px-3 text-[14px] outline-none cursor-not-allowed"
+                                        />
                                     </div>
                                 </div>
 

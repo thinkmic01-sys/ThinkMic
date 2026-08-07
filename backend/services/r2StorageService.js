@@ -47,11 +47,14 @@ async function getR2UploadPresignedUrl(key, mimeType, expiresIn = 300) {
     return getSignedUrl(getClient(), command, { expiresIn });
 }
 
-// Presigned GET URL for secure, time-limited playback/download streaming
-async function getR2DownloadPresignedUrl(key, expiresIn = 3600) {
+// Presigned GET URL for secure, time-limited playback/download streaming.
+// Pass `filename` to make the browser save the file under that name (via
+// ResponseContentDisposition) instead of the raw storage key.
+async function getR2DownloadPresignedUrl(key, expiresIn = 3600, filename) {
     const command = new GetObjectCommand({
         Bucket: process.env.R2_BUCKET_NAME,
-        Key: key
+        Key: key,
+        ...(filename ? { ResponseContentDisposition: `attachment; filename="${filename}"` } : {})
     });
     return getSignedUrl(getClient(), command, { expiresIn });
 }

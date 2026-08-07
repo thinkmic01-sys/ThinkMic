@@ -23,6 +23,11 @@ function normalizeTemplate(value) {
     return TEMPLATE_ALIASES[key] || 'standard';
 }
 
+function reportFilename(report, ext) {
+    const base = (report.title || 'ThinkMic_Report').replace(/[^a-zA-Z0-9_-]/g, '_');
+    return `${base}.${ext}`;
+}
+
 function normalizeSections(rawSections) {
     const s = rawSections || {};
     return {
@@ -103,10 +108,12 @@ exports.getReportStatus = async (req, res) => {
         if (!report) return res.status(404).json({ message: 'Report not found' });
 
         // Prefer a presigned R2 URL (secure, zero server bandwidth) when the file was
-        // mirrored to R2; fall back to the local static path otherwise.
+        // mirrored to R2; fall back to the local static path otherwise. The filename
+        // is set via ResponseContentDisposition so the browser saves it under the
+        // report's title instead of the raw storage key.
         const [pdfUrl, docxUrl] = await Promise.all([
-            report.pdfR2Key ? r2StorageService.getR2DownloadPresignedUrl(report.pdfR2Key) : report.pdfLocalPath,
-            report.docxR2Key ? r2StorageService.getR2DownloadPresignedUrl(report.docxR2Key) : report.docxLocalPath
+            report.pdfR2Key ? r2StorageService.getR2DownloadPresignedUrl(report.pdfR2Key, 3600, reportFilename(report, 'pdf')) : report.pdfLocalPath,
+            report.docxR2Key ? r2StorageService.getR2DownloadPresignedUrl(report.docxR2Key, 3600, reportFilename(report, 'docx')) : report.docxLocalPath
         ]);
 
         res.status(200).json({
@@ -137,7 +144,7 @@ exports.downloadReportFile = async (req, res) => {
         const localPath = type === 'pdf' ? report.pdfLocalPath : report.docxLocalPath;
 
         if (r2Key) {
-            const downloadUrl = await r2StorageService.getR2DownloadPresignedUrl(r2Key);
+            const downloadUrl = await r2StorageService.getR2DownloadPresignedUrl(r2Key, 3600, reportFilename(report, type));
             return res.redirect(downloadUrl);
         }
 

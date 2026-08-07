@@ -1,23 +1,25 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const helpCategories = [
-    { icon: 'rocket_launch', title: 'Getting Started', desc: 'Learn the basics of setting up your account.' },
-    { icon: 'mic', title: 'Using the Mic', desc: 'Detailed guides on hardware setup and integration.' },
-    { icon: 'psychology', title: 'AI Research', desc: 'Explore methodologies for utilizing AI analysis.' },
-    { icon: 'credit_card', title: 'Billing', desc: 'Manage your subscription and view invoices.' },
-    { icon: 'integration_instructions', title: 'API & Integrations', desc: 'Developer documentation for connections.' },
-    { icon: 'list_alt', title: 'Learning List', desc: 'Curated tutorials to master advanced workflows.' },
+    { icon: 'rocket_launch', title: 'Getting Started', desc: 'Set up your profile and take your first steps around ThinkMic.', path: '/app/dashboard' },
+    { icon: 'mic', title: 'Using the Mic', desc: 'Record live audio or upload a file for transcription, in English or Urdu.', path: '/app/research' },
+    { icon: 'psychology', title: 'AI Research', desc: 'See your recordings, transcripts, and AI summaries in one place.', path: '/app/projects' },
+    { icon: 'military_tech', title: 'Coins & Rewards', desc: 'Manage your coin wallet, referrals, and seminar rewards.', path: '/app/achievements' },
+    { icon: 'description', title: 'Exporting Reports', desc: 'Download your reports as PDF or Word, or email them to someone.', path: '/app/reports' },
+    { icon: 'list_alt', title: 'Learning List', desc: 'Track the seminars you have joined or registered for.', path: '/app/courses/my-learning' },
 ];
 
 // Exported so SupportSidebar's Instant Help tab searches this exact same list - single source of truth
 export const faqs = [
-    { question: 'How do I calibrate the AI sentiment analysis?', answer: 'To calibrate the sentiment analysis engine for specific domains, navigate to Settings > AI Processing > Model Calibration. We recommend uploading at least 5 baseline audio samples.' },
-    { question: 'Where can I find my invoice history?', answer: 'You can find your full invoice history by going to Settings > Billing and scrolling down to the "Invoices" section.' },
-    { question: 'What is the difference between standard and high-fidelity transcription?', answer: 'High-fidelity transcription uses a larger AI model that processes audio slower but achieves higher accuracy, especially for complex technical jargon.' },
-    { question: 'How do I export my research data to CSV?', answer: 'Navigate to the Analytics or Submissions page, apply your desired filters, and click the "Export CSV" button in the top right corner of the data table.' },
+    { question: 'How do I record or transcribe audio?', answer: 'Open Projects from the sidebar to reach the Speech Workspace. You can record live (streamed and transcribed in real time) or upload an existing audio file. Both English and Urdu are supported, and a summary is generated automatically once transcription finishes.' },
+    { question: 'How do I download or export my report as PDF or Word?', answer: 'Open the report from Reports Library, then use the "Download PDF" or "Download Word" button on the Report Export page to save it. You can also use "Send via Email" to share it directly with someone.' },
+    { question: 'How do coins and rewards work?', answer: 'You earn coins by completing seminars and inviting peers who join ThinkMic. Referral rewards and seminar reward campaigns are tracked on the Achievements page, along with your full coin transaction history and activity timeline.' },
+    { question: 'How do I join or host a seminar?', answer: 'Browse and register for seminars from the Seminar Library. If you are hosting one, starting the broadcast begins live speech-to-text for attendees; ending it automatically generates a summary that is shared with everyone who registered.' },
 ];
 
 export default function Support() {
+    const navigate = useNavigate();
     const [activeFaq, setActiveFaq] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -40,7 +42,7 @@ export default function Support() {
                     <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-[20px] sm:text-[24px] group-focus-within:text-primary transition-colors">search</span>
                     <input
                         type="text"
-                        placeholder="e.g., 'Configure mic' or 'export'"
+                        placeholder="e.g., 'record audio' or 'download report'"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full h-12 sm:h-14 pl-12 pr-4 rounded-xl border border-gray-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow text-base sm:text-lg placeholder:text-[14px] sm:placeholder:text-[16px]"
@@ -51,7 +53,7 @@ export default function Support() {
             {/* Categories Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-12 sm:mb-16">
                 {helpCategories.map((cat, idx) => (
-                    <div key={idx} className="bg-white p-5 sm:p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer group flex flex-col sm:block items-center text-center sm:text-left">
+                    <div key={idx} onClick={() => navigate(cat.path)} className="bg-white p-5 sm:p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer group flex flex-col sm:block items-center text-center sm:text-left">
                         <div className="w-10 h-10 rounded-lg bg-primary/5 flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-primary/10 transition-colors shrink-0">
                             <span className="material-symbols-outlined text-primary">{cat.icon}</span>
                         </div>

@@ -117,6 +117,13 @@ exports.uploadAudioLocal = async (req, res) => {
                 whisperModel: `skipped-via-${req.body.sttEngine || 'live-stt'}`
             });
 
+            // Mirrors transcriptionWorker.js's Whisper path - without this, Recording.transcriptId
+            // stays unset for every live (Deepgram/Browser) session, which breaks session restore
+            // (getRecordingById's populate('transcriptId') resolves to nothing) and breaks summary
+            // linking too (summarizationWorker.js looks up the Recording BY transcriptId).
+            recording.transcriptId = transcript._id;
+            await recording.save();
+
             await summarizationQueue.add('summarize', {
                 transcriptId: transcript._id,
                 userId: req.user._id,
@@ -185,7 +192,7 @@ exports.getMyRecordings = async (req, res) => {
 exports.getRecordingById = async (req, res) => {
     try {
         const recording = await Recording.findOne({ _id: req.params.id, userId: req.user._id })
-            .populate('transcriptId', 'text segments whisperModel')
+            .populate('transcriptId', 'text segments whisperModel editedText')
             .populate('summaryId', 'summaryText tags queries editedSummaryText')
             .exec();
 
@@ -237,6 +244,11 @@ exports.createRecordingDraft = async (req, res) => {
                 text: rawText || '(No audio detected or transcription empty)',
                 whisperModel: `skipped-via-${sttEngine || 'live-stt'}`
             });
+
+            // See the matching comment in uploadAudioLocal - without this, session restore
+            // and summary linking both silently break for this recording.
+            recording.transcriptId = transcript._id;
+            await recording.save();
 
             await summarizationQueue.add('summarize', {
                 transcriptId: transcript._id,

@@ -40,6 +40,11 @@ const getExtensionForMimeType = (mimeType) => {
 const LOCALE_LANGUAGE_NAMES = { 'en-US': 'English', 'ur-PK': 'Urdu' };
 const localeToLanguageName = (locale) => LOCALE_LANGUAGE_NAMES[locale] || 'English';
 
+// Single global slot for an in-progress live session's text, so a refresh/crash mid-recording
+// doesn't lose everything spoken so far (audio itself can't be recovered from localStorage -
+// only the transcribed text, since MediaRecorder's audio chunks live only in memory).
+const DRAFT_STORAGE_KEY = 'thinkmic_speech_draft_v1';
+
 export default function SpeechWorkspace() {
     // --- STATE MANAGEMENT ---
     const navigate = useNavigate();
@@ -82,6 +87,17 @@ export default function SpeechWorkspace() {
     const [expandedTopicId, setExpandedTopicId] = useState(null);
     const [topics, setTopics] = useState([]);
     const [queries, setQueries] = useState([]);
+
+    // --- TRANSCRIPT EDITING (Point 8) & SESSION RESTORE (Point 29) ---
+    const [audioPlaybackUrl, setAudioPlaybackUrl] = useState(null);
+    const [savedEditedText, setSavedEditedText] = useState(null);
+    const [isEditingTranscript, setIsEditingTranscript] = useState(false);
+    const [editedTranscriptDraft, setEditedTranscriptDraft] = useState('');
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+    // --- LOCAL AUTOSAVE / CRASH RECOVERY (Point 12) ---
+    const [recoveredDraft, setRecoveredDraft] = useState(null);
+    const autosaveIntervalRef = useRef(null);
 
     // Custom Toast State
     const [toast, setToast] = useState({ show: false, message: '', type: 'error' });
@@ -175,8 +191,17 @@ export default function SpeechWorkspace() {
                     } else if (transcript.text) {
                         setTranscripts([{ time: 0, text: transcript.text }]);
                     }
+                    // A prior manual edit always wins over the raw ASR text (mirrors how
+                    // summary.editedSummaryText is preferred below)
+                    if (transcript.editedText) {
+                        setSavedEditedText(transcript.editedText);
+                    }
                 } else if (transcriptIdParam) {
                     setCurrentTranscriptId(transcriptIdParam);
+                }
+
+                if (rec.playbackUrl) {
+                    setAudioPlaybackUrl(rec.playbackUrl);
                 }
 
                 if (summary) {
@@ -204,6 +229,93 @@ export default function SpeechWorkspace() {
         hydrateSession();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [recordingIdParam]);
+
+    // --- CRASH RECOVERY: on a fresh visit (not an explicit ?recordingId= resume link),
+    // check for a leftover local draft from a session that never got saved (e.g. a refresh
+    // mid-recording) and offer to bring the transcribed text back ---
+    useEffect(() => {
+        if (recordingIdParam) return; // explicit resume already handled above
+        try {
+            const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+            if (!raw) return;
+            const draft = JSON.parse(raw);
+            if (draft && Array.isArray(draft.transcripts) && draft.transcripts.length > 0) {
+                setRecoveredDraft(draft);
+            }
+        } catch (e) {
+            localStorage.removeItem(DRAFT_STORAGE_KEY);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const restoreDraft = () => {
+        if (!recoveredDraft) return;
+        setTranscripts(recoveredDraft.transcripts || []);
+        setInterimText(recoveredDraft.interimText || '');
+        if (recoveredDraft.language) setLanguage(recoveredDraft.language);
+        if (recoveredDraft.sttEngine) setSttEngine(recoveredDraft.sttEngine);
+        showToast('Recovered transcript text restored. Audio was not recoverable — start a new recording to keep capturing.', 'success');
+        setRecoveredDraft(null);
+    };
+
+    const discardDraft = () => {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+        setRecoveredDraft(null);
+    };
+
+    // --- LOCAL AUTOSAVE: while actively recording/paused, periodically snapshot the
+    // transcribed text to localStorage so a browser refresh/crash doesn't lose it ---
+    useEffect(() => {
+        const isLive = recordingState === 'recording' || recordingState === 'paused';
+        if (!isLive) {
+            if (autosaveIntervalRef.current) {
+                clearInterval(autosaveIntervalRef.current);
+                autosaveIntervalRef.current = null;
+            }
+            return;
+        }
+
+        const saveDraft = () => {
+            try {
+                localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({
+                    projectId: projectId || null,
+                    sttEngine,
+                    language,
+                    transcripts,
+                    interimText: interimTextRef.current,
+                    savedAt: Date.now()
+                }));
+            } catch (e) {
+                // localStorage full or unavailable (e.g. private browsing) - autosave is
+                // best-effort only, never block recording over it
+            }
+        };
+
+        saveDraft();
+        autosaveIntervalRef.current = setInterval(saveDraft, 8000);
+        return () => {
+            if (autosaveIntervalRef.current) {
+                clearInterval(autosaveIntervalRef.current);
+                autosaveIntervalRef.current = null;
+            }
+        };
+    }, [recordingState, transcripts, projectId, sttEngine, language]);
+
+    // --- REFRESH/CLOSE GUARD: browsers only allow the native confirmation prompt on
+    // beforeunload (custom text/button labels are ignored for security reasons), but
+    // triggering it at all stops an accidental refresh mid-seminar from silently wiping data ---
+    useEffect(() => {
+        const isLive = recordingState === 'recording' || recordingState === 'paused';
+        if (!isLive) return;
+
+        const handleBeforeUnload = (e) => {
+            e.preventDefault();
+            e.returnValue = '';
+            return '';
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [recordingState]);
 
     // --- UPLOAD LOGIC TO BACKEND ---
     // Uploads the audio bytes directly from the browser to R2 (bypassing our backend
@@ -272,6 +384,7 @@ export default function SpeechWorkspace() {
             }
 
             setUploadProgress(100);
+            localStorage.removeItem(DRAFT_STORAGE_KEY);
             showToast('Audio saved successfully to the server!', 'success');
         } catch (error) {
             console.error("Upload error:", error);
@@ -330,6 +443,9 @@ export default function SpeechWorkspace() {
                 setSummaryText('');
                 setCurrentTranscriptId(null);
                 setTopics([]);
+                setSavedEditedText(null);
+                setAudioPlaybackUrl(null);
+                setRecoveredDraft(null);
             }
             
             // For Deepgram, we need timeslice chunks. For others, we also need it for the final blob.
@@ -504,6 +620,39 @@ export default function SpeechWorkspace() {
         }
         // Allow re-selecting the same file after a previous rejection
         e.target.value = '';
+    };
+
+    // --- TRANSCRIPT EDITING (Point 8) ---
+    const startEditingTranscript = () => {
+        const currentText = savedEditedText !== null
+            ? savedEditedText
+            : transcripts.map((t) => t.text).join(' ').trim();
+        setEditedTranscriptDraft(currentText);
+        setIsEditingTranscript(true);
+    };
+
+    const cancelEditingTranscript = () => {
+        setIsEditingTranscript(false);
+        setEditedTranscriptDraft('');
+    };
+
+    const saveEditedTranscript = async () => {
+        if (!currentTranscriptId) {
+            showToast('No saved transcript to edit yet — stop the recording first.', 'error');
+            return;
+        }
+        setIsSavingEdit(true);
+        try {
+            await api.patch(`/transcriptions/${currentTranscriptId}`, { editedText: editedTranscriptDraft });
+            setSavedEditedText(editedTranscriptDraft);
+            setIsEditingTranscript(false);
+            showToast('Transcript updated.', 'success');
+        } catch (error) {
+            console.error('Failed to save transcript edit:', error);
+            showToast(`Could not save edit: ${error.response?.data?.message || 'Unknown error'}`, 'error');
+        } finally {
+            setIsSavingEdit(false);
+        }
     };
 
     // --- INTERACTIVE FUNCTIONALITY HANDLERS ---
@@ -747,6 +896,24 @@ export default function SpeechWorkspace() {
                 </div>
             </div>
 
+            {recoveredDraft && (
+                <div className="max-w-[1280px] mx-auto w-full px-4 sm:px-6 pt-4">
+                    <div className="bg-[#fff8e1] border border-[#e8c547] rounded-lg px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <p className="text-[13px] sm:text-[14px] text-[#181c22]">
+                            Found unsaved transcript text from a previous session (last saved {new Date(recoveredDraft.savedAt).toLocaleTimeString()}). Audio wasn't recoverable — only the transcribed text.
+                        </p>
+                        <div className="flex gap-2 shrink-0">
+                            <button onClick={discardDraft} className="text-[13px] font-bold text-[#777682] hover:text-[#181c22] transition-colors px-3 py-1.5">
+                                Discard
+                            </button>
+                            <button onClick={restoreDraft} className="bg-[#222777] text-white text-[13px] font-bold px-4 py-1.5 rounded-md hover:bg-[#3a3f8f] transition-colors">
+                                Restore
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* --- MAIN LAYOUT --- */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 pb-28 md:pb-32 flex flex-col lg:flex-row gap-4 sm:gap-6 max-w-[1280px] mx-auto w-full">
 
@@ -775,9 +942,18 @@ export default function SpeechWorkspace() {
                                     <span className="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 text-[16px] text-[#777682] pointer-events-none">expand_more</span>
                                 </div>
                                 <div className="flex gap-2 sm:gap-3 ml-2 sm:ml-4 border-l border-[#e0e2eb] pl-2 sm:pl-4">
-                                    <button 
+                                    {!isEditingTranscript && (
+                                        <button
+                                            onClick={startEditingTranscript}
+                                            title="Edit transcript"
+                                            className="text-[#777682] hover:text-[#222777] transition-colors"
+                                        >
+                                            <span className="material-symbols-outlined text-[18px] sm:text-[20px]">edit</span>
+                                        </button>
+                                    )}
+                                    <button
                                         onClick={() => {
-                                            let text = transcripts.map(t => t.text).join(' ');
+                                            let text = savedEditedText !== null ? savedEditedText : transcripts.map(t => t.text).join(' ');
                                             if (interimTextRef.current) text += ' ' + interimTextRef.current;
                                             navigator.clipboard.writeText(text);
                                             showToast("Copied to clipboard!", "success");
@@ -790,36 +966,77 @@ export default function SpeechWorkspace() {
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
-                            {transcripts.map((t, idx) => (
-                                <div key={idx} className="flex gap-3 sm:gap-4">
-                                    <span className={`font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 ${recordingState === 'recording' ? 'text-[#006e73]' : 'text-[#777682]'}`}>
-                                        {formatTime(t.time)}
-                                    </span>
-                                    <p className={`text-[#181c22] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] ${language === 'ur-PK' ? 'font-urdu' : ''}`} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
-                                        {t.text}
-                                    </p>
+                        {audioPlaybackUrl && (
+                            <div className="px-4 sm:px-6 py-2 sm:py-3 border-b border-[#e0e2eb] bg-[#f9f9ff]">
+                                <audio controls src={audioPlaybackUrl} className="w-full h-9">
+                                    Your browser does not support audio playback.
+                                </audio>
+                            </div>
+                        )}
+
+                        {isEditingTranscript ? (
+                            <div className="flex-1 flex flex-col p-4 sm:p-6 gap-3">
+                                <textarea
+                                    value={editedTranscriptDraft}
+                                    onChange={(e) => setEditedTranscriptDraft(e.target.value)}
+                                    className={`flex-1 w-full min-h-[200px] p-3 sm:p-4 text-[14px] sm:text-[16px] text-[#181c22] leading-[1.7] border border-[#c7c5d3] rounded-md outline-none resize-none ${language === 'ur-PK' ? 'font-urdu' : ''}`}
+                                    dir={language === 'ur-PK' ? 'rtl' : 'ltr'}
+                                />
+                                <div className="flex justify-end gap-2 sm:gap-3">
+                                    <button
+                                        onClick={cancelEditingTranscript}
+                                        disabled={isSavingEdit}
+                                        className="text-[13px] sm:text-[14px] font-bold text-[#777682] hover:text-[#181c22] transition-colors px-3 py-2"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={saveEditedTranscript}
+                                        disabled={isSavingEdit}
+                                        className="bg-[#222777] text-white text-[13px] sm:text-[14px] font-bold px-4 py-2 rounded-md hover:bg-[#3a3f8f] transition-colors disabled:opacity-60"
+                                    >
+                                        {isSavingEdit ? 'Saving...' : 'Save Transcript'}
+                                    </button>
                                 </div>
-                            ))}
-                            {interimText && (
-                                <div className="flex gap-3 sm:gap-4">
-                                    <span className="font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 text-[#006e73]">
-                                        {formatTime(Math.floor((Date.now() - recordingStartTimeRef.current) / 1000))}
-                                    </span>
-                                    <p className={`text-[#3a3f8f] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] italic ${language === 'ur-PK' ? 'font-urdu' : ''}`} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
-                                        {interimText}
-                                    </p>
-                                </div>
-                            )}
-                            {recordingState === 'recording' && (
-                                <div className="flex gap-3 sm:gap-4">
-                                    <span className="text-[#006e73] font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 opacity-50">
-                                        {formatTime(timeElapsed)}
-                                    </span>
-                                    <span className="w-[2px] h-4 sm:h-5 bg-[#00c2cb] animate-pulse mt-1 sm:mt-1.5"></span>
-                                </div>
-                            )}
-                        </div>
+                            </div>
+                        ) : savedEditedText !== null ? (
+                            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                                <p className={`text-[#181c22] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] whitespace-pre-wrap ${language === 'ur-PK' ? 'font-urdu' : ''}`} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
+                                    {savedEditedText}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+                                {transcripts.map((t, idx) => (
+                                    <div key={idx} className="flex gap-3 sm:gap-4">
+                                        <span className={`font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 ${recordingState === 'recording' ? 'text-[#006e73]' : 'text-[#777682]'}`}>
+                                            {formatTime(t.time)}
+                                        </span>
+                                        <p className={`text-[#181c22] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] ${language === 'ur-PK' ? 'font-urdu' : ''}`} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
+                                            {t.text}
+                                        </p>
+                                    </div>
+                                ))}
+                                {interimText && (
+                                    <div className="flex gap-3 sm:gap-4">
+                                        <span className="font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 text-[#006e73]">
+                                            {formatTime(Math.floor((Date.now() - recordingStartTimeRef.current) / 1000))}
+                                        </span>
+                                        <p className={`text-[#3a3f8f] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] italic ${language === 'ur-PK' ? 'font-urdu' : ''}`} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
+                                            {interimText}
+                                        </p>
+                                    </div>
+                                )}
+                                {recordingState === 'recording' && (
+                                    <div className="flex gap-3 sm:gap-4">
+                                        <span className="text-[#006e73] font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 opacity-50">
+                                            {formatTime(timeElapsed)}
+                                        </span>
+                                        <span className="w-[2px] h-4 sm:h-5 bg-[#00c2cb] animate-pulse mt-1 sm:mt-1.5"></span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* Processing Intent Box */}

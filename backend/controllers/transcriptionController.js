@@ -22,11 +22,22 @@ exports.getTranscriptStatus = async (req, res) => {
 exports.updateTranscript = async (req, res) => {
     try {
         const { id } = req.params;
-        const { editedText } = req.body;
+        const { text, editedText } = req.body;
+
+        // `text` is the raw/live field (used by SpeechWorkspace's periodic autosave while
+        // recording is in progress); `editedText` is the user's manual correction layer.
+        // Both go through this same endpoint but are kept separate fields.
+        const update = {};
+        if (text !== undefined) update.text = text;
+        if (editedText !== undefined) update.editedText = editedText;
+
+        if (Object.keys(update).length === 0) {
+            return res.status(400).json({ message: 'No fields to update' });
+        }
 
         const transcript = await Transcript.findOneAndUpdate(
             { _id: id, userId: req.user._id },
-            { editedText },
+            update,
             { new: true }
         );
 

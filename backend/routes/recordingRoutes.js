@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const { getMyRecordings, uploadAudioLocal, getRecordingById, getUploadUrl, createRecordingDraft, deleteRecording } = require('../controllers/recordingController');
+const { getMyRecordings, uploadAudioLocal, getRecordingById, getUploadUrl, createRecordingDraft, deleteRecording, initLiveSession } = require('../controllers/recordingController');
 const { protect } = require('../middleware/authMiddleware');
 const { expensiveOperationLimiter } = require('../middleware/rateLimiters');
 
@@ -71,6 +71,10 @@ router.get('/upload-url', expensiveOperationLimiter, getUploadUrl);
 
 // Finalizes a recording after a direct R2 upload completes
 router.post('/draft', expensiveOperationLimiter, createRecordingDraft);
+
+// Creates a placeholder Recording + empty Transcript the moment a live recording starts,
+// so the transcript text can be autosaved (PATCH /transcriptions/:id) as it streams in
+router.post('/live/start', initLiveSession);
 
 // Our new Local Upload route. Multer handles the file labeled 'audio' in the form data
 router.post('/', expensiveOperationLimiter, handleAudioUpload, uploadAudioLocal);

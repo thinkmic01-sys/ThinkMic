@@ -98,6 +98,11 @@ export default function SpeechWorkspace() {
     // --- LOCAL AUTOSAVE / CRASH RECOVERY (Point 12) ---
     const [recoveredDraft, setRecoveredDraft] = useState(null);
     const autosaveIntervalRef = useRef(null);
+    // Server-side draft session (see initLiveSession): set once /recordings/live/start
+    // resolves after a fresh recording starts, so autosave and the Stop-time finalize call
+    // both have somewhere to write to instead of only ever persisting text at Stop.
+    const draftRecordingIdRef = useRef(null);
+    const draftTranscriptIdRef = useRef(null);
 
     // Custom Toast State
     const [toast, setToast] = useState({ show: false, message: '', type: 'error' });
@@ -263,8 +268,10 @@ export default function SpeechWorkspace() {
         setRecoveredDraft(null);
     };
 
-    // --- LOCAL AUTOSAVE: while actively recording/paused, periodically snapshot the
-    // transcribed text to localStorage so a browser refresh/crash doesn't lose it ---
+    // --- AUTOSAVE: while actively recording/paused, periodically snapshot the transcribed
+    // text both to localStorage (instant, survives even if the network/backend is down) and
+    // to the server-side draft transcript created by initLiveSession (survives a lost device
+    // or cleared browser storage, not just a same-device refresh) ---
     useEffect(() => {
         const isLive = recordingState === 'recording' || recordingState === 'paused';
         if (!isLive) {
@@ -288,6 +295,14 @@ export default function SpeechWorkspace() {
             } catch (e) {
                 // localStorage full or unavailable (e.g. private browsing) - autosave is
                 // best-effort only, never block recording over it
+            }
+
+            if (draftTranscriptIdRef.current) {
+                let text = transcripts.map((t) => t.text).join(' ').trim();
+                if (interimTextRef.current) text = (text + ' ' + interimTextRef.current).trim();
+                api.patch(`/transcriptions/${draftTranscriptIdRef.current}`, { text }).catch((err) => {
+                    console.error('Server-side autosave failed:', err);
+                });
             }
         };
 
@@ -328,13 +343,16 @@ export default function SpeechWorkspace() {
 
         const mimeType = audioBlob.type || 'audio/webm';
         const engineForUpload = isFileUpload ? undefined : sttEngine;
+        // A manual file upload (the "Upload" button) has no server-side draft session -
+        // only a live-recorded Stop finalizes the one initLiveSession created at Start.
+        const existingRecordingId = !isFileUpload ? draftRecordingIdRef.current : null;
         const onUploadProgress = (evt) => {
             if (evt.total) setUploadProgress(Math.round((evt.loaded / evt.total) * 100));
         };
 
         try {
             const { data: presign } = await api.get('/recordings/upload-url', {
-                params: { mimeType }
+                params: { mimeType, recordingId: existingRecordingId || undefined }
             });
 
             if (presign.storage === 'r2') {
@@ -376,6 +394,9 @@ export default function SpeechWorkspace() {
                 if (projectId) {
                     formData.append('projectId', projectId);
                 }
+                if (existingRecordingId) {
+                    formData.append('recordingId', existingRecordingId);
+                }
 
                 await api.post('/recordings', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' },
@@ -385,6 +406,8 @@ export default function SpeechWorkspace() {
 
             setUploadProgress(100);
             localStorage.removeItem(DRAFT_STORAGE_KEY);
+            draftRecordingIdRef.current = null;
+            draftTranscriptIdRef.current = null;
             showToast('Audio saved successfully to the server!', 'success');
         } catch (error) {
             console.error("Upload error:", error);
@@ -446,6 +469,26 @@ export default function SpeechWorkspace() {
                 setSavedEditedText(null);
                 setAudioPlaybackUrl(null);
                 setRecoveredDraft(null);
+
+                // Server-side draft: create the Recording+Transcript now so the periodic
+                // autosave below (and the Stop-time finalize call) have something to write
+                // to, instead of the transcript only ever being persisted once at Stop.
+                // Best-effort - if this fails, local recording and the localStorage autosave
+                // banner still protect the session, just without server-side durability.
+                draftRecordingIdRef.current = null;
+                draftTranscriptIdRef.current = null;
+                api.post('/recordings/live/start', {
+                    title: `Live Workspace Recording - ${new Date().toLocaleString()}`,
+                    projectId: projectId || undefined,
+                    sttEngine,
+                    language
+                }).then(({ data }) => {
+                    draftRecordingIdRef.current = data.recordingId;
+                    draftTranscriptIdRef.current = data.transcriptId;
+                    setCurrentTranscriptId(data.transcriptId);
+                }).catch((err) => {
+                    console.error('Failed to start server-side draft session:', err);
+                });
             }
             
             // For Deepgram, we need timeslice chunks. For others, we also need it for the final blob.

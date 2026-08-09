@@ -43,7 +43,7 @@ const attachPlaybackUrls = async (recordings) => {
 // @access  Private
 exports.getUploadUrl = async (req, res) => {
     try {
-        const { mimeType } = req.query;
+        const { mimeType, recordingId: reuseRecordingId } = req.query;
 
         if (!mimeType || !mimeType.startsWith('audio/')) {
             return res.status(400).json({ message: 'Invalid or missing audio mimeType' });
@@ -64,7 +64,12 @@ exports.getUploadUrl = async (req, res) => {
         // Pre-generate the Mongo _id this recording will use once finalized, so the R2 key
         // is partitioned exactly as recordings/{userId}/{recordingId}.{ext} - keeping the R2
         // object and its Mongo document permanently tied together (tenant isolation, easy audits).
-        const recordingId = new mongoose.Types.ObjectId();
+        // When a live session already created a draft Recording (see initLiveSession), reuse
+        // its id here instead of minting a new one, so createRecordingDraft finalizes that
+        // same draft rather than creating a second, orphaned Recording.
+        const recordingId = (reuseRecordingId && mongoose.Types.ObjectId.isValid(reuseRecordingId))
+            ? new mongoose.Types.ObjectId(reuseRecordingId)
+            : new mongoose.Types.ObjectId();
         const r2Key = `recordings/${req.user._id}/${recordingId}.${ext}`;
 
         const uploadUrl = await r2StorageService.getR2UploadPresignedUrl(r2Key, mimeType, 300);
@@ -82,6 +87,56 @@ exports.getUploadUrl = async (req, res) => {
     }
 };
 
+// @desc    Start a live recording session: creates a placeholder Recording + empty
+//          Transcript immediately, before any audio exists, so the transcript text can
+//          be autosaved via PATCH /transcriptions/:id as it streams in, instead of only
+//          ever being written once at Stop. uploadAudioLocal and createRecordingDraft
+//          both finalize this same draft (by recordingId) rather than creating a second
+//          Recording once the audio itself is ready - Transcript.recordingId is unique,
+//          so a second Recording would just orphan the transcript already autosaved here.
+// @route   POST /api/v1/recordings/live/start
+// @access  Private
+exports.initLiveSession = async (req, res) => {
+    try {
+        const { title, projectId, sttEngine } = req.body;
+
+        const recordingData = {
+            userId: req.user._id,
+            title: title || 'Untitled Research Audio',
+            mimeType: 'audio/webm', // placeholder, corrected once the real audio is attached at Stop
+            fileSizeBytes: 0,
+            s3Key: `pending-${Date.now()}`,
+            status: 'uploaded'
+        };
+        if (projectId) recordingData.projectId = projectId;
+
+        const recording = await Recording.create(recordingData);
+        const transcript = await Transcript.create({
+            recordingId: recording._id,
+            userId: req.user._id,
+            // Transcript.text has `required: true`, which Mongoose enforces as non-empty on
+            // create() - an empty string fails validation, so seed a placeholder that the
+            // first autosave PATCH (which skips validators on update) immediately overwrites.
+            text: '(Recording in progress...)',
+            // Deliberately not setting `language` here: Transcript.text is a text index, and
+            // MongoDB treats a field literally named `language` on a text-indexed document as
+            // the reserved per-document stemming-language override - passing a BCP-47 locale
+            // like "en-US" (as opposed to a Mongo-recognized language name) throws "language
+            // override unsupported". The existing bypass paths in uploadAudioLocal/
+            // createRecordingDraft already avoid this by never setting it for live engines.
+            whisperModel: `skipped-via-${sttEngine || 'live-stt'}`
+        });
+
+        recording.transcriptId = transcript._id;
+        await recording.save();
+
+        res.status(201).json({ recordingId: recording._id, transcriptId: transcript._id });
+    } catch (error) {
+        console.error('Init Live Session Error:', error);
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
 // @desc    Upload audio locally
 // @route   POST /api/v1/recordings
 // @access  Private
@@ -92,37 +147,66 @@ exports.uploadAudioLocal = async (req, res) => {
             return res.status(400).json({ message: 'No audio file provided' });
         }
 
-        // Create the recording document in the database
-        const recordingData = {
-            userId: req.user._id,
-            title: req.body.title || 'Untitled Research Audio',
-            mimeType: cleanMimeType(req.file.mimetype),
-            fileSizeBytes: req.file.size,
-            s3Key: req.file.filename, // We temporarily store the local filename here
-            status: 'uploaded'
-        };
+        // If recordingId points at an existing draft (see initLiveSession), finalize it in
+        // place instead of creating a second Recording, which would orphan the transcript
+        // already linked (and possibly already autosaved) to the original draft.
+        let recording = req.body.recordingId
+            ? await Recording.findOne({ _id: req.body.recordingId, userId: req.user._id })
+            : null;
+        const isNewRecording = !recording;
 
-        if (req.body.projectId) {
-            recordingData.projectId = req.body.projectId;
+        if (recording) {
+            recording.mimeType = cleanMimeType(req.file.mimetype);
+            recording.fileSizeBytes = req.file.size;
+            recording.s3Key = req.file.filename;
+            recording.status = 'uploaded';
+            if (req.body.title) recording.title = req.body.title;
+            if (req.body.projectId) recording.projectId = req.body.projectId;
+            await recording.save();
+        } else {
+            const recordingData = {
+                userId: req.user._id,
+                title: req.body.title || 'Untitled Research Audio',
+                mimeType: cleanMimeType(req.file.mimetype),
+                fileSizeBytes: req.file.size,
+                s3Key: req.file.filename, // We temporarily store the local filename here
+                status: 'uploaded'
+            };
+
+            if (req.body.projectId) {
+                recordingData.projectId = req.body.projectId;
+            }
+
+            recording = await Recording.create(recordingData);
         }
 
-        const recording = await Recording.create(recordingData);
-
         if (req.body.sttEngine === 'Browser' || req.body.sttEngine === 'Deepgram' || req.body.rawText !== undefined) {
-            // Bypass Whisper: Create transcript directly and enqueue summarization
-            const transcript = await Transcript.create({
-                recordingId: recording._id,
-                userId: req.user._id,
-                text: req.body.rawText || '(No audio detected or transcription empty)',
-                whisperModel: `skipped-via-${req.body.sttEngine || 'live-stt'}`
-            });
+            // Bypass Whisper: the transcript already exists (live text) or gets created now,
+            // then enqueue summarization
+            let transcript;
+            if (recording.transcriptId) {
+                // Created by initLiveSession and possibly already autosaved - just make sure
+                // it holds the final text before summarizing.
+                transcript = await Transcript.findByIdAndUpdate(
+                    recording.transcriptId,
+                    { text: req.body.rawText || '(No audio detected or transcription empty)' },
+                    { new: true }
+                );
+            } else {
+                transcript = await Transcript.create({
+                    recordingId: recording._id,
+                    userId: req.user._id,
+                    text: req.body.rawText || '(No audio detected or transcription empty)',
+                    whisperModel: `skipped-via-${req.body.sttEngine || 'live-stt'}`
+                });
 
-            // Mirrors transcriptionWorker.js's Whisper path - without this, Recording.transcriptId
-            // stays unset for every live (Deepgram/Browser) session, which breaks session restore
-            // (getRecordingById's populate('transcriptId') resolves to nothing) and breaks summary
-            // linking too (summarizationWorker.js looks up the Recording BY transcriptId).
-            recording.transcriptId = transcript._id;
-            await recording.save();
+                // Mirrors transcriptionWorker.js's Whisper path - without this, Recording.transcriptId
+                // stays unset for every live (Deepgram/Browser) session, which breaks session restore
+                // (getRecordingById's populate('transcriptId') resolves to nothing) and breaks summary
+                // linking too (summarizationWorker.js looks up the Recording BY transcriptId).
+                recording.transcriptId = transcript._id;
+                await recording.save();
+            }
 
             await summarizationQueue.add('summarize', {
                 transcriptId: transcript._id,
@@ -153,7 +237,7 @@ exports.uploadAudioLocal = async (req, res) => {
             });
         }
 
-        res.status(201).json({
+        res.status(isNewRecording ? 201 : 200).json({
             message: 'Audio uploaded successfully',
             recording
         });
@@ -217,38 +301,67 @@ exports.createRecordingDraft = async (req, res) => {
     try {
         const { title, mimeType, fileSizeBytes, r2Key, recordingId, projectId, sttEngine, rawText } = req.body;
 
-        const recordingData = {
-            userId: req.user._id,
-            title: title || 'Untitled Research Audio',
-            mimeType,
-            fileSizeBytes,
-            // r2Key is the durable reference once uploaded; s3Key stays required by
-            // the schema, so mirror it there too for any code path still keyed on s3Key
-            s3Key: r2Key || `pending-${Date.now()}`,
-            status: 'uploaded'
-        };
-        if (r2Key) recordingData.r2Key = r2Key;
-        if (projectId) recordingData.projectId = projectId;
-        // Keep the Mongo _id in sync with the recordingId issued by GET /upload-url,
-        // so the R2 key (recordings/{userId}/{recordingId}.ext) matches this document's _id
-        if (recordingId) recordingData._id = recordingId;
+        // If recordingId points at an existing draft (see initLiveSession), finalize it in
+        // place instead of creating a duplicate - Transcript.recordingId is unique, so a
+        // second Recording would orphan the transcript already autosaved to the original.
+        let recording = recordingId
+            ? await Recording.findOne({ _id: recordingId, userId: req.user._id })
+            : null;
+        const isNewRecording = !recording;
 
-        const recording = await Recording.create(recordingData);
+        if (recording) {
+            if (mimeType) recording.mimeType = mimeType;
+            if (fileSizeBytes !== undefined) recording.fileSizeBytes = fileSizeBytes;
+            if (r2Key) { recording.r2Key = r2Key; recording.s3Key = r2Key; }
+            if (title) recording.title = title;
+            if (projectId) recording.projectId = projectId;
+            recording.status = 'uploaded';
+            await recording.save();
+        } else {
+            const recordingData = {
+                userId: req.user._id,
+                title: title || 'Untitled Research Audio',
+                mimeType,
+                fileSizeBytes,
+                // r2Key is the durable reference once uploaded; s3Key stays required by
+                // the schema, so mirror it there too for any code path still keyed on s3Key
+                s3Key: r2Key || `pending-${Date.now()}`,
+                status: 'uploaded'
+            };
+            if (r2Key) recordingData.r2Key = r2Key;
+            if (projectId) recordingData.projectId = projectId;
+            // Keep the Mongo _id in sync with the recordingId issued by GET /upload-url,
+            // so the R2 key (recordings/{userId}/{recordingId}.ext) matches this document's _id
+            if (recordingId) recordingData._id = recordingId;
+
+            recording = await Recording.create(recordingData);
+        }
 
         if (r2Key && (sttEngine === 'Browser' || sttEngine === 'Deepgram' || rawText !== undefined)) {
             // Same bypass as uploadAudioLocal: live-recorded audio already has its
             // transcript from the browser/Deepgram, so skip Whisper entirely.
-            const transcript = await Transcript.create({
-                recordingId: recording._id,
-                userId: req.user._id,
-                text: rawText || '(No audio detected or transcription empty)',
-                whisperModel: `skipped-via-${sttEngine || 'live-stt'}`
-            });
+            let transcript;
+            if (recording.transcriptId) {
+                // Created by initLiveSession and possibly already autosaved - just make sure
+                // it holds the final text before summarizing.
+                transcript = await Transcript.findByIdAndUpdate(
+                    recording.transcriptId,
+                    { text: rawText || '(No audio detected or transcription empty)' },
+                    { new: true }
+                );
+            } else {
+                transcript = await Transcript.create({
+                    recordingId: recording._id,
+                    userId: req.user._id,
+                    text: rawText || '(No audio detected or transcription empty)',
+                    whisperModel: `skipped-via-${sttEngine || 'live-stt'}`
+                });
 
-            // See the matching comment in uploadAudioLocal - without this, session restore
-            // and summary linking both silently break for this recording.
-            recording.transcriptId = transcript._id;
-            await recording.save();
+                // See the matching comment in uploadAudioLocal - without this, session restore
+                // and summary linking both silently break for this recording.
+                recording.transcriptId = transcript._id;
+                await recording.save();
+            }
 
             await summarizationQueue.add('summarize', {
                 transcriptId: transcript._id,
@@ -278,7 +391,7 @@ exports.createRecordingDraft = async (req, res) => {
             });
         }
 
-        res.status(201).json({ recording });
+        res.status(isNewRecording ? 201 : 200).json({ recording });
     } catch (error) {
         console.error('Create Recording Error:', error);
         res.status(500).json({ message: 'Server Error', error: error.message });

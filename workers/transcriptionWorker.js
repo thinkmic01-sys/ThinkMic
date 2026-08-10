@@ -48,7 +48,10 @@ const worker = new Worker('transcription', async (job) => {
         const transcript = await Transcript.create({
             recordingId,
             userId,
-            text: transcriptionResult.text,
+            // Transcript.text has `required: true`, which Mongoose rejects for an empty
+            // string - Whisper returns "" for audio with no detectable speech (silence,
+            // tone, non-speech noise), which would otherwise crash this job entirely.
+            text: transcriptionResult.text || '(No audio detected or transcription empty)',
             segments: transcriptionResult.segments,
             language: transcriptionResult.language,
             whisperModel: 'whisper-1'

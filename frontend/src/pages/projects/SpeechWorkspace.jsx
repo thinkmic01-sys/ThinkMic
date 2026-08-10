@@ -146,9 +146,15 @@ export default function SpeechWorkspace() {
 
         socket.on('transcription_complete', (data) => {
             showToast('Transcription complete!', 'success');
-            // If we already have live transcripts, we might not want to overwrite them with the whisper one, 
+            // If we already have live transcripts, we might not want to overwrite them with the whisper one,
             // but we absolutely need the transcriptId for summarization.
             setCurrentTranscriptId(data.transcriptId);
+            // A plain file upload (Whisper, no live capture) never populates transcripts as it
+            // goes - this event is the only moment that text becomes available, so show it here.
+            // Guarded to never overwrite an already-progressing live Deepgram/Browser session.
+            if (data.text) {
+                setTranscripts((prev) => (prev.length > 0 ? prev : [{ time: 0, text: data.text }]));
+            }
         });
 
         socket.on('summarization_complete', (data) => {

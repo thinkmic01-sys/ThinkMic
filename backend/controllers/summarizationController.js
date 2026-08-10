@@ -1,6 +1,7 @@
 const Summary = require('../models/Summary');
 const Transcript = require('../models/Transcript');
 const { summarizationQueue } = require('../queues');
+const openaiService = require('../services/openaiService');
 
 exports.getSummary = async (req, res) => {
     try {
@@ -62,6 +63,34 @@ exports.updateSummary = async (req, res) => {
 
         res.status(200).json({ summary });
     } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+// @desc    Translate a summary into another language for display purposes only -
+//          deliberately never persisted, mirrors transcriptionController.translateTranscript
+// @route   POST /api/v1/summaries/transcript/:transcriptId/translate
+// @access  Private
+exports.translateSummary = async (req, res) => {
+    try {
+        const { transcriptId } = req.params;
+        const { targetLanguage } = req.body;
+
+        if (!targetLanguage) {
+            return res.status(400).json({ message: 'targetLanguage is required' });
+        }
+
+        const summary = await Summary.findOne({ transcriptId, userId: req.user._id });
+        if (!summary) {
+            return res.status(404).json({ message: 'Summary not found' });
+        }
+
+        const sourceText = summary.editedSummaryText || summary.summaryText;
+        const translatedText = await openaiService.translateText(sourceText, targetLanguage);
+
+        res.status(200).json({ translatedText });
+    } catch (error) {
+        console.error('Translate Summary Error:', error);
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };

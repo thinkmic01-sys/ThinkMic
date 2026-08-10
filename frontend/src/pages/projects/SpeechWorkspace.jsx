@@ -105,6 +105,21 @@ export default function SpeechWorkspace() {
     const draftRecordingIdRef = useRef(null);
     const draftTranscriptIdRef = useRef(null);
 
+    // --- DISPLAY TRANSLATION ---
+    // null = show the real transcript/summary as-is; a string = show this translation instead.
+    // Never persisted server-side and never written back into transcripts/savedEditedText/
+    // summaryText, so switching languages back and forth can't corrupt the real content, and
+    // editing a transcript always operates on the real (untranslated) text.
+    const [translatedTranscriptText, setTranslatedTranscriptText] = useState(null);
+    const [translatedSummaryText, setTranslatedSummaryText] = useState(null);
+    const [isTranslating, setIsTranslating] = useState(false);
+    // The language the current transcript/summary actually exist in - selecting this language
+    // again just reverts to the real content instead of calling the translate API.
+    const originalContentLanguageRef = useRef('en-US');
+    // Caches translate API results per transcriptId+targetLanguage so toggling back and forth
+    // between the same two languages doesn't re-call (and re-bill) the AI translation each time.
+    const translationCacheRef = useRef({});
+
     // Custom Toast State
     const [toast, setToast] = useState({ show: false, message: '', type: 'error' });
 
@@ -189,6 +204,14 @@ export default function SpeechWorkspace() {
 
         const hydrateSession = async () => {
             setIsLoadingSession(true);
+            // Best-effort: the restored recording's true original language isn't reliably
+            // known (Transcript.language is often unset for live/bypass sessions), so this
+            // just assumes whatever's currently selected - selecting a different language
+            // will translate from here.
+            setTranslatedTranscriptText(null);
+            setTranslatedSummaryText(null);
+            translationCacheRef.current = {};
+            originalContentLanguageRef.current = language;
             try {
                 const res = await api.get(`/recordings/${recordingIdParam}`);
                 const rec = res.data.recording;
@@ -269,6 +292,10 @@ export default function SpeechWorkspace() {
         setInterimText(recoveredDraft.interimText || '');
         if (recoveredDraft.language) setLanguage(recoveredDraft.language);
         if (recoveredDraft.sttEngine) setSttEngine(recoveredDraft.sttEngine);
+        setTranslatedTranscriptText(null);
+        setTranslatedSummaryText(null);
+        translationCacheRef.current = {};
+        originalContentLanguageRef.current = recoveredDraft.language || language;
         showToast('Recovered transcript text restored. Audio was not recoverable — start a new recording to keep capturing.', 'success');
         setRecoveredDraft(null);
     };
@@ -479,6 +506,10 @@ export default function SpeechWorkspace() {
                 setSavedEditedText(null);
                 setAudioPlaybackUrl(null);
                 setRecoveredDraft(null);
+                setTranslatedTranscriptText(null);
+                setTranslatedSummaryText(null);
+                translationCacheRef.current = {};
+                originalContentLanguageRef.current = language;
 
                 // Server-side draft: create the Recording+Transcript now so the periodic
                 // autosave below (and the Stop-time finalize call) have something to write
@@ -677,6 +708,15 @@ export default function SpeechWorkspace() {
 
     // --- TRANSCRIPT EDITING (Point 8) ---
     const startEditingTranscript = () => {
+        // Always edit the real (untranslated) transcript, never a displayed translation -
+        // reverting first avoids the user unknowingly saving translated text as the transcript.
+        // Reverts the summary translation too so the language selector and both panels never
+        // fall out of sync with each other.
+        if (translatedTranscriptText !== null) {
+            setTranslatedTranscriptText(null);
+            setTranslatedSummaryText(null);
+            setLanguage(originalContentLanguageRef.current);
+        }
         const currentText = savedEditedText !== null
             ? savedEditedText
             : transcripts.map((t) => t.text).join(' ').trim();
@@ -705,6 +745,62 @@ export default function SpeechWorkspace() {
             showToast(`Could not save edit: ${error.response?.data?.message || 'Unknown error'}`, 'error');
         } finally {
             setIsSavingEdit(false);
+        }
+    };
+
+    // --- DISPLAY TRANSLATION ---
+    const handleLanguageChange = async (newLang) => {
+        const prevLang = language;
+        setLanguage(newLang);
+        if (newLang === prevLang) return;
+
+        const hasTranscriptContent = savedEditedText !== null || transcripts.length > 0;
+        const hasSummaryContent = !!summaryText;
+        if (!hasTranscriptContent && !hasSummaryContent) return; // nothing to translate yet
+
+        if (newLang === originalContentLanguageRef.current) {
+            // Back to the language this content actually exists in - just revert, no API call
+            setTranslatedTranscriptText(null);
+            setTranslatedSummaryText(null);
+            return;
+        }
+
+        const cacheKey = `${currentTranscriptId || 'none'}:${newLang}`;
+        const cached = translationCacheRef.current[cacheKey];
+        if (cached) {
+            setTranslatedTranscriptText(cached.transcriptText);
+            setTranslatedSummaryText(cached.summaryText);
+            return;
+        }
+
+        if (!currentTranscriptId) {
+            showToast('No saved transcript to translate yet — stop the recording first.', 'error');
+            return;
+        }
+
+        setIsTranslating(true);
+        try {
+            const targetLanguageName = localeToLanguageName(newLang);
+            const [transcriptRes, summaryRes] = await Promise.all([
+                hasTranscriptContent
+                    ? api.post(`/transcriptions/${currentTranscriptId}/translate`, { targetLanguage: targetLanguageName })
+                    : Promise.resolve(null),
+                hasSummaryContent
+                    ? api.post(`/summaries/transcript/${currentTranscriptId}/translate`, { targetLanguage: targetLanguageName })
+                    : Promise.resolve(null)
+            ]);
+
+            const translatedTranscript = transcriptRes ? transcriptRes.data.translatedText : null;
+            const translatedSummary = summaryRes ? summaryRes.data.translatedText : null;
+
+            setTranslatedTranscriptText(translatedTranscript);
+            setTranslatedSummaryText(translatedSummary);
+            translationCacheRef.current[cacheKey] = { transcriptText: translatedTranscript, summaryText: translatedSummary };
+        } catch (error) {
+            console.error('Translation failed:', error);
+            showToast(`Translation failed: ${error.response?.data?.message || 'Unknown error'}`, 'error');
+        } finally {
+            setIsTranslating(false);
         }
     };
 
@@ -816,6 +912,13 @@ export default function SpeechWorkspace() {
         const s = seconds % 60;
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
+
+    // Mirrors the Intelligence Summary panel's (isUploading || isGeneratingSummary) skeleton
+    // trigger, but only while there's nothing to show yet - a live Deepgram/Browser session
+    // already has spoken text on screen by the time Stop triggers isUploading, and that text
+    // should keep showing through the finalize upload rather than being replaced by a skeleton.
+    const showTranscriptSkeleton = isLoadingSession || isTranslating ||
+        ((isUploading || isGeneratingSummary) && transcripts.length === 0 && savedEditedText === null);
 
     return (
         <div className="flex flex-col relative w-full h-[calc(100vh-64px)] bg-[#f9f9ff] overflow-hidden font-sans">
@@ -986,7 +1089,7 @@ export default function SpeechWorkspace() {
                                 <div className="relative w-full sm:w-auto">
                                     <select
                                         value={language}
-                                        onChange={(e) => setLanguage(e.target.value)}
+                                        onChange={(e) => handleLanguageChange(e.target.value)}
                                         disabled={recordingState !== 'idle'}
                                         title={recordingState !== 'idle' ? 'Stop recording to change the language' : undefined}
                                         className="bg-transparent text-[12px] sm:text-[14px] font-bold text-[#464651] outline-none appearance-none pr-6 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1008,7 +1111,9 @@ export default function SpeechWorkspace() {
                                     )}
                                     <button
                                         onClick={() => {
-                                            let text = savedEditedText !== null ? savedEditedText : transcripts.map(t => t.text).join(' ');
+                                            let text = translatedTranscriptText !== null
+                                                ? translatedTranscriptText
+                                                : savedEditedText !== null ? savedEditedText : transcripts.map(t => t.text).join(' ');
                                             if (interimTextRef.current) text += ' ' + interimTextRef.current;
                                             navigator.clipboard.writeText(text);
                                             showToast("Copied to clipboard!", "success");
@@ -1029,7 +1134,7 @@ export default function SpeechWorkspace() {
                             </div>
                         )}
 
-                        {isLoadingSession ? (
+                        {showTranscriptSkeleton ? (
                             <div className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6 animate-pulse" aria-busy="true" aria-label="Loading transcript">
                                 {[0, 1, 2, 3].map((i) => (
                                     <div key={i} className="flex gap-3 sm:gap-4">
@@ -1065,6 +1170,12 @@ export default function SpeechWorkspace() {
                                         {isSavingEdit ? 'Saving...' : 'Save Transcript'}
                                     </button>
                                 </div>
+                            </div>
+                        ) : translatedTranscriptText !== null ? (
+                            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                                <p className={`text-[#181c22] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] whitespace-pre-wrap ${language === 'ur-PK' ? 'font-urdu' : ''}`} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
+                                    {translatedTranscriptText}
+                                </p>
                             </div>
                         ) : savedEditedText !== null ? (
                             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
@@ -1202,13 +1313,19 @@ export default function SpeechWorkspace() {
                             
                             {/* Summary Text Render */}
                             <div className="flex-1 mt-4 text-[#464651] text-[14px] sm:text-[15px] leading-relaxed overflow-y-auto pr-2 custom-scrollbar">
-                                {(isUploading || isGeneratingSummary) ? (
+                                {(isUploading || isGeneratingSummary || isTranslating) ? (
                                     <div className="h-full flex flex-col space-y-4 animate-pulse pt-2">
                                         <div className="h-4 bg-[#e0e2eb] rounded w-3/4"></div>
                                         <div className="h-4 bg-[#e0e2eb] rounded w-full"></div>
                                         <div className="h-4 bg-[#e0e2eb] rounded w-5/6"></div>
                                         <div className="h-4 bg-[#e0e2eb] rounded w-full mt-4"></div>
                                         <div className="h-4 bg-[#e0e2eb] rounded w-4/5"></div>
+                                    </div>
+                                ) : translatedSummaryText !== null ? (
+                                    <div className={`prose prose-sm prose-blue max-w-none ${language === 'ur-PK' ? 'font-urdu' : ''}`} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
+                                        {translatedSummaryText.split('\n').map((line, i) => (
+                                            <p key={i} className="mb-2">{line}</p>
+                                        ))}
                                     </div>
                                 ) : summaryText ? (
                                     <div className={`prose prose-sm prose-blue max-w-none ${language === 'ur-PK' ? 'font-urdu' : ''}`} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>

@@ -117,6 +117,37 @@ CRITICAL INSTRUCTION: ${langInstruction}`;
     }
 };
 
+exports.translateText = async (text, targetLanguageName) => {
+    if (!text || !text.trim()) {
+        throw new Error('No text provided to translate.');
+    }
+
+    if (isMock) {
+        console.log(`[MOCK] Translating text to ${targetLanguageName}`);
+        return new Promise((resolve) => {
+            setTimeout(() => resolve(`[${targetLanguageName} MOCK TRANSLATION] ${text}`), 500);
+        });
+    }
+
+    try {
+        console.log(`[OpenAI] Translating text to ${targetLanguageName}...`);
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+                {
+                    role: 'system',
+                    content: `You are a professional translator. Translate the user's text into ${targetLanguageName}, preserving the original meaning, tone, and paragraph structure as closely as possible. Return ONLY the translated text - no preamble, quotes, or commentary.`
+                },
+                { role: 'user', content: text }
+            ]
+        });
+        return response.choices[0].message.content.trim();
+    } catch (error) {
+        console.error('[OpenAI Translate Error]:', error);
+        throw error;
+    }
+};
+
 // Section structure per template - each maps to the report's `template` enum on Report.js
 const REPORT_TEMPLATE_STRUCTURES = {
     academic: `- Abstract / Executive Summary (<h2>Abstract</h2>)

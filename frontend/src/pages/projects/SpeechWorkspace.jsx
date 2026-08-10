@@ -76,6 +76,7 @@ export default function SpeechWorkspace() {
 
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [isLoadingSession, setIsLoadingSession] = useState(false);
 
     const dispatch = useDispatch();
     // Functionality States
@@ -187,6 +188,7 @@ export default function SpeechWorkspace() {
         if (!recordingIdParam) return;
 
         const hydrateSession = async () => {
+            setIsLoadingSession(true);
             try {
                 const res = await api.get(`/recordings/${recordingIdParam}`);
                 const rec = res.data.recording;
@@ -234,6 +236,8 @@ export default function SpeechWorkspace() {
             } catch (err) {
                 console.error('Failed to hydrate session:', err);
                 showToast('Could not load the requested research session.', 'error');
+            } finally {
+                setIsLoadingSession(false);
             }
         };
 
@@ -980,10 +984,12 @@ export default function SpeechWorkspace() {
                             </div>
                             <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
                                 <div className="relative w-full sm:w-auto">
-                                    <select 
+                                    <select
                                         value={language}
                                         onChange={(e) => setLanguage(e.target.value)}
-                                        className="bg-transparent text-[12px] sm:text-[14px] font-bold text-[#464651] outline-none appearance-none pr-6 cursor-pointer"
+                                        disabled={recordingState !== 'idle'}
+                                        title={recordingState !== 'idle' ? 'Stop recording to change the language' : undefined}
+                                        className="bg-transparent text-[12px] sm:text-[14px] font-bold text-[#464651] outline-none appearance-none pr-6 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <option value="en-US">English (US)</option>
                                         <option value="ur-PK">Urdu (PK)</option>
@@ -1023,7 +1029,19 @@ export default function SpeechWorkspace() {
                             </div>
                         )}
 
-                        {isEditingTranscript ? (
+                        {isLoadingSession ? (
+                            <div className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6 animate-pulse" aria-busy="true" aria-label="Loading transcript">
+                                {[0, 1, 2, 3].map((i) => (
+                                    <div key={i} className="flex gap-3 sm:gap-4">
+                                        <div className="h-3 w-10 sm:w-12 rounded bg-[#e0e2eb] shrink-0 mt-1" />
+                                        <div className="flex-1 space-y-2">
+                                            <div className="h-3 rounded bg-[#e0e2eb]" style={{ width: `${85 - i * 10}%` }} />
+                                            {i % 2 === 0 && <div className="h-3 rounded bg-[#e0e2eb]" style={{ width: `${55 - i * 5}%` }} />}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : isEditingTranscript ? (
                             <div className="flex-1 flex flex-col p-4 sm:p-6 gap-3">
                                 <textarea
                                     value={editedTranscriptDraft}

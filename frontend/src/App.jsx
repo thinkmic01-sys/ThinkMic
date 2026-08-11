@@ -16,6 +16,7 @@ import Support from "./pages/Support/Support.jsx";
 import Achievements from "./pages/Achievement/Achievements.jsx";
 import Courses from "./pages/Courses/Courses.jsx";
 import UserManagement from "./pages/Management/UserManagement.jsx";
+import AdminUserDetail from "./pages/Management/AdminUserDetail.jsx";
 import Collaboration from "./pages/Collaboration/Collaboration.jsx";
 import ResearchResults from "./pages/projects/ResearchResults.jsx";
 import SchemaBuilder from "./pages/Management/SchemaBuilder.jsx";
@@ -142,6 +143,7 @@ function AppRoutes() {
                             <Route path="admin">
                                 <Route index element={<Navigate to="users" replace />} />
                                 <Route path="users" element={<RequireRole allowed={['admin']} role={role}><UserManagement /></RequireRole>} />
+                                <Route path="users/:userId" element={<RequireRole allowed={['admin']} role={role}><AdminUserDetail /></RequireRole>} />
                                 <Route path="schemas" element={<RequireRole allowed={['admin']} role={role}><SchemaLibrary /></RequireRole>} />
                                 <Route path="schemas/new" element={<RequireRole allowed={['admin']} role={role}><SchemaBuilder /></RequireRole>} />
                                 <Route path="schemas/edit/:id" element={<RequireRole allowed={['admin']} role={role}><SchemaBuilder /></RequireRole>} />

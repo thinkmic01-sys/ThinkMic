@@ -356,26 +356,37 @@ export default function UserManagement() {
                                         </td>
                                         <td className="py-3 px-4 font-mono text-[11px] sm:text-xs text-[#777682] whitespace-nowrap">{user.lastActive}</td>
                                         <td className="py-3 px-4 text-right opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                            {user.role === 'admin' ? (
-                                                <span className="text-[10px] text-[#c7c5d3] font-bold uppercase tracking-wider">Protected</span>
-                                            ) : user.status === 'inactive' ? (
-                                                <button onClick={() => handleUpdateStatus(user.id, 'active')} className="text-[#c7c5d3] hover:text-[#222777] transition-colors p-1" title="Restore">
-                                                    <span className="material-symbols-outlined text-[18px]">settings_backup_restore</span>
-                                                </button>
-                                            ) : (
-                                                <div className="flex items-center justify-end gap-1">
-                                                    <button
-                                                        onClick={() => { setEditingUser(user); setEditRole(user.role); }}
-                                                        className="text-[#c7c5d3] hover:text-[#222777] transition-colors p-1"
-                                                        title="Change Role"
-                                                    >
-                                                        <span className="material-symbols-outlined text-[18px]">edit</span>
+                                            <div className="flex items-center justify-end gap-1">
+                                                <a
+                                                    href={`/app/admin/users/${user.id}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-[#c7c5d3] hover:text-[#222777] transition-colors p-1"
+                                                    title="View full profile"
+                                                >
+                                                    <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                                                </a>
+                                                {user.role === 'admin' ? (
+                                                    <span className="text-[10px] text-[#c7c5d3] font-bold uppercase tracking-wider">Protected</span>
+                                                ) : user.status === 'inactive' ? (
+                                                    <button onClick={() => handleUpdateStatus(user.id, 'active')} className="text-[#c7c5d3] hover:text-[#222777] transition-colors p-1" title="Restore">
+                                                        <span className="material-symbols-outlined text-[18px]">settings_backup_restore</span>
                                                     </button>
-                                                    <button onClick={() => handleUpdateStatus(user.id, 'inactive')} className="text-[#c7c5d3] hover:text-[#ba1a1a] transition-colors p-1" title={user.status === 'invited' ? 'Cancel' : 'Deactivate'}>
-                                                        <span className="material-symbols-outlined text-[18px]">{user.status === 'invited' ? 'close' : 'block'}</span>
-                                                    </button>
-                                                </div>
-                                            )}
+                                                ) : (
+                                                    <>
+                                                        <button
+                                                            onClick={() => { setEditingUser(user); setEditRole(user.role); }}
+                                                            className="text-[#c7c5d3] hover:text-[#222777] transition-colors p-1"
+                                                            title="Change Role"
+                                                        >
+                                                            <span className="material-symbols-outlined text-[18px]">edit</span>
+                                                        </button>
+                                                        <button onClick={() => handleUpdateStatus(user.id, 'inactive')} className="text-[#c7c5d3] hover:text-[#ba1a1a] transition-colors p-1" title={user.status === 'invited' ? 'Cancel' : 'Deactivate'}>
+                                                            <span className="material-symbols-outlined text-[18px]">{user.status === 'invited' ? 'close' : 'block'}</span>
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))

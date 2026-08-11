@@ -13,7 +13,7 @@ export default function MyLearningList() {
                 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c7c5d3; border-radius: 10px; }
             `}</style>
 
-            <div className="max-w-[1280px] mx-auto p-4 sm:p-6 md:p-8 pb-12 sm:pb-8 animate-in fade-in duration-300">
+            <div className="w-full p-4 sm:p-6 md:p-8 pb-12 sm:pb-8 animate-in fade-in duration-300">
                 <button onClick={() => navigate('/app/courses')} className="text-[#777682] hover:text-[#222777] flex items-center gap-1 text-[12px] sm:text-[13px] font-bold mb-3 sm:mb-4 transition-colors w-fit">
                     <span className="material-symbols-outlined text-[16px] sm:text-[18px]">arrow_back</span> <span className="hidden sm:inline">Back to</span> Seminar Library
                 </button>

@@ -71,7 +71,7 @@ export default function Achievements() {
                 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c7c5d3; border-radius: 10px; }
             `}</style>
 
-            <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 md:p-8 flex flex-col pb-20">
+            <div className="w-full p-4 sm:p-6 md:p-8 flex flex-col pb-20">
 
                 {/* Header */}
                 <div className="mb-6 sm:mb-8">

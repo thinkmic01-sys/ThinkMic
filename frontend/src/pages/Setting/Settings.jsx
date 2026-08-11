@@ -233,7 +233,7 @@ export default function Settings() {
     };
 
     return (
-        <div className="flex flex-col md:flex-row gap-6 md:gap-8 w-full max-w-7xl mx-auto p-4 sm:p-6 md:p-8 font-sans">
+        <div className="flex flex-col md:flex-row gap-6 md:gap-8 w-full p-4 sm:p-6 md:p-8 font-sans">
 
             <style>{`
                 .hide-scrollbar::-webkit-scrollbar { display: none; }

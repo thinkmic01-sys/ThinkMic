@@ -75,7 +75,7 @@ export default function SchemaLibrary() {
     };
 
     return (
-        <div className="p-4 sm:p-6 md:p-8 w-full max-w-[1280px] mx-auto font-sans">
+        <div className="p-4 sm:p-6 md:p-8 w-full font-sans">
 
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { height: 6px; }

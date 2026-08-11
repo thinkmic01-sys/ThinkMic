@@ -55,7 +55,7 @@ export default function ProjectDashboard() {
         <div className="flex-1 w-full bg-[#f9f9ff] h-[calc(100vh-64px)] overflow-y-auto font-sans flex flex-col">
             {/* Header Area */}
             <div className="bg-white border-b border-[#e0e2eb] px-4 sm:px-6 md:px-8 pt-6 pb-0 shadow-sm z-10 sticky top-0">
-                <div className="max-w-[1280px] mx-auto w-full">
+                <div className="w-full">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6">
                         <div>
                             <div className="flex items-center gap-2 text-[12px] font-bold text-[#777682] uppercase tracking-widest mb-2 cursor-pointer hover:text-[#222777]" onClick={() => navigate('/app/projects')}>
@@ -91,7 +91,7 @@ export default function ProjectDashboard() {
             </div>
 
             {/* Content Area */}
-            <div className="max-w-[1280px] mx-auto w-full p-4 sm:p-6 md:p-8 flex-1 flex flex-col">
+            <div className="w-full p-4 sm:p-6 md:p-8 flex-1 flex flex-col">
                 {activeTab === 'overview' && (
                     <div className="bg-white rounded-xl shadow-sm border border-[#e0e2eb] overflow-hidden flex flex-col h-[70vh]">
                         <ProjectNotes projectId={id} />

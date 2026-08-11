@@ -29,7 +29,7 @@ export default function CourseWorkbook() {
                 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c7c5d3; border-radius: 10px; }
             `}</style>
 
-            <div className="max-w-[1280px] mx-auto p-4 sm:p-6 md:p-8 pb-12 sm:pb-20 animate-in slide-in-from-right-8 duration-300">
+            <div className="w-full p-4 sm:p-6 md:p-8 pb-12 sm:pb-20 animate-in slide-in-from-right-8 duration-300">
 
                 {/* Top Progress Bar */}
                 <div className="mb-5 sm:mb-6">

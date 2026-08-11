@@ -222,7 +222,7 @@ export default function ReferralCoinManagement() {
                 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c7c5d3; border-radius: 10px; }
             `}</style>
 
-            <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 md:p-8 flex flex-col pb-20 min-h-full">
+            <div className="w-full p-4 sm:p-6 md:p-8 flex flex-col pb-20 min-h-full">
 
                 {/* Page Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5 sm:mb-6">

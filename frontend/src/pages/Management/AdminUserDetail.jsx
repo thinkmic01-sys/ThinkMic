@@ -22,7 +22,7 @@ const SectionCard = ({ title, count, children }) => (
             <h3 className="font-bold text-[13px] sm:text-sm text-[#222777] tracking-wide">{title}</h3>
             {count !== undefined && <span className="text-[11px] font-mono text-[#777682]">{count}</span>}
         </div>
-        <div className="divide-y divide-[#e0e2eb]">{children}</div>
+        <div className="divide-y divide-[#e0e2eb] max-h-[520px] overflow-y-auto custom-scrollbar">{children}</div>
     </div>
 );
 
@@ -121,7 +121,7 @@ export default function AdminUserDetail() {
 
     if (loadingProfile) {
         return (
-            <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
+            <div className="w-full p-4 sm:p-6 md:p-8">
                 <div className="h-24 bg-white rounded-xl border border-[#e0e2eb] animate-pulse mb-6" />
                 <div className="h-64 bg-white rounded-xl border border-[#e0e2eb] animate-pulse" />
             </div>
@@ -130,7 +130,7 @@ export default function AdminUserDetail() {
 
     if (profileError || !profile) {
         return (
-            <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 md:p-8 text-center py-20">
+            <div className="w-full p-4 sm:p-6 md:p-8 text-center py-20">
                 <span className="material-symbols-outlined text-4xl text-[#c7c5d3] mb-2">person_off</span>
                 <p className="font-bold text-[#464651]">{profileError || 'User not found.'}</p>
             </div>
@@ -141,7 +141,12 @@ export default function AdminUserDetail() {
     const initials = extractedName.substring(0, 2).toUpperCase();
 
     return (
-        <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 md:p-8 pb-20">
+        <div className="w-full p-4 sm:p-6 md:p-8 pb-20">
+            <style>{`
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c7c5d3; border-radius: 10px; }
+            `}</style>
             {/* Profile Header */}
             <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-5 sm:p-6 mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">

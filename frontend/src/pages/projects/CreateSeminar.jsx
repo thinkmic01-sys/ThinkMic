@@ -233,7 +233,7 @@ export default function CreateSeminar() {
 
     return (
         <div className="w-full h-[calc(100vh-64px)] bg-[#f9f9ff] overflow-y-auto font-sans">
-            <div className="max-w-[1280px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6 pb-20">
+            <div className="w-full p-4 sm:p-6 lg:p-8 flex flex-col gap-6 pb-20">
 
                 {/* Page Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[#e0e2eb] pb-6 gap-4">

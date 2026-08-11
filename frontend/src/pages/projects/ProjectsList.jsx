@@ -40,7 +40,7 @@ export default function ProjectsList() {
 
     return (
         <div className="flex-1 w-full bg-[#f9f9ff] p-4 sm:p-6 md:p-8 flex justify-center h-[calc(100vh-64px)] overflow-y-auto font-sans">
-            <div className="w-full max-w-[1280px] flex flex-col pb-12">
+            <div className="w-full flex flex-col pb-12">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6 sm:mb-8 border-b border-[#e0e2eb] pb-4 sm:pb-6">
                     <div className="w-full sm:w-auto">
                         <h2 className="text-[24px] sm:text-[28px] md:text-[32px] font-bold text-[#222777] tracking-tight leading-tight">Projects Hub</h2>

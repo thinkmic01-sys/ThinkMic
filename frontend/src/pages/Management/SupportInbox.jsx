@@ -119,7 +119,7 @@ export default function SupportInbox() {
     };
 
     return (
-        <div className="p-4 sm:p-6 md:p-8 w-full max-w-[1280px] mx-auto font-sans h-[calc(100vh-64px)] flex flex-col">
+        <div className="p-4 sm:p-6 md:p-8 w-full font-sans h-[calc(100vh-64px)] flex flex-col">
             <div className="mb-6 shrink-0">
                 <h1 className="text-2xl sm:text-3xl font-bold text-[#222777] tracking-tight">Support Inbox</h1>
                 <p className="text-[13px] sm:text-sm font-semibold text-[#777682] mt-1">Manage user support requests.</p>

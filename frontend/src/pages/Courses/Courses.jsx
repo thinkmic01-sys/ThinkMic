@@ -6,7 +6,7 @@ export default function Courses() {
 
     // --- VIEW 1: MY LEARNING LIST ---
     const renderLearningList = () => (
-        <div className="flex-1 h-full overflow-y-auto custom-scrollbar pt-4 sm:pt-6 md:pt-[24px] px-4 sm:px-6 md:px-8 pb-20 max-w-[1280px] w-full mx-auto animate-in fade-in duration-300">
+        <div className="flex-1 h-full overflow-y-auto custom-scrollbar pt-4 sm:pt-6 md:pt-[24px] px-4 sm:px-6 md:px-8 pb-20 w-full animate-in fade-in duration-300">
             <header className="mb-6 sm:mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h1 className="text-[28px] sm:text-[32px] md:text-[40px] leading-[1.2] tracking-[-0.02em] font-bold text-[#222777]">My Learning List</h1>
@@ -173,7 +173,7 @@ export default function Courses() {
 
     // --- VIEW 2: WORKBOOK ---
     const renderWorkbook = () => (
-        <div className="flex-1 h-full pt-4 sm:pt-6 md:pt-[24px] px-4 sm:px-6 md:px-8 pb-20 max-w-[1280px] w-full mx-auto relative overflow-y-auto custom-scrollbar animate-in slide-in-from-right-8 duration-300">
+        <div className="flex-1 h-full pt-4 sm:pt-6 md:pt-[24px] px-4 sm:px-6 md:px-8 pb-20 w-full relative overflow-y-auto custom-scrollbar animate-in slide-in-from-right-8 duration-300">
             {/* Top Progress Bar */}
             <div className="mb-5 sm:mb-6">
                 <button onClick={() => setActiveView('learning-list')} className="text-[#777682] hover:text-[#222777] flex items-center gap-1 text-[12px] sm:text-[13px] font-bold mb-3 sm:mb-4 transition-colors w-fit">

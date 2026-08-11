@@ -256,7 +256,7 @@ export default function Collaboration() {
                 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c7c5d3; border-radius: 10px; }
             `}</style>
 
-            <div className="max-w-[1280px] mx-auto p-4 sm:p-6 md:p-8 flex flex-col gap-6 pb-20 animate-in fade-in duration-300">
+            <div className="w-full p-4 sm:p-6 md:p-8 flex flex-col gap-6 pb-20 animate-in fade-in duration-300">
 
                 {/* --- HERO BANNER (UPDATED WITH FORM BUTTON) --- */}
                 <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8">

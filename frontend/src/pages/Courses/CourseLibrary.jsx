@@ -182,7 +182,7 @@ export default function CourseLibrary() {
                 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
             `}</style>
 
-            <div className="max-w-[1280px] mx-auto p-4 sm:p-6 md:p-8 pb-20">
+            <div className="w-full p-4 sm:p-6 md:p-8 pb-20">
 
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-5 sm:mb-6 border-b border-[#e0e2eb] pb-4 gap-4">

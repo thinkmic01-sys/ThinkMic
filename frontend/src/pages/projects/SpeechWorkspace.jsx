@@ -1053,7 +1053,7 @@ export default function SpeechWorkspace() {
             </div>
 
             {recoveredDraft && (
-                <div className="max-w-[1280px] mx-auto w-full px-4 sm:px-6 pt-4">
+                <div className="w-full px-4 sm:px-6 pt-4">
                     <div className="bg-[#fff8e1] border border-[#e8c547] rounded-lg px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <p className="text-[13px] sm:text-[14px] text-[#181c22]">
                             Found unsaved transcript text from a previous session (last saved {new Date(recoveredDraft.savedAt).toLocaleTimeString()}). Audio wasn't recoverable — only the transcribed text.
@@ -1071,7 +1071,7 @@ export default function SpeechWorkspace() {
             )}
 
             {/* --- MAIN LAYOUT --- */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 pb-28 md:pb-32 flex flex-col lg:flex-row gap-4 sm:gap-6 max-w-[1280px] mx-auto w-full">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 pb-28 md:pb-32 flex flex-col lg:flex-row gap-4 sm:gap-6 w-full">
 
                 {/* LEFT COLUMN: Transcript & Processing Intent */}
                 <div className="flex-1 flex flex-col gap-4 sm:gap-6 min-w-0">

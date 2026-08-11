@@ -183,7 +183,7 @@ export default function UserManagement() {
                 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c7c5d3; border-radius: 10px; }
             `}</style>
 
-            <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 md:p-8 flex flex-col pb-20 min-h-full">
+            <div className="w-full p-4 sm:p-6 md:p-8 flex flex-col pb-20 min-h-full">
 
                 {/* Page Header & Controls */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5 sm:mb-6">
@@ -357,15 +357,13 @@ export default function UserManagement() {
                                         <td className="py-3 px-4 font-mono text-[11px] sm:text-xs text-[#777682] whitespace-nowrap">{user.lastActive}</td>
                                         <td className="py-3 px-4 text-right opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity whitespace-nowrap">
                                             <div className="flex items-center justify-end gap-1">
-                                                <a
-                                                    href={`/app/admin/users/${user.id}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
+                                                <Link
+                                                    to={`/app/admin/users/${user.id}`}
                                                     className="text-[#c7c5d3] hover:text-[#222777] transition-colors p-1"
                                                     title="View full profile"
                                                 >
                                                     <span className="material-symbols-outlined text-[18px]">open_in_new</span>
-                                                </a>
+                                                </Link>
                                                 {user.role === 'admin' ? (
                                                     <span className="text-[10px] text-[#c7c5d3] font-bold uppercase tracking-wider">Protected</span>
                                                 ) : user.status === 'inactive' ? (

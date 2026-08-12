@@ -203,12 +203,6 @@ export default function CourseLibrary() {
                         >
                             <span className="material-symbols-outlined text-[18px]">location_on</span> Nearby Seminars
                         </button>
-                        <button
-                            onClick={() => navigate('/app/courses/my-learning')}
-                            className="bg-[#f1f3fc] text-[#222777] border border-[#c7c5d3] px-4 py-2.5 sm:py-2 rounded-lg font-bold text-[13px] hover:bg-[#e0e2eb] transition-colors flex items-center justify-center gap-2 shadow-sm shrink-0 whitespace-nowrap"
-                        >
-                            <span className="material-symbols-outlined text-[18px]">bookmark</span> My Learning List
-                        </button>
                     </div>
                 </div>
 

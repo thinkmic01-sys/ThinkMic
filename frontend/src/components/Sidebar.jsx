@@ -19,8 +19,10 @@ const NavLink = ({ to, icon, label, isManagement }) => {
     if (to === '/app/projects') {
         isActive = location.pathname.startsWith('/app/projects') && !isCreateSeminar;
     }
-    if (to === '/app/courses' && isCreateSeminar) {
-        isActive = true;
+    // My Learning List now has its own sidebar entry (used to only be reachable via a button
+    // on the Seminar Library page) - keep it from also lighting up the "Seminars" entry.
+    if (to === '/app/courses') {
+        isActive = (location.pathname.startsWith('/app/courses') && !location.pathname.startsWith('/app/courses/my-learning')) || isCreateSeminar;
     }
     // Management active state grouping
     if (isManagement) {
@@ -91,6 +93,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 <NavLink to="/app/projects" icon="folder_open" label="Project Hub" />
                 <NavLink to="/app/reports" icon="summarize" label="Reports" />
                 <NavLink to="/app/courses" icon="school" label="Seminars" />
+                <NavLink to="/app/courses/my-learning" icon="bookmark" label="My Learning List" />
                 <NavLink to="/app/forms" icon="groups" label="Collaboration" />
                 {managementRoute && (
                     <NavLink to={managementRoute} icon="admin_panel_settings" label="Management" isManagement />

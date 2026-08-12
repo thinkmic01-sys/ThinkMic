@@ -40,6 +40,28 @@ const getExtensionForMimeType = (mimeType) => {
 const LOCALE_LANGUAGE_NAMES = { 'en-US': 'English', 'ur-PK': 'Urdu' };
 const localeToLanguageName = (locale) => LOCALE_LANGUAGE_NAMES[locale] || 'English';
 
+// Popular display fonts for the Speech-to-Text transcript, keyed by locale. 'default' leaves
+// the font-family untouched (English falls back to the page's base sans-serif; Urdu falls back
+// to the .font-urdu stack in index.css). Only Noto Nastaliq Urdu is loaded via Google Fonts
+// (see index.html) - the other Urdu options render correctly for users who already have those
+// fonts installed locally and fall back to a generic serif otherwise, same as .font-urdu already did.
+const TRANSCRIPT_FONT_OPTIONS = {
+    'en-US': [
+        { value: 'default', label: 'Default' },
+        { value: 'times', label: 'Times New Roman', stack: "'Times New Roman', Times, serif" },
+        { value: 'georgia', label: 'Georgia', stack: "Georgia, 'Times New Roman', serif" },
+        { value: 'arial', label: 'Arial', stack: "Arial, Helvetica, sans-serif" },
+        { value: 'verdana', label: 'Verdana', stack: "Verdana, Geneva, sans-serif" },
+        { value: 'courier', label: 'Courier New', stack: "'Courier New', Courier, monospace" }
+    ],
+    'ur-PK': [
+        { value: 'default', label: 'Default (Jameel Noori Nastaleeq)' },
+        { value: 'noto-nastaliq', label: 'Noto Nastaliq Urdu', stack: "'Noto Nastaliq Urdu', serif" },
+        { value: 'jameel', label: 'Jameel Noori Nastaleeq', stack: "'Jameel Noori Nastaleeq', serif" },
+        { value: 'alvi', label: 'Alvi Nastaleeq', stack: "'Alvi Nastaleeq', serif" }
+    ]
+};
+
 // Single global slot for an in-progress live session's text, so a refresh/crash mid-recording
 // doesn't lose everything spoken so far (audio itself can't be recovered from localStorage -
 // only the transcribed text, since MediaRecorder's audio chunks live only in memory).
@@ -67,6 +89,10 @@ export default function SpeechWorkspace() {
     const [newTagValue, setNewTagValue] = useState('');
     const [sttEngine, setSttEngine] = useState('Deepgram'); // Browser, Whisper, Deepgram
     const [language, setLanguage] = useState('en-US'); // en-US, ur-PK
+    // Display-only preference (never persisted) - which font renders the transcript text.
+    // Keyed against TRANSCRIPT_FONT_OPTIONS[language]; reset to 'default' whenever the
+    // language changes since a font choice from one language rarely makes sense in the other.
+    const [transcriptFont, setTranscriptFont] = useState('default');
     const recognitionRef = useRef(null);
     const interimTextRef = useRef('');
     const recordingStartTimeRef = useRef(null);
@@ -752,6 +778,9 @@ export default function SpeechWorkspace() {
     const handleLanguageChange = async (newLang) => {
         const prevLang = language;
         setLanguage(newLang);
+        // The chosen font belongs to the old language's option list - reset to that language's
+        // default so we never end up applying e.g. "Times New Roman" to Urdu text.
+        setTranscriptFont('default');
         if (newLang === prevLang) return;
 
         const hasTranscriptContent = savedEditedText !== null || transcripts.length > 0;
@@ -919,6 +948,11 @@ export default function SpeechWorkspace() {
     // should keep showing through the finalize upload rather than being replaced by a skeleton.
     const showTranscriptSkeleton = isLoadingSession || isTranslating ||
         ((isUploading || isGeneratingSummary) && transcripts.length === 0 && savedEditedText === null);
+
+    const fontOptionsForLanguage = TRANSCRIPT_FONT_OPTIONS[language] || TRANSCRIPT_FONT_OPTIONS['en-US'];
+    // undefined for 'default' - lets the .font-urdu class (Urdu) or the page's base font
+    // (English) keep governing the family, exactly as before this feature existed.
+    const transcriptFontStyle = { fontFamily: fontOptionsForLanguage.find(f => f.value === transcriptFont)?.stack };
 
     return (
         <div className="flex flex-col relative w-full h-[calc(100vh-64px)] bg-[#f9f9ff] overflow-hidden font-sans">
@@ -1099,6 +1133,19 @@ export default function SpeechWorkspace() {
                                     </select>
                                     <span className="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 text-[16px] text-[#777682] pointer-events-none">expand_more</span>
                                 </div>
+                                <div className="relative w-full sm:w-auto">
+                                    <select
+                                        value={transcriptFont}
+                                        onChange={(e) => setTranscriptFont(e.target.value)}
+                                        title="Transcript display font"
+                                        className="bg-transparent text-[12px] sm:text-[14px] font-bold text-[#464651] outline-none appearance-none pr-6 cursor-pointer"
+                                    >
+                                        {fontOptionsForLanguage.map((f) => (
+                                            <option key={f.value} value={f.value}>{f.label}</option>
+                                        ))}
+                                    </select>
+                                    <span className="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 text-[16px] text-[#777682] pointer-events-none">expand_more</span>
+                                </div>
                                 <div className="flex gap-2 sm:gap-3 ml-2 sm:ml-4 border-l border-[#e0e2eb] pl-2 sm:pl-4">
                                     {!isEditingTranscript && (
                                         <button
@@ -1152,6 +1199,7 @@ export default function SpeechWorkspace() {
                                     value={editedTranscriptDraft}
                                     onChange={(e) => setEditedTranscriptDraft(e.target.value)}
                                     className={`flex-1 w-full min-h-[200px] p-3 sm:p-4 text-[14px] sm:text-[16px] text-[#181c22] leading-[1.7] border border-[#c7c5d3] rounded-md outline-none resize-none ${language === 'ur-PK' ? 'font-urdu' : ''}`}
+                                    style={transcriptFontStyle}
                                     dir={language === 'ur-PK' ? 'rtl' : 'ltr'}
                                 />
                                 <div className="flex justify-end gap-2 sm:gap-3">
@@ -1173,13 +1221,13 @@ export default function SpeechWorkspace() {
                             </div>
                         ) : translatedTranscriptText !== null ? (
                             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-                                <p className={`text-[#181c22] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] whitespace-pre-wrap ${language === 'ur-PK' ? 'font-urdu' : ''}`} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
+                                <p className={`text-[#181c22] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] whitespace-pre-wrap ${language === 'ur-PK' ? 'font-urdu' : ''}`} style={transcriptFontStyle} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
                                     {translatedTranscriptText}
                                 </p>
                             </div>
                         ) : savedEditedText !== null ? (
                             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-                                <p className={`text-[#181c22] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] whitespace-pre-wrap ${language === 'ur-PK' ? 'font-urdu' : ''}`} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
+                                <p className={`text-[#181c22] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] whitespace-pre-wrap ${language === 'ur-PK' ? 'font-urdu' : ''}`} style={transcriptFontStyle} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
                                     {savedEditedText}
                                 </p>
                             </div>
@@ -1190,7 +1238,7 @@ export default function SpeechWorkspace() {
                                         <span className={`font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 ${recordingState === 'recording' ? 'text-[#006e73]' : 'text-[#777682]'}`}>
                                             {formatTime(t.time)}
                                         </span>
-                                        <p className={`text-[#181c22] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] ${language === 'ur-PK' ? 'font-urdu' : ''}`} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
+                                        <p className={`text-[#181c22] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] ${language === 'ur-PK' ? 'font-urdu' : ''}`} style={transcriptFontStyle} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
                                             {t.text}
                                         </p>
                                     </div>
@@ -1200,7 +1248,7 @@ export default function SpeechWorkspace() {
                                         <span className="font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 text-[#006e73]">
                                             {formatTime(Math.floor((Date.now() - recordingStartTimeRef.current) / 1000))}
                                         </span>
-                                        <p className={`text-[#3a3f8f] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] italic ${language === 'ur-PK' ? 'font-urdu' : ''}`} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
+                                        <p className={`text-[#3a3f8f] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] italic ${language === 'ur-PK' ? 'font-urdu' : ''}`} style={transcriptFontStyle} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
                                             {interimText}
                                         </p>
                                     </div>
@@ -1281,8 +1329,14 @@ export default function SpeechWorkspace() {
                     <div className="bg-white rounded-lg shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] flex flex-col flex-1 min-h-[300px]">
                         <div className="p-4 sm:p-5 border-b border-[#e0e2eb] flex justify-between items-center bg-[#f9f9ff] rounded-t-lg">
                             <h2 className="text-[20px] sm:text-2xl font-bold text-[#222777] tracking-tight">Intelligence Summary</h2>
-                            <button onClick={handleSummarize} className="text-[#006e73] text-[12px] sm:text-[14px] font-bold flex items-center gap-1 hover:text-[#004f53] transition-colors shrink-0">
-                                <span className="material-symbols-outlined text-[16px]">refresh</span> <span className="hidden sm:inline">Regenerate</span>
+                            <button
+                                onClick={handleSummarize}
+                                disabled={isGeneratingSummary || !currentTranscriptId}
+                                title="Summarizes the transcript captured so far - works anytime, even while still recording."
+                                className="text-[#006e73] text-[12px] sm:text-[14px] font-bold flex items-center gap-1 hover:text-[#004f53] transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <span className={`material-symbols-outlined text-[16px] ${isGeneratingSummary ? 'animate-spin' : ''}`}>{summaryText ? 'refresh' : 'auto_awesome'}</span>
+                                <span className="hidden sm:inline">{isGeneratingSummary ? 'Generating...' : summaryText ? 'Regenerate' : 'Generate Summary'}</span>
                             </button>
                         </div>
                         <div className="p-4 sm:p-6 flex-1 flex flex-col overflow-hidden">
@@ -1334,9 +1388,23 @@ export default function SpeechWorkspace() {
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="h-full flex flex-col items-center justify-center text-[#c7c5d3] italic p-6">
+                                    <div className="h-full flex flex-col items-center justify-center text-[#c7c5d3] p-6">
                                         <span className="material-symbols-outlined text-[40px] mb-2 opacity-50">analytics</span>
-                                        <p className="text-center">Stop recording to automatically generate an AI summary.</p>
+                                        <p className="text-center italic mb-4">
+                                            {currentTranscriptId
+                                                ? 'Generate an AI summary of the transcript captured so far - you can do this anytime, even while still recording.'
+                                                : 'Start recording or upload audio to enable AI summaries.'}
+                                        </p>
+                                        {currentTranscriptId && (
+                                            <button
+                                                onClick={handleSummarize}
+                                                disabled={isGeneratingSummary}
+                                                className="bg-[#222777] text-white text-[13px] font-bold px-4 py-2 rounded-md hover:bg-[#3a3f8f] transition-colors disabled:opacity-60 flex items-center gap-2"
+                                            >
+                                                <span className={`material-symbols-outlined text-[16px] ${isGeneratingSummary ? 'animate-spin' : ''}`}>auto_awesome</span>
+                                                {isGeneratingSummary ? 'Generating...' : 'Generate Summary'}
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </div>

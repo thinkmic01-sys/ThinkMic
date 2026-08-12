@@ -122,6 +122,13 @@ const UserSchema = new mongoose.Schema({
         // Private R2 object key for an optional uploaded certificate file/scan
         certificateKey: String,
         description: String
+    }],
+    // The user's "My Learning List" - admin-curated keywords they've chosen to follow.
+    // Creating a non-draft seminar whose category matches a followed keyword's text
+    // notifies everyone following it (see seminarsController.createSeminar).
+    learningKeywords: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Keyword'
     }]
 }, {
     timestamps: true,

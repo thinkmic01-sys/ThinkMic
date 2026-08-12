@@ -15,7 +15,8 @@ const NOTIFICATION_META = {
     seminar_reward_received: { icon: 'redeem', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Reward Received' },
     seminar_coins_reserved: { icon: 'lock_clock', color: 'text-[#222777] bg-[#eef0f9]', title: 'Coins Reserved' },
     seminar_coins_refunded: { icon: 'replay', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Coins Refunded' },
-    form_published: { icon: 'assignment', color: 'text-[#222777] bg-[#eef0f9]', title: 'New Form' }
+    form_published: { icon: 'assignment', color: 'text-[#222777] bg-[#eef0f9]', title: 'New Form' },
+    keyword_seminar_match: { icon: 'bookmark', color: 'text-[#00c2cb] bg-[#e6fbfc]', title: 'Followed Topic' }
 };
 const DEFAULT_NOTIFICATION_META = { icon: 'notifications', color: 'text-[#777682] bg-[#f1f3fc]', title: 'Notification' };
 
@@ -131,7 +132,7 @@ export default function Navbar({ onMenuClick }) {
         }
 
         // If inside Management workflow
-        if (location.pathname.startsWith('/app/admin/users') || location.pathname.startsWith('/app/admin/schemas') || location.pathname.startsWith('/app/admin/rewards') || location.pathname.startsWith('/app/admin/roles')) {
+        if (location.pathname.startsWith('/app/admin/users') || location.pathname.startsWith('/app/admin/schemas') || location.pathname.startsWith('/app/admin/rewards') || location.pathname.startsWith('/app/admin/roles') || location.pathname.startsWith('/app/admin/keywords')) {
             return (
                 <div className="flex space-x-4 sm:space-x-6 h-full items-center overflow-x-auto hide-scrollbar">
                     <Link to="/app/admin/users" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/admin/users') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
@@ -145,6 +146,9 @@ export default function Navbar({ onMenuClick }) {
                     </Link>
                     <Link to="/app/admin/rewards" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/admin/rewards') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
                         Rewards
+                    </Link>
+                    <Link to="/app/admin/keywords" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/admin/keywords') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
+                        Keywords
                     </Link>
                 </div>
             );

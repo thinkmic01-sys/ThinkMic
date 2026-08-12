@@ -48,10 +48,11 @@ const NavLink = ({ to, icon, label, isManagement }) => {
     );
 };
 
-// The "Management" nav item covers the Users/Roles/Schemas/Rewards tab group (Support and
-// Analytics are reached via their own separate nav entries/routes, not this one) - checked
-// in this order so the link lands on the first section a given permission set can actually
-// open, instead of always pointing at /admin/users regardless of what the role can reach.
+// The "Management" nav item covers the Users/Roles/Schemas/Rewards/Keywords tab group
+// (Support and Analytics are reached via their own separate nav entries/routes, not this
+// one) - checked in this order so the link lands on the first section a given permission
+// set can actually open, instead of always pointing at /admin/users regardless of what
+// the role can reach.
 const MANAGEMENT_LANDING_ROUTES = [
     ['users.view', '/app/admin/users'],
     ['roles.manage', '/app/admin/roles'],
@@ -60,7 +61,8 @@ const MANAGEMENT_LANDING_ROUTES = [
     ['rewards.manage_pending', '/app/admin/rewards'],
     ['rewards.approve_reject', '/app/admin/rewards'],
     ['rewards.view_history_stats', '/app/admin/rewards'],
-    ['rewards.adjust_coins', '/app/admin/rewards']
+    ['rewards.adjust_coins', '/app/admin/rewards'],
+    ['keywords.manage', '/app/admin/keywords']
 ];
 
 export default function Sidebar({ isOpen, setIsOpen }) {

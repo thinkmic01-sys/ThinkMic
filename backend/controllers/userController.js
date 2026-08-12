@@ -26,7 +26,8 @@ exports.getMe = async (req, res) => {
         // so the exclusion and forced inclusion must be passed in a single .select() call.
         const user = await User.findById(req.user._id)
             .select('-passwordHash +kyc.idNumberEncrypted')
-            .populate('roleId', 'name slug permissions');
+            .populate('roleId', 'name slug permissions')
+            .populate('learningKeywords', 'text');
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -48,7 +49,7 @@ exports.updateMe = async (req, res) => {
         const {
             fullName, title, language, avatarUrl, notificationPrefs,
             workPhone, personalPhone, address,
-            kycIdType, kycIdNumber, kycIdDocumentKey, certifications
+            kycIdType, kycIdNumber, kycIdDocumentKey, certifications, learningKeywords
         } = req.body;
         const update = {};
         if (fullName !== undefined) update.fullName = fullName;
@@ -72,10 +73,15 @@ exports.updateMe = async (req, res) => {
         // has the complete list (including certificateKey from a prior document upload) and
         // sends it back whole rather than patching individual entries.
         if (certifications !== undefined) update.certifications = certifications;
+        // Full-array replace of keyword ids - My Learning List sends its complete current
+        // selection back whole (add/remove both just resend the new full list), same
+        // convention as certifications/notificationPrefs above.
+        if (learningKeywords !== undefined) update.learningKeywords = learningKeywords;
 
         const user = await User.findByIdAndUpdate(req.user._id, update, { new: true, runValidators: true })
             .select('-passwordHash +kyc.idNumberEncrypted')
-            .populate('roleId', 'name slug permissions');
+            .populate('roleId', 'name slug permissions')
+            .populate('learningKeywords', 'text');
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }

@@ -139,7 +139,8 @@ export default function CreateSeminar() {
     // --- FORM STATE ---
     const [title, setTitle] = useState('');
     const [abstract, setAbstract] = useState('');
-    const [category, setCategory] = useState('Machine Learning');
+    const [category, setCategory] = useState('');
+    const [categoryOptions, setCategoryOptions] = useState([]);
     const [tags, setTags] = useState('');
     const [imageUrl, setImageUrl] = useState('');
     const [locationInput, setLocationInput] = useState('');
@@ -166,6 +167,16 @@ export default function CreateSeminar() {
     const hostImageInputRef = useRef(null);
     const [isUploading, setIsUploading] = useState(false);
     const [isUploadingHost, setIsUploadingHost] = useState(false);
+
+    // Category is one of the admin-curated keywords (Management > Keywords) - picking one
+    // here is what notifies users following that keyword (see seminarsController).
+    useEffect(() => {
+        api.get('/keywords').then(res => {
+            const options = (res.data.keywords || []).map(k => k.text);
+            setCategoryOptions(options);
+            setCategory(prev => prev || options[0] || '');
+        }).catch(err => console.error('Failed to load keywords', err));
+    }, []);
 
     const handleImageUpload = async (e, isHost = false) => {
         const file = e.target.files[0];
@@ -314,12 +325,14 @@ export default function CreateSeminar() {
                                             <select
                                                 value={category}
                                                 onChange={(e) => setCategory(e.target.value)}
-                                                className="w-full appearance-none border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 pr-10 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none cursor-pointer"
+                                                disabled={categoryOptions.length === 0}
+                                                className="w-full appearance-none border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 pr-10 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
-                                                <option>Machine Learning</option>
-                                                <option>Quantum Computing</option>
-                                                <option>Bioinformatics</option>
-                                                <option>Ethics in AI</option>
+                                                {categoryOptions.length === 0 ? (
+                                                    <option value="">No keywords available yet</option>
+                                                ) : (
+                                                    categoryOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)
+                                                )}
                                             </select>
                                             <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none">expand_more</span>
                                         </div>

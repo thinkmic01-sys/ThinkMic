@@ -4,10 +4,43 @@ const Registration = require('../models/Registration');
 const Notification = require('../models/Notification');
 const Recording = require('../models/Recording');
 const Transcript = require('../models/Transcript');
+const Keyword = require('../models/Keyword');
+const User = require('../models/User');
 const coinWalletService = require('../services/coinWalletService');
 const { summarizationQueue } = require('../queues');
 const socket = require('../utils/socket');
 const r2StorageService = require('../services/r2StorageService');
+
+// Notifies everyone following the keyword matching this seminar's category (My Learning
+// List) - skips the host themselves. Only called for non-draft seminars, matching the
+// same "drafts are private" rule the reward escrow and getSeminars listing already use.
+// Best-effort: a lookup/notify failure here should never fail seminar creation itself.
+async function notifyKeywordFollowers(seminar) {
+    if (!seminar.category) return;
+    try {
+        const keyword = await Keyword.findOne({ text: { $regex: `^${seminar.category.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } });
+        if (!keyword) return;
+
+        const followers = await User.find({ learningKeywords: keyword._id, _id: { $ne: seminar.hostId } }).select('_id');
+        if (followers.length === 0) return;
+
+        const link = '/app/courses/seminars';
+        const message = `A new seminar "${seminar.title}" was posted in "${keyword.text}" - a topic you're following!`;
+        const notifDocs = await Notification.insertMany(followers.map((f) => ({
+            userId: f._id,
+            type: 'keyword_seminar_match',
+            message,
+            link
+        })));
+
+        const io = socket.getIO();
+        followers.forEach((f, i) => {
+            io.to(f._id.toString()).emit('new_notification', { notification: notifDocs[i] });
+        });
+    } catch (error) {
+        console.error('notifyKeywordFollowers error:', error.message);
+    }
+}
 
 // Reserves `totalRequired` coins from the host into escrow for a seminar's reward campaign.
 // Mutates `seminar.rewardHeldAmount` and notifies the host. Throws InsufficientBalanceError
@@ -120,6 +153,11 @@ exports.createSeminar = async (req, res) => {
         }
 
         const savedSeminar = await newSeminar.save();
+
+        if (status !== 'draft') {
+            await notifyKeywordFollowers(savedSeminar);
+        }
+
         res.status(201).json(savedSeminar);
     } catch (err) {
         console.error(err);
@@ -209,6 +247,13 @@ exports.updateSeminar = async (req, res) => {
         }
 
         const updatedSeminar = await seminar.save();
+
+        // A seminar created as a draft and only now published should still notify keyword
+        // followers - createSeminar only covers seminars that are non-draft from the start.
+        if (wasDraft && !nowDraft) {
+            await notifyKeywordFollowers(updatedSeminar);
+        }
+
         res.status(200).json(updatedSeminar);
     } catch (err) {
         console.error(err);

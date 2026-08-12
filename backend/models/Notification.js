@@ -16,7 +16,7 @@ const notificationSchema = new mongoose.Schema({
             'reminder', 'system', 'update',
             'referral_pending', 'referral_approved', 'referral_rejected',
             'seminar_reward_received', 'seminar_coins_reserved', 'seminar_coins_refunded',
-            'seminar_live', 'form_published'
+            'seminar_live', 'form_published', 'keyword_seminar_match'
         ],
         default: 'reminder'
     },

@@ -13,6 +13,7 @@ const {
 const {
     getPermissionCatalog, listRoles, createRole, updateRole, deleteRole
 } = require('../controllers/roleController');
+const { createKeyword, deleteKeyword } = require('../controllers/keywordsController');
 
 router.use(protect);
 // Every route below carries its own checkPermission() - there is deliberately no
@@ -56,5 +57,10 @@ router.get('/roles', checkPermission('roles.manage'), listRoles);
 router.post('/roles', checkPermission('roles.manage'), createRole);
 router.patch('/roles/:id', checkPermission('roles.manage'), updateRole);
 router.delete('/roles/:id', checkPermission('roles.manage'), deleteRole);
+
+// Keywords - admin curation only; reading the list (My Learning List, seminar category
+// dropdown) is open to any authenticated user via GET /api/v1/keywords instead.
+router.post('/keywords', checkPermission('keywords.manage'), createKeyword);
+router.delete('/keywords/:id', checkPermission('keywords.manage'), deleteKeyword);
 
 module.exports = router;

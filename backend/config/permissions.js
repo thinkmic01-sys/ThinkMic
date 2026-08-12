@@ -16,6 +16,7 @@ const PERMISSIONS = [
     { key: 'rewards.view_history_stats', label: 'View Reward History & Stats', category: 'Rewards & Coins', description: 'View reward approval history and statistics' },
     { key: 'rewards.adjust_coins', label: 'Adjust User Coins', category: 'Rewards & Coins', description: 'Manually credit or debit a user\'s coin balance' },
     { key: 'schemas.manage', label: 'Manage Schema Builder', category: 'Schema Builder', description: 'Create, edit, and publish dynamic form schemas' },
+    { key: 'keywords.manage', label: 'Manage Keywords', category: 'Keywords', description: 'Add and remove the admin-curated keywords shown on My Learning List and used as seminar categories' },
     { key: 'support.manage_all', label: 'Manage Support Inbox', category: 'Support', description: 'View and respond to every user\'s support tickets' },
     { key: 'analytics.view', label: 'View Analytics', category: 'Analytics', description: 'View submission and platform analytics' },
     { key: 'submissions.view_all', label: 'View All Submissions', category: 'Submissions', description: 'List and view every user\'s form submissions' },

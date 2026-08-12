@@ -37,6 +37,12 @@ const ReportSchema = new mongoose.Schema({
         enum: ['standard', 'executive', 'academic'],
         required: true
     },
+    // Natural-language instruction to the AI ("English"/"Urdu"), not a locale code - mirrors
+    // the same convention already used by Summary generation (openaiService.generateSummary).
+    // Undefined/null means auto-detect from the source material, same as before this field existed.
+    language: {
+        type: String
+    },
     sections: {
         type: {
             summary: Boolean,

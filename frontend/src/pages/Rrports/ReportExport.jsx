@@ -11,6 +11,12 @@ const TEMPLATE_OPTIONS = [
 ];
 const TEMPLATE_LABEL = TEMPLATE_OPTIONS.reduce((acc, t) => ({ ...acc, [t.value]: t.label }), {});
 
+const LANGUAGE_OPTIONS = [
+    { value: '', label: 'Auto-detect' },
+    { value: 'English', label: 'English' },
+    { value: 'Urdu', label: 'Urdu' }
+];
+
 function formatRelativeTime(dateStr) {
     if (!dateStr) return 'Not generated yet';
     const diffMs = Date.now() - new Date(dateStr).getTime();
@@ -31,6 +37,7 @@ export default function ReportExport() {
     const [title, setTitle] = useState("Loading Report...");
     const [subtitle, setSubtitle] = useState("Prepared by ThinkMic AI");
     const [template, setTemplate] = useState("academic");
+    const [language, setLanguage] = useState("");
     const [sections, setSections] = useState({
         execSummary: true,
         findings: true,
@@ -57,6 +64,7 @@ export default function ReportExport() {
                     setTitle(data.report.title || "Untitled Document");
                     setSubtitle(data.report.subtitle || "Prepared by ThinkMic AI");
                     if (data.report.template) setTemplate(data.report.template);
+                    setLanguage(data.report.language || "");
                 }
             } catch (err) {
                 console.error(err);
@@ -100,7 +108,8 @@ export default function ReportExport() {
                 title,
                 subtitle,
                 template,
-                sections
+                sections,
+                language
             });
         } catch (error) {
             console.error("Failed to regenerate report", error);
@@ -189,6 +198,20 @@ export default function ReportExport() {
                                         className="w-full sm:w-auto appearance-none bg-white border border-[#c7c5d3] rounded-md pl-3 pr-8 py-1.5 text-[12px] sm:text-[13px] font-bold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none cursor-pointer shadow-sm"
                                     >
                                         {TEMPLATE_OPTIONS.map(opt => (
+                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                        ))}
+                                    </select>
+                                    <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[16px] text-[#777682] pointer-events-none">expand_more</span>
+                                </div>
+                                <span className="text-[11px] sm:text-[12px] text-[#464651] font-bold whitespace-nowrap">Language:</span>
+                                <div className="relative w-full sm:w-auto">
+                                    <select
+                                        value={language}
+                                        onChange={(e) => setLanguage(e.target.value)}
+                                        title="Regenerates the report in the selected language"
+                                        className="w-full sm:w-auto appearance-none bg-white border border-[#c7c5d3] rounded-md pl-3 pr-8 py-1.5 text-[12px] sm:text-[13px] font-bold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none cursor-pointer shadow-sm"
+                                    >
+                                        {LANGUAGE_OPTIONS.map(opt => (
                                             <option key={opt.value} value={opt.value}>{opt.label}</option>
                                         ))}
                                     </select>

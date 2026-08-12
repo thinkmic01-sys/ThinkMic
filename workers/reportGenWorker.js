@@ -20,8 +20,13 @@ const formatTimestamp = (seconds) => {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 };
 
+const escapeHtml = (s) => (s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
 const worker = new Worker('report-generation', async (job) => {
-    const { reportId, userId, templateType } = job.data;
+    const { reportId, userId, templateType, language } = job.data;
     console.log(`[Worker] Starting report generation for report ${reportId}`);
 
     try {
@@ -106,11 +111,12 @@ const worker = new Worker('report-generation', async (job) => {
         ].filter(Boolean).join('\n\n');
 
         const resolvedTemplate = templateType || report.template || 'standard';
+        const resolvedLanguage = language || report.language || null;
 
         // 4. Generate report content - try Claude first, fallback to ChatGPT
         let reportContent;
         try {
-            const result = await anthropicService.generateReport(summaryText, combinedContext, resolvedTemplate);
+            const result = await anthropicService.generateReport(summaryText, combinedContext, resolvedTemplate, resolvedLanguage);
             reportContent = result.reportContent;
             console.log(`[Worker] Report generated via Anthropic (Claude)`);
         } catch (claudeError) {
@@ -119,16 +125,30 @@ const worker = new Worker('report-generation', async (job) => {
                 summaryText,
                 combinedContext,
                 resolvedTemplate,
-                report.sections
+                report.sections,
+                resolvedLanguage
             );
             reportContent = result.reportContent;
             console.log(`[Worker] Report generated via OpenAI fallback`);
         }
 
+        // 4b. Guarantee the complete transcript appears in the report - the AI is only asked
+        // for a handful of illustrative quotes (see the system prompt), so append the full,
+        // verbatim transcript as its own appendix here rather than trusting the model to
+        // reproduce it faithfully (risks paraphrasing, truncation, or skipping content).
+        if (report.sections?.transcript && transcriptText) {
+            const appendixHeading = resolvedLanguage && resolvedLanguage.toLowerCase().startsWith('urdu') ? 'مکمل ٹرانسکرپٹ' : 'Full Transcript';
+            const transcriptParagraphs = transcriptText.split('\n')
+                .filter((line) => line.trim() !== '')
+                .map((line) => `<p>${escapeHtml(line)}</p>`)
+                .join('');
+            reportContent += `<h2>${appendixHeading}</h2>${transcriptParagraphs}`;
+        }
+
         // 5. Generate PDF and DOCX with the report's current title/subtitle/template/sections
         const { generatePDF, generateDOCX } = require('./utils/documentGenerator');
-        const pdfResult = await generatePDF(reportId, report.title, reportContent, report.subtitle, resolvedTemplate, report.sections);
-        const docxResult = await generateDOCX(reportId, report.title, reportContent, report.subtitle, resolvedTemplate, report.sections);
+        const pdfResult = await generatePDF(reportId, report.title, reportContent, report.subtitle, resolvedTemplate, report.sections, resolvedLanguage);
+        const docxResult = await generateDOCX(reportId, report.title, reportContent, report.subtitle, resolvedTemplate, report.sections, resolvedLanguage);
 
         // 6. Update report in DB
         await Report.findByIdAndUpdate(reportId, {

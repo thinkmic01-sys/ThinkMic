@@ -210,7 +210,7 @@ const REPORT_TEMPLATE_STRUCTURES = {
 - Web References (<h2>Web References</h2>)`
 };
 
-exports.generateReport = async (summaryText, transcriptText, templateType, sections = {}) => {
+exports.generateReport = async (summaryText, transcriptText, templateType, sections = {}, language = null) => {
     try {
         const normalizedTemplate = REPORT_TEMPLATE_STRUCTURES[templateType] ? templateType : 'standard';
         console.log(`[OpenAI] Generating ${normalizedTemplate} report...`);
@@ -221,8 +221,13 @@ Return ONLY raw semantic HTML suitable for injecting directly into a <div> - nev
 Use only these tags: <h1>, <h2>, <h3>, <p>, <ul>, <li>, <blockquote>, <table>, <tr>, <td>, <th>, <a>, <strong>, <em>.
 Use <blockquote> for direct quotes from the transcript or research, and <a href="..."> for every cited web source URL.
 If the source material contains Urdu or any other non-English script, preserve it verbatim in its original language and script - do not transliterate or translate it.
+If the report includes a transcript section, the complete verbatim transcript is appended automatically as its own appendix after your content - do not attempt to reproduce the full transcript yourself, just quote the handful of most relevant excerpts.`;
 
-Structure the report using this "${normalizedTemplate}" template:
+        if (language) {
+            systemPrompt += `\n\nCRITICAL LANGUAGE INSTRUCTION: Write the entire report (all headings, analysis, and commentary) in ${language}, regardless of the source material's language. Direct quotations from the transcript may stay in their original spoken language for authenticity, but everything else must be in ${language}.`;
+        }
+
+        systemPrompt += `\n\nStructure the report using this "${normalizedTemplate}" template:
 ${REPORT_TEMPLATE_STRUCTURES[normalizedTemplate]}`;
 
         let requestedSections = [];

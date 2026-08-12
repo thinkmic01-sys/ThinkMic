@@ -7,7 +7,7 @@
 
 const isMock = !process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'MOCK';
 
-exports.generateReport = async (summaryText, transcriptText, templateType) => {
+exports.generateReport = async (summaryText, transcriptText, templateType, language = null) => {
     if (isMock) {
         console.log(`[MOCK] Anthropic key missing, throwing error to trigger OpenAI fallback...`);
         throw new Error("Anthropic API Key missing, falling back to OpenAI");

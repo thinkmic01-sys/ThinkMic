@@ -6,6 +6,7 @@ const {
 } = require('docx');
 const fs = require('fs');
 const path = require('path');
+const QRCode = require('qrcode');
 const r2StorageService = require('../../backend/services/r2StorageService');
 
 const ensureDirectoryExists = (dirPath) => {
@@ -13,6 +14,42 @@ const ensureDirectoryExists = (dirPath) => {
         fs.mkdirSync(dirPath, { recursive: true });
     }
 };
+
+// Noto Sans Arabic is bundled (not a system font) so Urdu text has a font with the right
+// glyphs on any host. It's a Naskh-style font, not the calligraphic Nastaliq used in the
+// live transcript UI - deliberate choice, since neither PDFKit nor docx.js run a real Arabic
+// text-shaping engine (no letter joining/contextual forms), and Naskh-style isolated glyphs
+// stay far more legible than Nastaliq's without shaping. Expect Urdu text to still read a
+// little disconnected compared to a properly shaped renderer (e.g. a browser or Word's own
+// engine) - this is a known limitation, not a bug.
+const FONT_DIR = path.join(__dirname, 'fonts');
+const ARABIC_REGULAR_PATH = path.join(FONT_DIR, 'NotoSansArabic-Regular.ttf');
+const ARABIC_BOLD_PATH = path.join(FONT_DIR, 'NotoSansArabic-Bold.ttf');
+// The bundled Arabic font has zero Latin glyphs (verified: NotoSansArabic-Regular has no
+// A-Z/a-z coverage), so font/alignment choice must be decided per piece of text, not once
+// for the whole document - an Urdu-language report still contains plenty of plain English
+// (URLs, the verbatim transcript appendix, proper nouns) that must stay on Helvetica or it
+// renders as blank/missing glyphs. Range covers Arabic + Arabic Supplement + Presentation Forms.
+const ARABIC_SCRIPT_RE = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/;
+const containsArabicScript = (text) => ARABIC_SCRIPT_RE.test(text || '');
+
+// Generates (and memoizes per-document) a small QR PNG buffer for a URL so printed copies of
+// the report can be scanned to open the link. Cache is per generatePDF/generateDOCX call -
+// the same source URL is often cited more than once in one report.
+async function getQrBuffer(url, cache) {
+    if (cache.has(url)) return cache.get(url);
+    let buffer = null;
+    try {
+        buffer = await QRCode.toBuffer(url, { type: 'png', width: 96, margin: 1, color: { dark: '#181c22', light: '#FFFFFF' } });
+    } catch (error) {
+        console.error(`QR generation failed for ${url}:`, error.message);
+    }
+    cache.set(url, buffer);
+    return buffer;
+}
+
+// Pulls the distinct link URLs out of a set of parsed inline tokens (paragraphs/list items)
+const linksFromTokens = (tokens) => [...new Set(tokens.filter((t) => t.link).map((t) => t.link))];
 
 // Best-effort mirror of a generated report buffer into R2. Never throws - if R2 upload
 // fails, the local copy (already written to disk) remains the source of truth.
@@ -137,16 +174,27 @@ function ensureSpace(doc, height) {
     }
 }
 
-function fontFor(bold, italic) {
+function fontFor(bold, italic, useArabic) {
+    if (useArabic) return bold ? 'NotoArabic-Bold' : 'NotoArabic';
     if (bold && italic) return 'Helvetica-BoldOblique';
     if (bold) return 'Helvetica-Bold';
     if (italic) return 'Helvetica-Oblique';
     return 'Helvetica';
 }
 
+// Registers the bundled Arabic font under PDFKit's own font-name registry (idempotent -
+// PDFKit allows re-registering the same name harmlessly) so fontFor()'s 'NotoArabic'/
+// 'NotoArabic-Bold' names resolve. Only called when a report actually needs it.
+function registerArabicFonts(doc) {
+    if (fs.existsSync(ARABIC_REGULAR_PATH)) doc.registerFont('NotoArabic', ARABIC_REGULAR_PATH);
+    if (fs.existsSync(ARABIC_BOLD_PATH)) doc.registerFont('NotoArabic-Bold', ARABIC_BOLD_PATH);
+}
+
 // Renders a sequence of styled inline tokens as one flowing, wrapped paragraph -
 // PDFKit's `continued` text mode lets each run carry its own font/color/link while
-// staying on the same flowed line(s).
+// staying on the same flowed line(s). Font is chosen per-token from that token's own text
+// (not a blanket document-wide flag) since the Arabic font has no Latin glyphs at all - a
+// run of plain English inside an otherwise-Urdu paragraph must still use Helvetica.
 function renderRuns(doc, tokens, { size = 10.5, color = COLORS.dark, align, x, width, lineGap = 2 } = {}) {
     if (!tokens.length) return;
     if (x !== undefined) doc.x = x;
@@ -155,7 +203,7 @@ function renderRuns(doc, tokens, { size = 10.5, color = COLORS.dark, align, x, w
         const isFirst = i === 0;
         const isLast = i === tokens.length - 1;
 
-        doc.font(fontFor(token.bold, token.italic)).fontSize(size).fillColor(token.link ? COLORS.cyan : color);
+        doc.font(fontFor(token.bold, token.italic, containsArabicScript(token.text))).fontSize(size).fillColor(token.link ? COLORS.cyan : color);
 
         // PDFKit carries text-state options (underline, link) forward across
         // `continued` fragments unless each one explicitly overrides them - so
@@ -232,12 +280,12 @@ function drawCover(doc, { title, subtitle, template, sections }) {
         doc.moveDown(1);
     }
 
-    doc.font('Helvetica-Bold').fontSize(24).fillColor(COLORS.navy)
+    doc.font(fontFor(true, false, containsArabicScript(title))).fontSize(24).fillColor(COLORS.navy)
         .text(title || 'Research Report', { align: 'center' });
 
     if (subtitle) {
         doc.moveDown(0.3);
-        doc.font('Helvetica').fontSize(13).fillColor(COLORS.muted).text(subtitle, { align: 'center' });
+        doc.font(fontFor(false, false, containsArabicScript(subtitle))).fontSize(13).fillColor(COLORS.muted).text(subtitle, { align: 'center' });
     }
 
     doc.moveDown(0.4);
@@ -271,8 +319,9 @@ function drawHeading(doc, level, innerHtml) {
     ensureSpace(doc, 60);
     doc.moveDown(0.9);
     const text = decodeEntities(stripTags(innerHtml)).trim();
+    const headingIsArabic = containsArabicScript(text);
     const size = level === 1 ? 18 : level === 2 ? 16 : 13;
-    doc.font('Helvetica-Bold').fontSize(size).fillColor(COLORS.navy).text(text, { align: 'left' });
+    doc.font(fontFor(true, false, headingIsArabic)).fontSize(size).fillColor(COLORS.navy).text(text, { align: headingIsArabic ? 'right' : 'left' });
 
     if (level <= 2) {
         doc.moveDown(0.25);
@@ -286,18 +335,46 @@ function drawHeading(doc, level, innerHtml) {
     doc.x = doc.page.margins.left;
 }
 
-function drawParagraph(doc, innerHtml) {
+// Draws a compact row of QR thumbnails (one per unique link) below a block, so a printed
+// copy of the report can be scanned to open each cited URL - "beside" the link in spirit,
+// placed just under it since PDFKit can't mix an inline image into a flowed text run.
+async function drawQrRow(doc, urls, qrCache) {
+    if (!urls.length) return;
+    const size = 34;
+    const gap = 14;
+    const contentX = doc.page.margins.left;
+
+    for (const url of urls) {
+        const buffer = await getQrBuffer(url, qrCache);
+        if (!buffer) continue;
+
+        ensureSpace(doc, size + 6);
+        const y = doc.y;
+        doc.image(buffer, contentX, y, { width: size, height: size });
+        const label = url.length > 60 ? `${url.slice(0, 57)}...` : url;
+        doc.font('Helvetica').fontSize(7.5).fillColor(COLORS.muted)
+            .text('Scan to open', contentX + size + 8, y + 2, { width: doc.page.width - doc.page.margins.right - contentX - size - 8 })
+            .text(label, contentX + size + 8, y + 13, { width: doc.page.width - doc.page.margins.right - contentX - size - 8, lineGap: 1 });
+        doc.y = Math.max(doc.y, y + size) + gap - 8;
+        doc.x = contentX;
+    }
+}
+
+async function drawParagraph(doc, innerHtml, qrCache) {
     const tokens = parseInline(innerHtml);
     if (!tokens.length) return;
     ensureSpace(doc, 20);
-    renderRuns(doc, tokens, { size: 10.5, color: COLORS.dark, align: 'justify', lineGap: 3 });
+    const blockIsArabic = tokens.some((t) => containsArabicScript(t.text));
+    renderRuns(doc, tokens, { size: 10.5, color: COLORS.dark, align: blockIsArabic ? 'right' : 'justify', lineGap: 3 });
     doc.moveDown(0.6);
     doc.x = doc.page.margins.left;
+    await drawQrRow(doc, linksFromTokens(tokens), qrCache);
 }
 
-function drawList(doc, innerHtml) {
+async function drawList(doc, innerHtml, qrCache) {
     const itemRe = /<li[^>]*>([\s\S]*?)<\/li>/gi;
     let match;
+    const allLinks = [];
     while ((match = itemRe.exec(innerHtml)) !== null) {
         const tokens = parseInline(match[1]);
         if (!tokens.length) continue;
@@ -308,13 +385,16 @@ function drawList(doc, innerHtml) {
         tokens[0] = { ...tokens[0], text: `•  ${tokens[0].text}` };
         renderRuns(doc, tokens, { size: 10.5, color: COLORS.dark, x: bulletX, width: rightEdge - bulletX, lineGap: 2 });
         doc.moveDown(0.35);
+        allLinks.push(...linksFromTokens(tokens));
     }
     doc.x = doc.page.margins.left;
+    await drawQrRow(doc, [...new Set(allLinks)], qrCache);
 }
 
 function drawBlockquote(doc, innerHtml) {
     const text = decodeEntities(stripTags(innerHtml)).trim();
     if (!text) return;
+    const quoteIsArabic = containsArabicScript(text);
 
     const padding = 10;
     const barWidth = 3.5;
@@ -322,7 +402,7 @@ function drawBlockquote(doc, innerHtml) {
     const contentWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
     const textWidth = contentWidth - barWidth - padding * 2;
 
-    doc.font('Helvetica-Oblique').fontSize(10.5);
+    doc.font(fontFor(false, true, quoteIsArabic)).fontSize(10.5);
     const textHeight = doc.heightOfString(text, { width: textWidth, lineGap: 2 });
     const boxHeight = textHeight + padding * 2;
 
@@ -332,14 +412,14 @@ function drawBlockquote(doc, innerHtml) {
     doc.roundedRect(contentX, boxY, contentWidth, boxHeight, 4).fill(COLORS.quoteBg);
     doc.rect(contentX, boxY, barWidth, boxHeight).fill(COLORS.cyan);
 
-    doc.font('Helvetica-Oblique').fontSize(10.5).fillColor(COLORS.slate)
+    doc.font(fontFor(false, true, quoteIsArabic)).fontSize(10.5).fillColor(COLORS.slate)
         .text(text, contentX + barWidth + padding, boxY + padding, { width: textWidth, lineGap: 2 });
 
     doc.y = boxY + boxHeight + 14;
     doc.x = contentX;
 }
 
-function drawTable(doc, innerHtml) {
+async function drawTable(doc, innerHtml, qrCache) {
     const rows = parseTableRows(innerHtml);
     if (!rows.length) return;
 
@@ -352,6 +432,7 @@ function drawTable(doc, innerHtml) {
 
     const cellPadding = 6;
     const isHeaderRow = (row) => row.every((c) => c.tag === 'th');
+    const tableLinks = [];
 
     ensureSpace(doc, 40);
     doc.moveDown(0.3);
@@ -359,9 +440,11 @@ function drawTable(doc, innerHtml) {
     rows.forEach((row, rowIndex) => {
         const header = isHeaderRow(row);
 
-        doc.font(header ? 'Helvetica-Bold' : 'Helvetica').fontSize(9.5);
+        // Each cell may be a different script, so height must be measured with that
+        // cell's own font, not one font picked for the whole row.
         const cellHeights = row.map((cell, i) => {
             const plain = decodeEntities(stripTags(cell.html)).trim();
+            doc.font(fontFor(header, false, containsArabicScript(plain))).fontSize(9.5);
             return doc.heightOfString(plain || ' ', { width: colWidths[i] - cellPadding * 2 });
         });
         const rowHeight = Math.max(...cellHeights) + cellPadding * 2;
@@ -383,8 +466,9 @@ function drawTable(doc, innerHtml) {
             const plain = decodeEntities(stripTags(cell.html)).trim();
             const linkMatch = cell.html.match(/<a\s+href=["']([^"']*)["']/i);
             const url = linkMatch ? linkMatch[1] : (isUrl(plain) ? plain : null);
+            if (url && !header) tableLinks.push(url);
 
-            doc.font(header ? 'Helvetica-Bold' : 'Helvetica').fontSize(9.5)
+            doc.font(fontFor(header, false, containsArabicScript(plain))).fontSize(9.5)
                 .fillColor(header ? COLORS.navy : (url ? COLORS.cyan : COLORS.dark));
 
             const textOpts = { width: w - cellPadding * 2 };
@@ -402,6 +486,9 @@ function drawTable(doc, innerHtml) {
 
     doc.moveDown(0.8);
     doc.x = contentX;
+
+    // QR codes for every cited source in this table, so a printed copy can be scanned open
+    await drawQrRow(doc, [...new Set(tableLinks)], qrCache);
 }
 
 function drawFooters(doc) {
@@ -427,58 +514,62 @@ function drawFooters(doc) {
     }
 }
 
-const generatePDF = async (reportId, title, content, subtitle, template = 'standard', sections = {}) => {
-    return new Promise((resolve, reject) => {
-        try {
-            const reportsDir = path.join(__dirname, '../../backend/uploads/reports');
-            ensureDirectoryExists(reportsDir);
+const generatePDF = async (reportId, title, content, subtitle, template = 'standard', sections = {}, language = null) => {
+    const reportsDir = path.join(__dirname, '../../backend/uploads/reports');
+    ensureDirectoryExists(reportsDir);
 
-            const fileName = `report_${reportId}.pdf`;
-            const filePath = path.join(reportsDir, fileName);
-            const doc = new PDFDocument({ margin: 50, bufferPages: true });
+    const fileName = `report_${reportId}.pdf`;
+    const filePath = path.join(reportsDir, fileName);
+    const doc = new PDFDocument({ margin: 50, bufferPages: true });
 
-            const stream = fs.createWriteStream(filePath);
-            doc.pipe(stream);
+    const stream = fs.createWriteStream(filePath);
+    doc.pipe(stream);
 
-            const chunks = [];
-            doc.on('data', (chunk) => chunks.push(chunk));
+    const chunks = [];
+    doc.on('data', (chunk) => chunks.push(chunk));
 
-            drawCover(doc, { title, subtitle, template, sections });
+    // Registered unconditionally (cheap) - font/alignment choice happens per piece of text
+    // via containsArabicScript() below, not from this report's declared `language`, so Arabic
+    // script renders correctly even if it shows up somewhere unexpected.
+    registerArabicFonts(doc);
+    const qrCache = new Map();
 
-            const blocks = parseBlocks(content || '');
-            if (blocks.length === 0) {
-                const plainText = decodeEntities(stripTags(content || '')).trim();
-                if (plainText) {
-                    renderRuns(doc, [{ text: plainText }], { size: 10.5, color: COLORS.dark, align: 'justify' });
-                }
-            } else {
-                blocks.forEach((block) => {
-                    switch (block.tag) {
-                        case 'h1': drawHeading(doc, 1, block.inner); break;
-                        case 'h2': drawHeading(doc, 2, block.inner); break;
-                        case 'h3': drawHeading(doc, 3, block.inner); break;
-                        case 'p': drawParagraph(doc, block.inner); break;
-                        case 'ul': drawList(doc, block.inner); break;
-                        case 'blockquote': drawBlockquote(doc, block.inner); break;
-                        case 'table': drawTable(doc, block.inner); break;
-                        default: break;
-                    }
-                });
-            }
+    drawCover(doc, { title, subtitle, template, sections });
 
-            drawFooters(doc);
-            doc.end();
-
-            stream.on('finish', async () => {
-                const localPath = `/uploads/reports/${fileName}`;
-                const r2Key = await mirrorToR2(`reports/${reportId}.pdf`, Buffer.concat(chunks), 'application/pdf');
-                resolve({ localPath, r2Key });
-            });
-            stream.on('error', reject);
-        } catch (error) {
-            reject(error);
+    const blocks = parseBlocks(content || '');
+    if (blocks.length === 0) {
+        const plainText = decodeEntities(stripTags(content || '')).trim();
+        if (plainText) {
+            renderRuns(doc, [{ text: plainText }], { size: 10.5, color: COLORS.dark, align: containsArabicScript(plainText) ? 'right' : 'justify' });
         }
+    } else {
+        // Sequential (not Promise.all) - PDFKit draws directly onto one shared cursor/stream,
+        // so blocks must be laid out in document order, one at a time.
+        for (const block of blocks) {
+            switch (block.tag) {
+                case 'h1': drawHeading(doc, 1, block.inner); break;
+                case 'h2': drawHeading(doc, 2, block.inner); break;
+                case 'h3': drawHeading(doc, 3, block.inner); break;
+                case 'p': await drawParagraph(doc, block.inner, qrCache); break;
+                case 'ul': await drawList(doc, block.inner, qrCache); break;
+                case 'blockquote': drawBlockquote(doc, block.inner); break;
+                case 'table': await drawTable(doc, block.inner, qrCache); break;
+                default: break;
+            }
+        }
+    }
+
+    drawFooters(doc);
+    doc.end();
+
+    await new Promise((resolve, reject) => {
+        stream.on('finish', resolve);
+        stream.on('error', reject);
     });
+
+    const localPath = `/uploads/reports/${fileName}`;
+    const r2Key = await mirrorToR2(`reports/${reportId}.pdf`, Buffer.concat(chunks), 'application/pdf');
+    return { localPath, r2Key };
 };
 
 // ============================================================
@@ -499,37 +590,68 @@ function buildRuns(tokens, { size = 22, color = '181c22' } = {}) {
     });
 }
 
+// Appends inline QR image runs (with a small caption) for a set of link URLs onto an
+// existing run array - Word (unlike PDFKit) freely mixes ImageRun/TextRun within one
+// Paragraph, so the QR can sit genuinely beside the link text rather than on its own line.
+async function appendQrRuns(runs, urls, qrCache) {
+    for (const url of urls) {
+        const buffer = await getQrBuffer(url, qrCache);
+        if (!buffer) continue;
+        runs.push(new TextRun({ text: '  ', size: 21 }));
+        runs.push(new ImageRun({ data: buffer, transformation: { width: 30, height: 30 } }));
+        runs.push(new TextRun({ text: '  (scan to open)', color: '777682', size: 15, italics: true }));
+    }
+    return runs;
+}
+
 function buildHeadingParagraph(level, innerHtml) {
     const text = decodeEntities(stripTags(innerHtml)).trim();
+    const headingIsArabic = containsArabicScript(text);
     const size = level === 1 ? 36 : level === 2 ? 32 : 26;
     return new Paragraph({
         children: [new TextRun({ text, color: '222777', bold: true, size })],
         spacing: { before: 300, after: 150 },
-        border: level <= 2 ? { bottom: { color: 'E0E2EB', space: 4, style: BorderStyle.SINGLE, size: 6 } } : undefined
+        border: level <= 2 ? { bottom: { color: 'E0E2EB', space: 4, style: BorderStyle.SINGLE, size: 6 } } : undefined,
+        alignment: headingIsArabic ? AlignmentType.RIGHT : undefined,
+        bidirectional: headingIsArabic
     });
 }
 
-function buildParagraphBlock(innerHtml) {
+// Word (unlike PDFKit) shapes and displays any Unicode script fine regardless of the
+// paragraph's declared font, so no font override is needed here for Arabic text - but the
+// paragraph-level RTL flag (`bidirectional`) still must be decided per-block from that
+// block's own content, or an all-English block (e.g. the transcript appendix) inside an
+// Urdu-language report would incorrectly get flipped to right-to-left reading order.
+async function buildParagraphBlock(innerHtml, qrCache) {
     const tokens = parseInline(innerHtml);
     if (!tokens.length) return null;
+    const blockIsArabic = tokens.some((t) => containsArabicScript(t.text));
+    const runs = buildRuns(tokens, { size: 21, color: '181c22' });
+    await appendQrRuns(runs, linksFromTokens(tokens), qrCache);
     return new Paragraph({
-        children: buildRuns(tokens, { size: 21, color: '181c22' }),
+        children: runs,
         spacing: { after: 200, line: 360 },
-        alignment: AlignmentType.JUSTIFIED
+        alignment: blockIsArabic ? AlignmentType.RIGHT : AlignmentType.JUSTIFIED,
+        bidirectional: blockIsArabic
     });
 }
 
-function buildListParagraphs(innerHtml) {
+async function buildListParagraphs(innerHtml, qrCache) {
     const itemRe = /<li[^>]*>([\s\S]*?)<\/li>/gi;
     const paragraphs = [];
     let match;
     while ((match = itemRe.exec(innerHtml)) !== null) {
         const tokens = parseInline(match[1]);
         if (!tokens.length) continue;
+        const itemIsArabic = tokens.some((t) => containsArabicScript(t.text));
+        const runs = [new TextRun({ text: '•  ', color: '181c22', size: 21 }), ...buildRuns(tokens, { size: 21, color: '181c22' })];
+        await appendQrRuns(runs, linksFromTokens(tokens), qrCache);
         paragraphs.push(new Paragraph({
-            children: [new TextRun({ text: '•  ', color: '181c22', size: 21 }), ...buildRuns(tokens, { size: 21, color: '181c22' })],
+            children: runs,
             spacing: { after: 120 },
-            indent: { left: 360 }
+            indent: { left: 360 },
+            alignment: itemIsArabic ? AlignmentType.RIGHT : undefined,
+            bidirectional: itemIsArabic
         }));
     }
     return paragraphs;
@@ -538,16 +660,19 @@ function buildListParagraphs(innerHtml) {
 function buildBlockquoteParagraph(innerHtml) {
     const text = decodeEntities(stripTags(innerHtml)).trim();
     if (!text) return null;
+    const quoteIsArabic = containsArabicScript(text);
     return new Paragraph({
         children: [new TextRun({ text, italics: true, color: '464651', size: 21 })],
         spacing: { before: 150, after: 200 },
         indent: { left: 200 },
         shading: { type: ShadingType.CLEAR, fill: 'F8F9FC' },
-        border: { left: { color: '00C2CB', size: 28, style: BorderStyle.SINGLE, space: 8 } }
+        border: { left: { color: '00C2CB', size: 28, style: BorderStyle.SINGLE, space: 8 } },
+        alignment: quoteIsArabic ? AlignmentType.RIGHT : undefined,
+        bidirectional: quoteIsArabic
     });
 }
 
-function buildDocxTable(innerHtml) {
+async function buildDocxTable(innerHtml, qrCache) {
     const rows = parseTableRows(innerHtml);
     if (!rows.length) return null;
 
@@ -556,33 +681,37 @@ function buildDocxTable(innerHtml) {
     const cellBorder = { style: BorderStyle.SINGLE, size: 4, color: 'E0E2EB' };
     const borders = { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder };
 
-    const tableRows = rows.map((row) => {
+    const tableRows = [];
+    for (const row of rows) {
         const isHeader = row.every((c) => c.tag === 'th');
-        return new TableRow({
-            children: row.map((cell, i) => {
-                const plain = decodeEntities(stripTags(cell.html)).trim();
-                const linkMatch = cell.html.match(/<a\s+href=["']([^"']*)["']/i);
-                const url = linkMatch ? linkMatch[1] : (isUrl(plain) ? plain : null);
+        const cells = [];
+        for (let i = 0; i < row.length; i++) {
+            const cell = row[i];
+            const plain = decodeEntities(stripTags(cell.html)).trim();
+            const cellIsArabic = containsArabicScript(plain);
+            const linkMatch = cell.html.match(/<a\s+href=["']([^"']*)["']/i);
+            const url = linkMatch ? linkMatch[1] : (isUrl(plain) ? plain : null);
 
-                const runChildren = url
-                    ? [new ExternalHyperlink({ link: url, children: [new TextRun({ text: plain, color: '00C2CB', underline: {}, size: 19 })] })]
-                    : [new TextRun({ text: plain, bold: isHeader, color: isHeader ? '222777' : '181c22', size: 19 })];
+            const runChildren = url
+                ? [new ExternalHyperlink({ link: url, children: [new TextRun({ text: plain, color: '00C2CB', underline: {}, size: 19 })] })]
+                : [new TextRun({ text: plain, bold: isHeader, color: isHeader ? '222777' : '181c22', size: 19 })];
+            if (url && !isHeader) await appendQrRuns(runChildren, [url], qrCache);
 
-                return new TableCell({
-                    children: [new Paragraph({ children: runChildren })],
-                    width: { size: colWidthPct[i], type: WidthType.PERCENTAGE },
-                    shading: isHeader ? { type: ShadingType.CLEAR, fill: 'F1F3FC' } : undefined,
-                    borders,
-                    margins: { top: 100, bottom: 100, left: 100, right: 100 }
-                });
-            })
-        });
-    });
+            cells.push(new TableCell({
+                children: [new Paragraph({ children: runChildren, alignment: cellIsArabic ? AlignmentType.RIGHT : undefined, bidirectional: cellIsArabic })],
+                width: { size: colWidthPct[i], type: WidthType.PERCENTAGE },
+                shading: isHeader ? { type: ShadingType.CLEAR, fill: 'F1F3FC' } : undefined,
+                borders,
+                margins: { top: 100, bottom: 100, left: 100, right: 100 }
+            }));
+        }
+        tableRows.push(new TableRow({ children: cells }));
+    }
 
     return new Table({ rows: tableRows, width: { size: 100, type: WidthType.PERCENTAGE } });
 }
 
-const generateDOCX = async (reportId, title, content, subtitle, template = 'standard', sections = {}) => {
+const generateDOCX = async (reportId, title, content, subtitle, template = 'standard', sections = {}, language = null) => {
     try {
         const reportsDir = path.join(__dirname, '../../backend/uploads/reports');
         ensureDirectoryExists(reportsDir);
@@ -590,28 +719,37 @@ const generateDOCX = async (reportId, title, content, subtitle, template = 'stan
         const fileName = `report_${reportId}.docx`;
         const filePath = path.join(reportsDir, fileName);
 
+        // Word shapes any Unicode script correctly on its own, so (unlike the PDF path) there's
+        // no font substitution to worry about - but bidirectional/alignment is still decided
+        // per-block from that block's own content, not this report's declared `language`, so a
+        // plain-English block (e.g. the transcript appendix) in an Urdu report isn't flipped RTL.
+        const qrCache = new Map();
         const blocks = parseBlocks(content || '');
         const bodyElements = [];
 
         if (blocks.length === 0) {
             const plainText = decodeEntities(stripTags(content || '')).trim();
             plainText.split('\n').filter((p) => p.trim() !== '').forEach((line) => {
+                const lineIsArabic = containsArabicScript(line);
                 bodyElements.push(new Paragraph({
                     children: [new TextRun({ text: line, color: '181c22', size: 22 })],
-                    spacing: { after: 200 }
+                    spacing: { after: 200 },
+                    alignment: lineIsArabic ? AlignmentType.RIGHT : undefined,
+                    bidirectional: lineIsArabic
                 }));
             });
         } else {
-            blocks.forEach((block) => {
+            // Sequential - QR generation is async and blocks may share a memoized cache entry
+            for (const block of blocks) {
                 switch (block.tag) {
                     case 'h1': bodyElements.push(buildHeadingParagraph(1, block.inner)); break;
                     case 'h2': bodyElements.push(buildHeadingParagraph(2, block.inner)); break;
                     case 'h3': bodyElements.push(buildHeadingParagraph(3, block.inner)); break;
-                    case 'p': { const p = buildParagraphBlock(block.inner); if (p) bodyElements.push(p); break; }
-                    case 'ul': bodyElements.push(...buildListParagraphs(block.inner)); break;
+                    case 'p': { const p = await buildParagraphBlock(block.inner, qrCache); if (p) bodyElements.push(p); break; }
+                    case 'ul': bodyElements.push(...(await buildListParagraphs(block.inner, qrCache))); break;
                     case 'blockquote': { const bq = buildBlockquoteParagraph(block.inner); if (bq) bodyElements.push(bq); break; }
                     case 'table': {
-                        const t = buildDocxTable(block.inner);
+                        const t = await buildDocxTable(block.inner, qrCache);
                         if (t) {
                             bodyElements.push(t);
                             bodyElements.push(new Paragraph({ text: '', spacing: { after: 200 } }));
@@ -620,7 +758,7 @@ const generateDOCX = async (reportId, title, content, subtitle, template = 'stan
                     }
                     default: break;
                 }
-            });
+            }
         }
 
         const logoPath = path.join(__dirname, 'logo.jpg');

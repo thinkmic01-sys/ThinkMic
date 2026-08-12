@@ -57,7 +57,7 @@ exports.listUserReports = async (req, res) => {
 
 exports.createAndGenerateReport = async (req, res) => {
     try {
-        const { title, subtitle, summaryId, sessionIds, template, sections } = req.body;
+        const { title, subtitle, summaryId, sessionIds, template, sections, language } = req.body;
 
         const reportData = {
             userId: req.user._id,
@@ -69,6 +69,7 @@ exports.createAndGenerateReport = async (req, res) => {
             status: 'pending'
         };
         if (subtitle !== undefined) reportData.subtitle = subtitle;
+        if (language !== undefined) reportData.language = language;
 
         if (req.body.projectId) {
             reportData.projectId = req.body.projectId;
@@ -79,7 +80,8 @@ exports.createAndGenerateReport = async (req, res) => {
         const job = await reportGenerationQueue.add('generate', {
             reportId: report._id,
             userId: req.user._id,
-            templateType: report.template
+            templateType: report.template,
+            language: report.language
         });
 
         res.status(202).json({ reportId: report._id, jobId: job.id });
@@ -160,13 +162,14 @@ exports.downloadReportFile = async (req, res) => {
 
 exports.regenerateReport = async (req, res) => {
     try {
-        const { title, subtitle, template, sections } = req.body;
+        const { title, subtitle, template, sections, language } = req.body;
 
         const update = { status: 'pending' };
         if (title !== undefined) update.title = title;
         if (subtitle !== undefined) update.subtitle = subtitle;
         if (template !== undefined) update.template = normalizeTemplate(template);
         if (sections !== undefined) update.sections = normalizeSections(sections);
+        if (language !== undefined) update.language = language;
 
         const report = await Report.findOneAndUpdate(
             { _id: req.params.id, userId: req.user._id },
@@ -180,7 +183,8 @@ exports.regenerateReport = async (req, res) => {
         const job = await reportGenerationQueue.add('generate', {
             reportId: report._id,
             userId: req.user._id,
-            templateType: report.template
+            templateType: report.template,
+            language: report.language
         });
 
         res.status(202).json({ reportId: report._id, jobId: job.id });
@@ -202,9 +206,9 @@ exports.exportReport = async (req, res) => {
 
         let result;
         if (type === 'pdf') {
-            result = await generatePDF(report._id, resolvedTitle, report.content, resolvedSubtitle, report.template, report.sections);
+            result = await generatePDF(report._id, resolvedTitle, report.content, resolvedSubtitle, report.template, report.sections, report.language);
         } else if (type === 'docx') {
-            result = await generateDOCX(report._id, resolvedTitle, report.content, resolvedSubtitle, report.template, report.sections);
+            result = await generateDOCX(report._id, resolvedTitle, report.content, resolvedSubtitle, report.template, report.sections, report.language);
         } else {
             return res.status(400).json({ message: 'Invalid export type' });
         }
@@ -253,7 +257,7 @@ exports.sendReportEmail = async (req, res) => {
                 return res.status(400).json({ message: 'This report has no content yet - generate it before sending.' });
             }
             const { generatePDF } = require('../../workers/utils/documentGenerator');
-            const result = await generatePDF(report._id, report.title, report.content, report.subtitle, report.template, report.sections);
+            const result = await generatePDF(report._id, report.title, report.content, report.subtitle, report.template, report.sections, report.language);
             pdfPath = path.join(__dirname, '..', result.localPath);
 
             // Persist the freshly-generated copy onto the report so future sends/exports/

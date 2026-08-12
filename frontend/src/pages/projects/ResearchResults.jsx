@@ -31,6 +31,19 @@ const ICON_BY_TYPE = {
     Article: 'language'
 };
 
+// Mirrors ReportExport.jsx's TEMPLATE_OPTIONS/value set so a report created here and one
+// edited later on the export page always agree on what each template value means.
+const REPORT_TEMPLATE_OPTIONS = [
+    { value: 'academic', label: 'Standard Academic' },
+    { value: 'executive', label: 'Executive Brief' },
+    { value: 'standard', label: 'Data Dense' }
+];
+const REPORT_LANGUAGE_OPTIONS = [
+    { value: '', label: 'Auto-detect' },
+    { value: 'English', label: 'English' },
+    { value: 'Urdu', label: 'Urdu' }
+];
+
 export default function ResearchResults() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -47,6 +60,11 @@ export default function ResearchResults() {
     const [activeSessionId, setActiveSessionId] = useState(null);
     const [activeSourceId, setActiveSourceId] = useState(null);
     const [selectedResultIds, setSelectedResultIds] = useState([]);
+    // Report generation config - real template/language selection at creation time, instead
+    // of a hardcoded 'academic' template and no language, both of which previously could only
+    // be changed afterward via ReportExport.jsx's regenerate flow.
+    const [reportTemplate, setReportTemplate] = useState('academic');
+    const [reportLanguage, setReportLanguage] = useState('');
     
     // --- RESPONSIVE TOGGLE STATES ---
     const [isQueriesOpen, setIsQueriesOpen] = useState(false);
@@ -202,9 +220,10 @@ export default function ResearchResults() {
             const payload = {
                 title: "Research Report",
                 sessionIds: [activeSessionId],
-                template: "academic",
+                template: reportTemplate,
                 sections: { summary: true, transcript: false, research: true, sources: true }
             };
+            if (reportLanguage) payload.language = reportLanguage;
             if (projectId) {
                 payload.projectId = projectId;
             }
@@ -514,15 +533,43 @@ export default function ResearchResults() {
                             <p className="font-mono text-[10px] sm:text-[11px] text-gray-500 font-bold hidden sm:block">AI is ready to synthesize selected sources.</p>
                         </div>
                     </div>
-                    <button
-                        onClick={handleProceedToReport}
-                        disabled={selectedResultIds.length === 0}
-                        className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-[12px] sm:text-sm font-bold shadow-sm transition-colors flex items-center gap-1 sm:gap-2
-                            ${selectedResultIds.length > 0 ? 'bg-primary text-white hover:bg-[#3a3f8f] cursor-pointer' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}
-                        `}
-                    >
-                        Generate <span className="hidden sm:inline">Report</span> <span className="material-symbols-outlined text-[16px] sm:text-[18px]">arrow_forward</span>
-                    </button>
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="relative hidden md:block">
+                            <select
+                                value={reportTemplate}
+                                onChange={(e) => setReportTemplate(e.target.value)}
+                                title="Report template"
+                                className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-7 py-2 text-[12px] font-bold text-gray-700 focus:border-primary focus:ring-1 focus:ring-primary outline-none cursor-pointer"
+                            >
+                                {REPORT_TEMPLATE_OPTIONS.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
+                            <span className="material-symbols-outlined absolute right-1.5 top-1/2 -translate-y-1/2 text-[16px] text-gray-400 pointer-events-none">expand_more</span>
+                        </div>
+                        <div className="relative hidden md:block">
+                            <select
+                                value={reportLanguage}
+                                onChange={(e) => setReportLanguage(e.target.value)}
+                                title="Report language"
+                                className="appearance-none bg-white border border-gray-200 rounded-lg pl-3 pr-7 py-2 text-[12px] font-bold text-gray-700 focus:border-primary focus:ring-1 focus:ring-primary outline-none cursor-pointer"
+                            >
+                                {REPORT_LANGUAGE_OPTIONS.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
+                            <span className="material-symbols-outlined absolute right-1.5 top-1/2 -translate-y-1/2 text-[16px] text-gray-400 pointer-events-none">expand_more</span>
+                        </div>
+                        <button
+                            onClick={handleProceedToReport}
+                            disabled={selectedResultIds.length === 0}
+                            className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-[12px] sm:text-sm font-bold shadow-sm transition-colors flex items-center gap-1 sm:gap-2
+                                ${selectedResultIds.length > 0 ? 'bg-primary text-white hover:bg-[#3a3f8f] cursor-pointer' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}
+                            `}
+                        >
+                            Generate <span className="hidden sm:inline">Report</span> <span className="material-symbols-outlined text-[16px] sm:text-[18px]">arrow_forward</span>
+                        </button>
+                    </div>
                 </div>
             </section>
 

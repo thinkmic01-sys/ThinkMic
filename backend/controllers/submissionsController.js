@@ -1,4 +1,10 @@
 const Submission = require('../models/Submission');
+const FieldSchema = require('../models/FieldSchema');
+
+// A caller with the blanket submissions.view_all permission sees every submission; anyone
+// with only submissions.view_own (e.g. a Lecturer) is restricted to submissions against
+// schemas they created themselves.
+const scopeToOwnSubmissions = (req) => !req.user.permissions.includes('submissions.view_all') && req.user.permissions.includes('submissions.view_own');
 
 exports.submitForm = async (req, res) => {
     try {
@@ -28,6 +34,15 @@ exports.listSubmissions = async (req, res) => {
         if (userId) query.userId = userId;
         if (status) query.status = status;
 
+        if (scopeToOwnSubmissions(req)) {
+            const ownSchemaIds = await FieldSchema.find({ createdBy: req.user._id }).distinct('_id');
+            // If a specific schemaId was requested but it isn't one of the caller's own, force
+            // an impossible match rather than leaking whether that schema exists at all.
+            query.schemaId = schemaId
+                ? (ownSchemaIds.some((sid) => sid.toString() === schemaId) ? schemaId : null)
+                : { $in: ownSchemaIds };
+        }
+
         const limit = 25;
         const currentPage = Math.max(1, parseInt(page, 10) || 1);
 
@@ -50,8 +65,11 @@ exports.getSubmissionDetail = async (req, res) => {
     try {
         const submission = await Submission.findById(req.params.id)
             .populate('userId', 'fullName email')
-            .populate('schemaId', 'name fields');
+            .populate('schemaId', 'name fields createdBy');
         if (!submission) return res.status(404).json({ message: 'Submission not found' });
+        if (scopeToOwnSubmissions(req) && submission.schemaId?.createdBy?.toString() !== req.user._id.toString()) {
+            return res.status(404).json({ message: 'Submission not found' });
+        }
 
         res.status(200).json({ submission, answers: Object.fromEntries(submission.answers) });
     } catch (error) {

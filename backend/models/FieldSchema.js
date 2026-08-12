@@ -32,9 +32,12 @@ const FieldSchemaSchema = new mongoose.Schema({
         unique: true
     },
     description: String,
-    // Either the literal 'all' (visible to everyone) or a User.title value (professional
-    // title, e.g. "Cardiologist") matched case-insensitively - not an access-role enum
-    // anymore, so no fixed enum constraint here.
+    // The literal 'all' (visible to everyone), the literal 'own-students' (visible only to
+    // students who carry this schema's createdBy in their User.assignedLecturers - forced by
+    // schemasController.createSchema for anyone without the blanket schemas.manage
+    // permission, e.g. a Lecturer), or a User.title value (professional title, e.g.
+    // "Cardiologist") matched case-insensitively - not an access-role enum, so no fixed
+    // enum constraint here.
     targetRole: {
         type: String,
         required: true

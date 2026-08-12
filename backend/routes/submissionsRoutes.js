@@ -6,7 +6,7 @@ const { submitForm, listSubmissions, getSubmissionDetail } = require('../control
 router.use(protect);
 
 router.post('/', submitForm);
-router.get('/', checkPermission('submissions.view_all'), listSubmissions);
-router.get('/:id', checkPermission('submissions.view_all'), getSubmissionDetail);
+router.get('/', checkPermission('submissions.view_all', 'submissions.view_own'), listSubmissions);
+router.get('/:id', checkPermission('submissions.view_all', 'submissions.view_own'), getSubmissionDetail);
 
 module.exports = router;

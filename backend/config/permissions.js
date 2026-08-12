@@ -16,10 +16,12 @@ const PERMISSIONS = [
     { key: 'rewards.view_history_stats', label: 'View Reward History & Stats', category: 'Rewards & Coins', description: 'View reward approval history and statistics' },
     { key: 'rewards.adjust_coins', label: 'Adjust User Coins', category: 'Rewards & Coins', description: 'Manually credit or debit a user\'s coin balance' },
     { key: 'schemas.manage', label: 'Manage Schema Builder', category: 'Schema Builder', description: 'Create, edit, and publish dynamic form schemas' },
+    { key: 'schemas.manage_own', label: 'Manage Own Schemas', category: 'Schema Builder', description: 'Create, edit, and publish forms visible only to your own assigned students (e.g. a Lecturer role) - cannot see or edit forms created by anyone else' },
     { key: 'keywords.manage', label: 'Manage Keywords', category: 'Keywords', description: 'Add and remove the admin-curated keywords shown on My Learning List and used as seminar categories' },
     { key: 'support.manage_all', label: 'Manage Support Inbox', category: 'Support', description: 'View and respond to every user\'s support tickets' },
     { key: 'analytics.view', label: 'View Analytics', category: 'Analytics', description: 'View submission and platform analytics' },
     { key: 'submissions.view_all', label: 'View All Submissions', category: 'Submissions', description: 'List and view every user\'s form submissions' },
+    { key: 'submissions.view_own', label: 'View Submissions To Own Schemas', category: 'Submissions', description: 'List and view submissions only for forms you created yourself' },
     { key: 'exports.access', label: 'Access Exports', category: 'Exports', description: 'Access data export endpoints' }
 ];
 

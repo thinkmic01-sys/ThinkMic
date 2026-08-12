@@ -3,11 +3,16 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const socket = require('../utils/socket');
 
+// A caller with the blanket schemas.manage permission sees every schema; anyone with only
+// schemas.manage_own (e.g. a Lecturer) is restricted to schemas they created themselves.
+const scopeToOwnSchemas = (req) => !req.user.permissions.includes('schemas.manage') && req.user.permissions.includes('schemas.manage_own');
+
 exports.listSchemas = async (req, res) => {
     try {
         const { status } = req.query;
         const query = {};
         if (status) query.status = status;
+        if (scopeToOwnSchemas(req)) query.createdBy = req.user._id;
 
         // Use aggregation to join the count of submissions for each schema
         const schemas = await FieldSchema.aggregate([
@@ -43,6 +48,9 @@ exports.getSchema = async (req, res) => {
     try {
         const schema = await FieldSchema.findById(req.params.id);
         if (!schema) return res.status(404).json({ message: 'Schema not found' });
+        if (scopeToOwnSchemas(req) && schema.createdBy.toString() !== req.user._id.toString()) {
+            return res.status(404).json({ message: 'Schema not found' });
+        }
         res.status(200).json({ schema });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
@@ -52,12 +60,17 @@ exports.getSchema = async (req, res) => {
 exports.createSchema = async (req, res) => {
     try {
         const { name, description, targetRole, fields } = req.body;
-        
+
+        // Anyone without the blanket schemas.manage permission (e.g. a Lecturer with only
+        // schemas.manage_own) can't pick an audience - their forms always target their own
+        // assigned students, ignoring whatever targetRole the client sent.
+        const resolvedTargetRole = scopeToOwnSchemas(req) ? 'own-students' : targetRole;
+
         const schema = await FieldSchema.create({
             createdBy: req.user._id,
             name,
             description,
-            targetRole,
+            targetRole: resolvedTargetRole,
             fields,
             status: 'draft'
         });
@@ -71,9 +84,15 @@ exports.createSchema = async (req, res) => {
 exports.updateSchema = async (req, res) => {
     try {
         const { id } = req.params;
+        const findQuery = { _id: id, status: 'draft' }; // Only drafts can be updated this way
+        if (scopeToOwnSchemas(req)) findQuery.createdBy = req.user._id;
+
+        const updateBody = { ...req.body };
+        if (scopeToOwnSchemas(req)) updateBody.targetRole = 'own-students';
+
         const schema = await FieldSchema.findOneAndUpdate(
-            { _id: id, status: 'draft' }, // Only drafts can be updated this way
-            req.body,
+            findQuery,
+            updateBody,
             { new: true }
         );
 
@@ -90,8 +109,11 @@ exports.updateSchema = async (req, res) => {
 exports.publishSchema = async (req, res) => {
     try {
         const { id } = req.params;
-        const schema = await FieldSchema.findByIdAndUpdate(
-            id,
+        const findQuery = { _id: id };
+        if (scopeToOwnSchemas(req)) findQuery.createdBy = req.user._id;
+
+        const schema = await FieldSchema.findOneAndUpdate(
+            findQuery,
             { status: 'active', $inc: { version: 1 } },
             { new: true }
         );
@@ -100,12 +122,17 @@ exports.publishSchema = async (req, res) => {
 
         res.status(200).json({ schema, version: schema.version });
 
-        // Notify every user this form is targeted at, same matching rule listPublishedForms
-        // uses to decide who can see it ('all', or their Title matched case-insensitively).
+        // Notify every user this form is targeted at: 'all', a lecturer's own assigned
+        // students ('own-students'), or their Title matched case-insensitively.
         try {
-            const userQuery = schema.targetRole === 'all'
-                ? {}
-                : { title: { $regex: `^${schema.targetRole.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } };
+            let userQuery;
+            if (schema.targetRole === 'all') {
+                userQuery = {};
+            } else if (schema.targetRole === 'own-students') {
+                userQuery = { assignedLecturers: schema.createdBy };
+            } else {
+                userQuery = { title: { $regex: `^${schema.targetRole.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } };
+            }
             const recipients = await User.find(userQuery).select('_id');
 
             if (recipients.length > 0) {
@@ -133,13 +160,17 @@ exports.publishSchema = async (req, res) => {
 
 exports.listPublishedForms = async (req, res) => {
     try {
-        // Users only see active forms targeted at 'all' or at their own professional Title
-        // (case-insensitive, since Title is free text with no enforced casing).
+        // Users only see active forms targeted at 'all', at their own professional Title
+        // (case-insensitive, since Title is free text with no enforced casing), or - for
+        // lecturer-owned forms - forms whose creator is one of this user's assignedLecturers.
         const userTitle = (req.user.title || '').trim();
         const orConditions = [{ targetRole: 'all' }];
         if (userTitle) {
             const escapedTitle = userTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             orConditions.push({ targetRole: { $regex: `^${escapedTitle}$`, $options: 'i' } });
+        }
+        if (req.user.assignedLecturers && req.user.assignedLecturers.length > 0) {
+            orConditions.push({ targetRole: 'own-students', createdBy: { $in: req.user.assignedLecturers } });
         }
 
         const forms = await FieldSchema.find({

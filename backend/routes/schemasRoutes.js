@@ -8,11 +8,12 @@ router.use(protect);
 // User route for forms
 router.get('/forms', listPublishedForms);
 
-// Admin routes for schema building
-router.get('/', checkPermission('schemas.manage'), listSchemas);
-router.get('/:id', checkPermission('schemas.manage'), getSchema);
-router.post('/', checkPermission('schemas.manage'), createSchema);
-router.put('/:id', checkPermission('schemas.manage'), updateSchema);
-router.post('/:id/publish', checkPermission('schemas.manage'), publishSchema);
+// Admin routes for schema building - schemas.manage_own (e.g. a Lecturer) can reach the
+// same routes but every controller above scopes them to schemas that caller created.
+router.get('/', checkPermission('schemas.manage', 'schemas.manage_own'), listSchemas);
+router.get('/:id', checkPermission('schemas.manage', 'schemas.manage_own'), getSchema);
+router.post('/', checkPermission('schemas.manage', 'schemas.manage_own'), createSchema);
+router.put('/:id', checkPermission('schemas.manage', 'schemas.manage_own'), updateSchema);
+router.post('/:id/publish', checkPermission('schemas.manage', 'schemas.manage_own'), publishSchema);
 
 module.exports = router;

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect, checkPermission } = require('../middleware/authMiddleware');
-const { listUsers, getDistinctTitles, inviteUsers, updateUserRoleStatus, deleteUser } = require('../controllers/adminController');
+const { listUsers, getDistinctTitles, inviteUsers, updateUserRoleStatus, deleteUser, getLecturerStudents, updateLecturerStudents } = require('../controllers/adminController');
 const {
     getSettings, updateSettings, listPendingRewards, updatePendingReward,
     approveReward, rejectReward, getApprovalHistory, getStats, adjustUserCoins
@@ -25,6 +25,12 @@ router.get('/users/titles', checkPermission('users.view'), getDistinctTitles);
 router.post('/users/invite', checkPermission('users.invite'), inviteUsers);
 router.patch('/users/:id', checkPermission('users.manage_role_status'), updateUserRoleStatus);
 router.delete('/users/:id', checkPermission('users.delete'), deleteUser);
+
+// Lecturer roster (:id is the lecturer, not the student) - who a Lecturer-role user's
+// schemas.manage_own forms are visible to. Gated the same as role/status management since
+// assigning a roster is itself a role-adjacent action on the affected student accounts.
+router.get('/users/:id/students', checkPermission('users.view_full_profile'), getLecturerStudents);
+router.patch('/users/:id/students', checkPermission('users.manage_role_status'), updateLecturerStudents);
 
 // Full-access admin view of a single user - each tab on the frontend page lazy-loads
 // its own section rather than one giant join across every collection.

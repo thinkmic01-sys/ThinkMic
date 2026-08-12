@@ -111,6 +111,51 @@ exports.updateUserRoleStatus = async (req, res) => {
     }
 };
 
+// @desc    List the students currently assigned to a lecturer (any user who has that
+//          lecturer's _id in their own User.assignedLecturers array)
+// @route   GET /api/v1/admin/users/:id/students
+exports.getLecturerStudents = async (req, res) => {
+    try {
+        const students = await User.find({ assignedLecturers: req.params.id })
+            .select('fullName email')
+            .sort({ fullName: 1 });
+        res.status(200).json({ students });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+// @desc    Full-array-replace of which students are assigned to a lecturer - adds this
+//          lecturer's _id to every newly-included student's assignedLecturers and pulls it
+//          from anyone no longer in the list, rather than touching a roster field on the
+//          lecturer's own document (a student can belong to more than one lecturer).
+// @route   PATCH /api/v1/admin/users/:id/students
+exports.updateLecturerStudents = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { studentIds } = req.body;
+        if (!Array.isArray(studentIds)) {
+            return res.status(400).json({ message: 'studentIds must be an array.' });
+        }
+
+        await User.updateMany(
+            { assignedLecturers: id, _id: { $nin: studentIds } },
+            { $pull: { assignedLecturers: id } }
+        );
+        await User.updateMany(
+            { _id: { $in: studentIds } },
+            { $addToSet: { assignedLecturers: id } }
+        );
+
+        const students = await User.find({ assignedLecturers: id })
+            .select('fullName email')
+            .sort({ fullName: 1 });
+        res.status(200).json({ students });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
 exports.deleteUser = async (req, res) => {
     try {
         if (req.params.id === req.user._id.toString()) {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { MANAGEMENT_PAGES } from '../config/managementAccess';
 
 const NavLink = ({ to, icon, label }) => {
     const location = useLocation();
@@ -42,27 +43,15 @@ const NavLink = ({ to, icon, label }) => {
     );
 };
 
-// Each of these is its own sidebar link now (used to be a single combined "Management"
-// entry landing on the first reachable one) - Support and Analytics are reached via their
-// own separate nav entries/routes, not this group.
-const MANAGEMENT_PAGES = [
-    { to: '/app/admin/users', icon: 'group', label: 'Users', permissions: ['users.view'] },
-    { to: '/app/admin/roles', icon: 'shield_person', label: 'Roles', permissions: ['roles.manage'] },
-    { to: '/app/admin/schemas', icon: 'dynamic_form', label: 'Schemas', permissions: ['schemas.manage'] },
-    {
-        to: '/app/admin/rewards', icon: 'redeem', label: 'Rewards', permissions: [
-            'rewards.manage_settings', 'rewards.manage_pending', 'rewards.approve_reject',
-            'rewards.view_history_stats', 'rewards.adjust_coins'
-        ]
-    },
-    { to: '/app/admin/keywords', icon: 'sell', label: 'Keywords', permissions: ['keywords.manage'] }
-];
-
 export default function Sidebar({ isOpen, setIsOpen }) {
     const permissions = useSelector((state) => state.auth?.user?.permissions) || [];
-    // Matches the same admin/regular-user split App.jsx uses to pick Dashboard vs AdminDashboard.
-    const isAdmin = permissions.length > 0;
     const managementPages = MANAGEMENT_PAGES.filter((page) => page.permissions.some((perm) => permissions.includes(perm)));
+    // True admin/manager-style roles (holding at least one of the actual Management-page
+    // permissions) get the reduced Management-only sidebar. A role that only carries
+    // schemas.manage_own (e.g. Lecturer) is NOT one of these - they still do product work
+    // as a regular user, just with an extra Schemas link (added below).
+    const isAdmin = managementPages.length > 0;
+    const canManageOwnSchemas = !isAdmin && permissions.includes('schemas.manage_own');
 
     return (
         <aside className={`w-[280px] h-screen bg-[#222777] flex flex-col fixed left-0 top-0 text-white z-50 border-r border-[#181c22]/20 transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
@@ -103,6 +92,9 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                         <NavLink to="/app/courses/my-learning" icon="bookmark" label="My Learning List" />
                         <NavLink to="/app/forms" icon="groups" label="Collaboration" />
                         <NavLink to="/app/achievements" icon="military_tech" label="Achievements" />
+                        {canManageOwnSchemas && (
+                            <NavLink to="/app/admin/schemas" icon="dynamic_form" label="Schemas" />
+                        )}
                     </>
                 )}
             </nav>

@@ -36,6 +36,7 @@ import MyLearningList from "./pages/Courses/MyLearningList.jsx";
 import CourseWorkbook from "./pages/Courses/CourseWorkbook.jsx";
 import NearbySeminars from "./pages/Courses/NearbySeminars.jsx";
 import SeminarBroadcast from "./pages/Courses/SeminarBroadcast.jsx";
+import { isManagementUser } from "./config/managementAccess";
 
 const Placeholder = ({ title }) => (
     <div className="p-8 bg-white rounded-xl shadow-md h-64 flex items-center justify-center border border-gray-100">
@@ -116,7 +117,7 @@ function AppRoutes() {
                     <Layout>
                         <Routes>
                             {/* Live Modules we have built */}
-                            <Route path="dashboard" element={(permissions && permissions.length > 0) ? <AdminDashboard /> : <Dashboard />} />
+                            <Route path="dashboard" element={isManagementUser(permissions) ? <AdminDashboard /> : <Dashboard />} />
 
                             {/* The Research Pipeline (Step 1 & 2) */}
                             <Route path="research" element={<SpeechWorkspace />} />
@@ -153,9 +154,9 @@ function AppRoutes() {
                                 <Route path="users/:userId" element={<RequireRole anyOf={['users.view_full_profile']} permissions={permissions}><AdminUserDetail /></RequireRole>} />
                                 <Route path="roles" element={<RequireRole anyOf={['roles.manage']} permissions={permissions}><RolesManagement /></RequireRole>} />
                                 <Route path="keywords" element={<RequireRole anyOf={['keywords.manage']} permissions={permissions}><KeywordsManagement /></RequireRole>} />
-                                <Route path="schemas" element={<RequireRole anyOf={['schemas.manage']} permissions={permissions}><SchemaLibrary /></RequireRole>} />
-                                <Route path="schemas/new" element={<RequireRole anyOf={['schemas.manage']} permissions={permissions}><SchemaBuilder /></RequireRole>} />
-                                <Route path="schemas/edit/:id" element={<RequireRole anyOf={['schemas.manage']} permissions={permissions}><SchemaBuilder /></RequireRole>} />
+                                <Route path="schemas" element={<RequireRole anyOf={['schemas.manage', 'schemas.manage_own']} permissions={permissions}><SchemaLibrary /></RequireRole>} />
+                                <Route path="schemas/new" element={<RequireRole anyOf={['schemas.manage', 'schemas.manage_own']} permissions={permissions}><SchemaBuilder /></RequireRole>} />
+                                <Route path="schemas/edit/:id" element={<RequireRole anyOf={['schemas.manage', 'schemas.manage_own']} permissions={permissions}><SchemaBuilder /></RequireRole>} />
                                 <Route path="support" element={<RequireRole anyOf={['support.manage_all']} permissions={permissions}><SupportInbox /></RequireRole>} />
                                 <Route path="rewards" element={<RequireRole anyOf={['rewards.manage_settings', 'rewards.manage_pending', 'rewards.approve_reject', 'rewards.view_history_stats', 'rewards.adjust_coins']} permissions={permissions}><ReferralCoinManagement /></RequireRole>} />
                                 <Route path="analytics" element={<RequireRole anyOf={['analytics.view']} permissions={permissions}><Dashboard /></RequireRole>} />

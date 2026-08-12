@@ -31,7 +31,8 @@ exports.getUserProfile = async (req, res) => {
         // two separate .select() calls silently drops the '+kyc.idNumberEncrypted' inclusion.
         const user = await User.findById(req.params.id)
             .select('-passwordHash +kyc.idNumberEncrypted')
-            .populate('referredBy', 'fullName email');
+            .populate('referredBy', 'fullName email')
+            .populate('roleId', 'name slug permissions');
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }

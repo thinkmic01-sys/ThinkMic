@@ -37,13 +37,18 @@ const ICON_BY_TYPE = {
 
 export default function SchemaBuilder() {
     const accessToken = useSelector((state) => state.auth?.accessToken);
+    const permissions = useSelector((state) => state.auth?.user?.permissions) || [];
+    // Anyone without the blanket schemas.manage permission (e.g. a Lecturer with only
+    // schemas.manage_own) can't pick an audience - the backend forces their forms to
+    // targetRole 'own-students' regardless of what's sent, so the picker is just hidden.
+    const canTargetAnyone = permissions.includes('schemas.manage');
     const [schemaName, setSchemaName] = useState(`New Form ${Math.floor(Math.random() * 10000)}`);
     const [schemaId, setSchemaId] = useState(null);
     const [schemaDescription, setSchemaDescription] = useState('');
     const [schemaStatus, setSchemaStatus] = useState('draft');
     const [schemaVersion, setSchemaVersion] = useState(1);
     const [lastSavedAt, setLastSavedAt] = useState(null);
-    const [targetRole, setTargetRole] = useState('all');
+    const [targetRole, setTargetRole] = useState(() => canTargetAnyone ? 'all' : 'own-students');
     const [availableTitles, setAvailableTitles] = useState([]);
     const { id } = useParams();
 
@@ -51,13 +56,15 @@ export default function SchemaBuilder() {
     const [fields, setFields] = useState([]);
     const activeField = fields.find(f => f.active);
 
-    // Populate the "Target Title" picker from the professional Titles real users actually have
+    // Populate the "Target Title" picker from the professional Titles real users actually
+    // have - skipped entirely for schemas.manage_own-only callers (e.g. a Lecturer), who
+    // don't have users.view and wouldn't see the picker anyway.
     useEffect(() => {
-        if (!accessToken) return;
+        if (!accessToken || !canTargetAnyone) return;
         api.get('/admin/users/titles')
             .then(res => setAvailableTitles(res.data.titles || []))
             .catch(console.error);
-    }, [accessToken]);
+    }, [accessToken, canTargetAnyone]);
 
     useEffect(() => {
         if (id && accessToken) {
@@ -284,24 +291,38 @@ export default function SchemaBuilder() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-6">
-                    <div className="hidden sm:flex items-center gap-2">
-                        <span className="text-[12px] font-bold text-[#777682]">Target Title:</span>
-                        <select
-                            value={targetRole}
-                            onChange={(e) => setTargetRole(e.target.value)}
-                            className="border border-[#c7c5d3] rounded-md py-1 px-2 bg-[#f9f9ff] text-[#181c22] focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none text-[12px] sm:text-sm font-semibold"
-                        >
-                            <option value="all">Everyone</option>
-                            {/* Preserve an old role-based or since-removed title value as its own option so
-                                editing an existing schema doesn't silently lose/reinterpret it */}
-                            {targetRole !== 'all' && !availableTitles.some(t => t.toLowerCase() === targetRole.toLowerCase()) && (
-                                <option value={targetRole}>{targetRole} (not a current title)</option>
-                            )}
-                            {availableTitles.map((t) => (
-                                <option key={t} value={t}>{t}</option>
-                            ))}
-                        </select>
-                    </div>
+                    {canTargetAnyone ? (
+                        <div className="hidden sm:flex items-center gap-2">
+                            <span className="text-[12px] font-bold text-[#777682]">Target Title:</span>
+                            <select
+                                value={targetRole}
+                                onChange={(e) => setTargetRole(e.target.value)}
+                                className="border border-[#c7c5d3] rounded-md py-1 px-2 bg-[#f9f9ff] text-[#181c22] focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none text-[12px] sm:text-sm font-semibold"
+                            >
+                                <option value="all">Everyone</option>
+                                {/* A lecturer-owned schema an admin is now editing - keep it selectable/labeled
+                                    rather than falling into the "not a current title" fallback below. */}
+                                {targetRole === 'own-students' && (
+                                    <option value="own-students">Own Students Only</option>
+                                )}
+                                {/* Preserve an old role-based or since-removed title value as its own option so
+                                    editing an existing schema doesn't silently lose/reinterpret it */}
+                                {targetRole !== 'all' && targetRole !== 'own-students' && !availableTitles.some(t => t.toLowerCase() === targetRole.toLowerCase()) && (
+                                    <option value={targetRole}>{targetRole} (not a current title)</option>
+                                )}
+                                {availableTitles.map((t) => (
+                                    <option key={t} value={t}>{t}</option>
+                                ))}
+                            </select>
+                        </div>
+                    ) : (
+                        <div className="hidden sm:flex items-center gap-2">
+                            <span className="text-[12px] font-bold text-[#777682]">Visible to:</span>
+                            <span className="border border-[#c7c5d3] rounded-md py-1 px-2 bg-[#f9f9ff] text-[#181c22] text-[12px] sm:text-sm font-semibold">
+                                Your Students Only
+                            </span>
+                        </div>
+                    )}
                     <div className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-[12px] font-bold flex items-center gap-1.5 shadow-sm border shrink-0 ${(STATUS_BADGE[schemaStatus] || STATUS_BADGE.draft).classes}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${(STATUS_BADGE[schemaStatus] || STATUS_BADGE.draft).dot}`}></span>
                         {(STATUS_BADGE[schemaStatus] || STATUS_BADGE.draft).label}
@@ -615,7 +636,7 @@ export default function SchemaBuilder() {
                         <div className="bg-[#222777] text-white px-6 sm:px-8 py-5 sm:py-6 flex justify-between items-center shrink-0 shadow-md z-10 relative">
                             <div>
                                 <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-1">{schemaName}</h2>
-                                <p className="text-[#c7c5d3] text-xs sm:text-sm font-semibold">Previewing as {targetRole === 'all' ? 'Everyone' : targetRole}</p>
+                                <p className="text-[#c7c5d3] text-xs sm:text-sm font-semibold">Previewing as {targetRole === 'all' ? 'Everyone' : targetRole === 'own-students' ? 'Your Students Only' : targetRole}</p>
                             </div>
                             <button
                                 onClick={() => setIsPreviewOpen(false)}

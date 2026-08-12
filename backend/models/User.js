@@ -129,6 +129,16 @@ const UserSchema = new mongoose.Schema({
     learningKeywords: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Keyword'
+    }],
+    // Which Lecturer-role user(s) (schemas.manage_own permission) this student has been
+    // assigned to by an admin (see adminController.updateLecturerStudents) - a student can
+    // be assigned to multiple lecturers, which is what lets different lecturers share some
+    // students while keeping distinct rosters overall. A lecturer's own schemas
+    // (FieldSchema.targetRole === 'own-students') are only ever visible/fillable by students
+    // who carry that lecturer's _id here (see schemasController.listPublishedForms).
+    assignedLecturers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     }]
 }, {
     timestamps: true,

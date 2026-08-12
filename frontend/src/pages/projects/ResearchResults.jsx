@@ -5,6 +5,32 @@ import api from '../../services/api';
 import { io } from 'socket.io-client';
 import { API_BASE_URL } from '../../config';
 
+// Real classification from the result's actual domain (Tavily doesn't return a content-type
+// field) - deliberately domain-based rather than a second/third Tavily call per query, so every
+// query still costs exactly one search. Order matters: video platforms checked first since some
+// (e.g. youtube.com) could otherwise also read as generic "Article".
+const VIDEO_DOMAINS = ['youtube.com', 'youtu.be', 'vimeo.com', 'dailymotion.com', 'twitch.tv', 'tiktok.com'];
+const ACADEMIC_HINTS = ['.edu', '.gov', 'arxiv.org', 'ncbi.nlm.nih.gov', 'researchgate.net', 'jstor.org'];
+const NEWS_DOMAINS = ['nytimes.com', 'bbc.co', 'bbc.com', 'cnn.com', 'reuters.com', 'techcrunch.com', 'forbes.com', 'bloomberg.com', 'theguardian.com', 'wsj.com', 'apnews.com'];
+const BLOG_DOMAINS = ['medium.com', 'blogspot.com', 'wordpress.com', 'substack.com', 'dev.to', 'hashnode.dev', 'tumblr.com'];
+
+const classifyResultType = (domain) => {
+    const d = (domain || '').toLowerCase();
+    if (VIDEO_DOMAINS.some((v) => d.includes(v))) return 'Video';
+    if (ACADEMIC_HINTS.some((a) => d.includes(a))) return 'Academic';
+    if (NEWS_DOMAINS.some((n) => d.includes(n))) return 'News';
+    if (BLOG_DOMAINS.some((b) => d.includes(b))) return 'Blog';
+    return 'Article';
+};
+
+const ICON_BY_TYPE = {
+    Video: 'smart_display',
+    Academic: 'school',
+    News: 'newspaper',
+    Blog: 'article',
+    Article: 'language'
+};
+
 export default function ResearchResults() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -64,16 +90,20 @@ export default function ResearchResults() {
                         const author = mockAuthors[idx % mockAuthors.length];
                         const publishedDate = `${["Jan", "Mar", "Jun", "Sep", "Nov"][idx % 5]} ${10 + idx}, ${years[idx % years.length]}`;
                         const reliability = domain.includes('.edu') || domain.includes('.gov') ? "98/100" : (idx % 2 === 0 ? "85/100" : "72/100");
+                        // Real classification from the actual URL - not mocked, so blog and video
+                        // results genuinely show up as such whenever Tavily's results include them.
+                        const type = classifyResultType(domain);
 
                         flattenedResults.push({
                             id: `${searchDoc._id}-${idx}`,
                             queryId: searchDoc._id,
                             domain: domain,
-                            type: idx % 3 === 0 ? "News" : idx % 2 === 0 ? "Academic" : "Blog",
+                            type,
                             title: r.title,
                             snippet: r.snippet,
+                            url: r.url,
                             metrics: [],
-                            icon: "language",
+                            icon: ICON_BY_TYPE[type],
                             entities: [],
                             metadata: { author: author, published: publishedDate, reliability: reliability },
                             region: regions[idx % regions.length],
@@ -199,6 +229,21 @@ export default function ResearchResults() {
         );
     };
 
+    // Selects (or, if already all selected, deselects) every result belonging to one query at
+    // once - works on any query in the sidebar, not just the currently active one, since
+    // allResults already holds every query's results client-side.
+    const handleSelectAllForQuery = (e, queryId) => {
+        e.stopPropagation();
+        const idsForQuery = allResults.filter(r => r.queryId === queryId).map(r => r.id);
+        if (idsForQuery.length === 0) return;
+        const allSelected = idsForQuery.every(id => selectedResultIds.includes(id));
+        setSelectedResultIds(prev => (
+            allSelected
+                ? prev.filter(id => !idsForQuery.includes(id))
+                : Array.from(new Set([...prev, ...idsForQuery]))
+        ));
+    };
+
     // --- FILTER LOGIC ---
     const currentResults = allResults.filter(result => {
         if (result.queryId !== activeQueryId) return false;
@@ -240,37 +285,55 @@ export default function ResearchResults() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                    {queries.map((query, idx) => (
-                        <div
-                            key={query.id}
-                            onClick={() => handleSelectQuery(query.id)}
-                            className={`group flex items-start gap-3 p-3 rounded-lg transition-colors cursor-pointer border
-                                ${activeQueryId === query.id ? 'bg-primary/5 border-primary/20' : 'border-transparent hover:border-gray-200 hover:bg-gray-50'}
-                            `}
-                        >
-                            <div className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center font-bold text-[12px] mt-0.5
-                                ${activeQueryId === query.id ? 'bg-primary text-white' : 'bg-gray-200 text-gray-600'}
-                            `}>
-                                {idx + 1}
-                            </div>
-                            <div className="flex-1">
-                                <p className={`text-sm leading-snug ${activeQueryId === query.id ? 'font-bold text-gray-900' : 'text-gray-700'}`}>
-                                    {query.text}
-                                </p>
-                                <div className="flex items-center gap-1 mt-1.5 font-mono text-[11px] font-bold">
-                                    {query.status === 'running' && (
-                                        <><span className="material-symbols-outlined text-[14px] text-cyan animate-spin">sync</span> <span className="text-cyan">Running search...</span></>
-                                    )}
-                                    {query.status === 'done' && (
-                                        <><span className="material-symbols-outlined text-[14px] text-primary">check_circle</span> <span className="text-primary">{query.results} results found</span></>
-                                    )}
-                                    {query.status === 'error' && (
-                                        <><span className="material-symbols-outlined text-[14px] text-red-500">cancel</span> <span className="text-red-500">Syntax error in query</span></>
-                                    )}
+                    {queries.map((query, idx) => {
+                        const idsForQuery = allResults.filter(r => r.queryId === query.id).map(r => r.id);
+                        const allSelected = idsForQuery.length > 0 && idsForQuery.every(id => selectedResultIds.includes(id));
+                        return (
+                            <div
+                                key={query.id}
+                                onClick={() => handleSelectQuery(query.id)}
+                                className={`group flex items-start gap-3 p-3 rounded-lg transition-colors cursor-pointer border
+                                    ${activeQueryId === query.id ? 'bg-primary/5 border-primary/20' : 'border-transparent hover:border-gray-200 hover:bg-gray-50'}
+                                `}
+                            >
+                                <div className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center font-bold text-[12px] mt-0.5
+                                    ${activeQueryId === query.id ? 'bg-primary text-white' : 'bg-gray-200 text-gray-600'}
+                                `}>
+                                    {idx + 1}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className={`text-sm leading-snug ${activeQueryId === query.id ? 'font-bold text-gray-900' : 'text-gray-700'}`}>
+                                        {query.text}
+                                    </p>
+                                    <div className="flex items-center justify-between gap-2 mt-1.5">
+                                        <div className="flex items-center gap-1 font-mono text-[11px] font-bold min-w-0">
+                                            {query.status === 'running' && (
+                                                <><span className="material-symbols-outlined text-[14px] text-cyan animate-spin">sync</span> <span className="text-cyan">Running search...</span></>
+                                            )}
+                                            {query.status === 'done' && (
+                                                <><span className="material-symbols-outlined text-[14px] text-primary">check_circle</span> <span className="text-primary">{query.results} results found</span></>
+                                            )}
+                                            {query.status === 'error' && (
+                                                <><span className="material-symbols-outlined text-[14px] text-red-500">cancel</span> <span className="text-red-500">Syntax error in query</span></>
+                                            )}
+                                        </div>
+                                        {query.status === 'done' && idsForQuery.length > 0 && (
+                                            <button
+                                                onClick={(e) => handleSelectAllForQuery(e, query.id)}
+                                                title={allSelected ? 'Deselect all results from this query' : 'Select all results from this query'}
+                                                className={`shrink-0 flex items-center gap-1 font-mono text-[10px] font-bold px-1.5 py-0.5 rounded border transition-colors
+                                                    ${allSelected ? 'bg-primary text-white border-primary' : 'bg-white text-gray-500 border-gray-200 hover:border-primary hover:text-primary'}
+                                                `}
+                                            >
+                                                <span className="material-symbols-outlined text-[13px]">done_all</span>
+                                                {allSelected ? 'All selected' : 'Select all'}
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 <div className="p-4 border-t border-gray-200 bg-gray-50 mt-auto">
@@ -406,7 +469,9 @@ export default function ResearchResults() {
                                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ml-auto
                                                 ${result.type === 'Academic' ? 'bg-primary/10 text-primary' : ''}
                                                 ${result.type === 'Blog' ? 'bg-gray-200 text-gray-700' : ''}
-                                                ${result.type === 'News' ? 'bg-cyan-soft text-cyan' : ''}`}
+                                                ${result.type === 'News' ? 'bg-cyan-soft text-cyan' : ''}
+                                                ${result.type === 'Video' ? 'bg-red-100 text-red-600' : ''}
+                                                ${result.type === 'Article' ? 'bg-gray-100 text-gray-500' : ''}`}
                                             >
                                                 {result.type}
                                             </span>

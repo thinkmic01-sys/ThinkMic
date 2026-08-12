@@ -1293,7 +1293,9 @@ export default function SpeechWorkspace() {
                         )}
                     </div>
 
-                    {/* Processing Intent Box - split in half: prompts on the left, their AI answers on the right */}
+                    {/* Processing Intent Box - every prompt is paired with its own answer cell on the same
+                        row, and the whole list of rows shares a single scrollbar (rather than the prompt
+                        list and a filtered answer list scrolling independently and drifting out of sync). */}
                     <div className="bg-white rounded-lg shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-5 flex flex-col gap-4">
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                             <h3 className="font-mono text-[13px] sm:text-[14px] font-bold text-[#222777] tracking-widest uppercase">Processing Intent</h3>
@@ -1305,78 +1307,71 @@ export default function SpeechWorkspace() {
                             </button>
                         </div>
 
-                        <div className="flex flex-col md:flex-row gap-4">
-                            {/* LEFT HALF: prompt inputs */}
-                            <div className="md:w-1/2 min-w-0 flex flex-col gap-3">
-                                <div className="flex flex-col gap-3 overflow-y-auto max-h-[105px] sm:max-h-[120px] custom-scrollbar pr-1">
-                                    {customPrompts.map((promptObj, index) => (
-                                        <div key={promptObj.id} className="relative border border-[#c7c5d3] rounded-md bg-white overflow-hidden shrink-0">
-                                            {customPrompts.length > 1 && (
-                                                <button
-                                                    onClick={() => setCustomPrompts(customPrompts.filter((_, i) => i !== index))}
-                                                    className="absolute top-2 right-2 text-[#c7c5d3] hover:text-[#ba1a1a] transition-colors z-10"
-                                                    title="Remove section"
-                                                >
-                                                    <span className="material-symbols-outlined text-[16px]">close</span>
-                                                </button>
-                                            )}
-                                            <textarea
-                                                value={promptObj.text}
-                                                onChange={(e) => {
-                                                    const newPrompts = [...customPrompts];
-                                                    newPrompts[index] = { ...newPrompts[index], text: e.target.value };
-                                                    setCustomPrompts(newPrompts);
-                                                }}
-                                                placeholder="Enter custom prompt or select a saved template..."
-                                                className="w-full h-20 sm:h-24 p-3 sm:p-4 text-[14px] sm:text-[16px] text-[#464651] outline-none resize-none bg-transparent placeholder:text-[#c7c5d3]"
-                                            />
+                        <div className="hidden md:flex gap-4 px-1">
+                            <span className="md:w-1/2 font-mono text-[10px] sm:text-[11px] font-bold text-[#777682] uppercase tracking-wider">Prompt</span>
+                            <span className="md:w-1/2 font-mono text-[10px] sm:text-[11px] font-bold text-[#777682] uppercase tracking-wider">Answer</span>
+                        </div>
+
+                        <div className="flex flex-col gap-3 overflow-y-auto max-h-[260px] sm:max-h-[280px] custom-scrollbar pr-1">
+                            {customPrompts.map((promptObj, index) => (
+                                <div key={promptObj.id} className="flex flex-col md:flex-row gap-3 shrink-0">
+                                    {/* Prompt cell */}
+                                    <div className="md:w-1/2 min-w-0 relative border border-[#c7c5d3] rounded-md bg-white overflow-hidden shrink-0">
+                                        {customPrompts.length > 1 && (
                                             <button
-                                                onClick={() => handleRunIntentPrompt(promptObj.id)}
-                                                disabled={promptObj.isAnswering || !promptObj.text.trim() || !currentTranscriptId}
-                                                title="Answers this prompt against the transcript captured so far, without touching the Intelligence Summary."
-                                                className="absolute bottom-2 right-2 bg-[#61f4fd] text-[#004f53] text-[12px] sm:text-[14px] font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-[6px] hover:bg-[#3edae3] transition-colors flex items-center gap-1 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                                                <span className={`material-symbols-outlined text-[14px] sm:text-[16px] ${promptObj.isAnswering ? 'animate-spin' : ''}`}>{promptObj.isAnswering ? 'sync' : 'magic_button'}</span> <span className="hidden sm:inline">{promptObj.isAnswering ? 'Running...' : 'Run Prompt'}</span>
+                                                onClick={() => setCustomPrompts(customPrompts.filter((_, i) => i !== index))}
+                                                className="absolute top-2 right-2 text-[#c7c5d3] hover:text-[#ba1a1a] transition-colors z-10"
+                                                title="Remove section"
+                                            >
+                                                <span className="material-symbols-outlined text-[16px]">close</span>
                                             </button>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <div className="flex flex-wrap gap-2">
-                                    {['Extract Action Items', 'Identify Key Entities', 'Sentiment Analysis'].map(tag => (
+                                        )}
+                                        <textarea
+                                            value={promptObj.text}
+                                            onChange={(e) => {
+                                                const newPrompts = [...customPrompts];
+                                                newPrompts[index] = { ...newPrompts[index], text: e.target.value };
+                                                setCustomPrompts(newPrompts);
+                                            }}
+                                            placeholder="Enter custom prompt or select a saved template..."
+                                            className="w-full h-20 sm:h-24 p-3 sm:p-4 text-[14px] sm:text-[16px] text-[#464651] outline-none resize-none bg-transparent placeholder:text-[#c7c5d3]"
+                                        />
                                         <button
-                                            key={tag}
-                                            onClick={() => handleIntentTagClick(tag)}
-                                            className="bg-[#e0e2eb] text-[#464651] font-bold text-[11px] sm:text-[12px] px-3 py-1.5 rounded-full hover:bg-[#c7c5d3] transition-colors"
-                                        >
-                                            {tag}
+                                            onClick={() => handleRunIntentPrompt(promptObj.id)}
+                                            disabled={promptObj.isAnswering || !promptObj.text.trim() || !currentTranscriptId}
+                                            title="Answers this prompt against the transcript captured so far, without touching the Intelligence Summary."
+                                            className="absolute bottom-2 right-2 bg-[#61f4fd] text-[#004f53] text-[12px] sm:text-[14px] font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-[6px] hover:bg-[#3edae3] transition-colors flex items-center gap-1 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <span className={`material-symbols-outlined text-[14px] sm:text-[16px] ${promptObj.isAnswering ? 'animate-spin' : ''}`}>{promptObj.isAnswering ? 'sync' : 'magic_button'}</span> <span className="hidden sm:inline">{promptObj.isAnswering ? 'Running...' : 'Run Prompt'}</span>
                                         </button>
-                                    ))}
-                                </div>
-                            </div>
+                                    </div>
 
-                            {/* RIGHT HALF: each prompt's answer, kept out of the Intelligence Summary entirely */}
-                            <div className="md:w-1/2 min-w-0 border-t md:border-t-0 md:border-l border-[#e0e2eb] pt-3 md:pt-0 md:pl-4 flex flex-col gap-2">
-                                <span className="font-mono text-[10px] sm:text-[11px] font-bold text-[#777682] uppercase tracking-wider">Answers</span>
-                                <div className="flex flex-col gap-2 overflow-y-auto max-h-[150px] sm:max-h-[165px] custom-scrollbar pr-1">
-                                    {customPrompts.filter(p => p.answer || p.isAnswering).length === 0 ? (
-                                        <p className="text-[12px] text-[#c7c5d3] italic">Run a prompt to see its answer here.</p>
-                                    ) : (
-                                        customPrompts.filter(p => p.answer || p.isAnswering).map((promptObj) => (
-                                            <div key={promptObj.id} className="border border-[#e0e2eb] rounded-md p-2.5 sm:p-3 bg-[#f9f9ff]">
-                                                <p className="text-[10px] font-bold text-[#777682] uppercase tracking-wide mb-1 truncate" title={promptObj.text}>{promptObj.text}</p>
-                                                {promptObj.isAnswering ? (
-                                                    <div className="space-y-1.5 animate-pulse">
-                                                        <div className="h-2.5 bg-[#e0e2eb] rounded w-full"></div>
-                                                        <div className="h-2.5 bg-[#e0e2eb] rounded w-4/5"></div>
-                                                    </div>
-                                                ) : (
-                                                    <p className="text-[12px] sm:text-[13px] text-[#464651] whitespace-pre-wrap">{promptObj.answer}</p>
-                                                )}
+                                    {/* Answer cell - always rendered so every prompt has a visible, paired answer slot */}
+                                    <div className="md:w-1/2 min-w-0 border border-[#e0e2eb] rounded-md p-3 bg-[#f9f9ff] flex flex-col justify-center shrink-0">
+                                        {promptObj.isAnswering ? (
+                                            <div className="space-y-1.5 animate-pulse">
+                                                <div className="h-2.5 bg-[#e0e2eb] rounded w-full"></div>
+                                                <div className="h-2.5 bg-[#e0e2eb] rounded w-4/5"></div>
                                             </div>
-                                        ))
-                                    )}
+                                        ) : promptObj.answer ? (
+                                            <p className="text-[12px] sm:text-[13px] text-[#464651] whitespace-pre-wrap">{promptObj.answer}</p>
+                                        ) : (
+                                            <p className="text-[12px] text-[#c7c5d3] italic">Run this prompt to see its answer here.</p>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
+                            ))}
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                            {['Extract Action Items', 'Identify Key Entities', 'Sentiment Analysis'].map(tag => (
+                                <button
+                                    key={tag}
+                                    onClick={() => handleIntentTagClick(tag)}
+                                    className="bg-[#e0e2eb] text-[#464651] font-bold text-[11px] sm:text-[12px] px-3 py-1.5 rounded-full hover:bg-[#c7c5d3] transition-colors"
+                                >
+                                    {tag}
+                                </button>
+                            ))}
                         </div>
                     </div>
 

@@ -2,10 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import api from '../../services/api';
+import StudentRosterPanel from '../../components/StudentRosterPanel';
 
 export default function SchemaLibrary() {
     const accessToken = useSelector((state) => state.auth?.accessToken);
+    const permissions = useSelector((state) => state.auth?.user?.permissions) || [];
+    // A Lecturer (schemas.manage_own only, not the blanket schemas.manage) manages their own
+    // roster right here, since this is the page their sidebar "Schemas" link lands on.
+    const canManageOwnRoster = !permissions.includes('schemas.manage') && permissions.includes('schemas.manage_own');
     const [schemas, setSchemas] = useState([]);
+
+    const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+    const showToast = (message, type = 'success') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast({ show: false, message: '', type }), 4000);
+    };
 
     const [viewingSchema, setViewingSchema] = useState(null);
     const [submissions, setSubmissions] = useState([]);
@@ -98,6 +109,16 @@ export default function SchemaLibrary() {
                     New Schema
                 </Link>
             </div>
+
+            {canManageOwnRoster && (
+                <StudentRosterPanel
+                    getEndpoint="/users/me/students"
+                    patchEndpoint="/users/me/students"
+                    searchEndpoint="/users/search-students"
+                    showToast={showToast}
+                    title="My Students"
+                />
+            )}
 
             {/* Schemas Table */}
             <div className="bg-white border border-[#e0e2eb] rounded-lg shadow-[0_1px_4px_rgba(58,63,143,0.05)] overflow-hidden w-full flex flex-col">
@@ -268,6 +289,12 @@ export default function SchemaLibrary() {
                             </div>
                         )}
                     </div>
+                </div>
+            )}
+
+            {toast.show && (
+                <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-[13px] font-bold ${toast.type === 'error' ? 'bg-[#ba1a1a]' : 'bg-[#222777]'}`}>
+                    {toast.message}
                 </div>
             )}
 

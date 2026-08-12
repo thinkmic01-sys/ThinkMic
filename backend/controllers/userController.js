@@ -110,3 +110,74 @@ exports.getDocumentUploadUrl = async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 };
+
+// @desc    Self-service roster for a Lecturer-style user (schemas.manage_own) - same
+//          add/remove-a-student mechanics as the admin-only adminController equivalents,
+//          but always scoped to the caller's own _id so a lecturer can only ever touch
+//          their own roster, never another lecturer's.
+// @route   GET /api/v1/users/me/students
+// @access  Private (schemas.manage_own or schemas.manage)
+exports.getMyStudents = async (req, res) => {
+    try {
+        const students = await User.find({ assignedLecturers: req.user._id })
+            .select('fullName email')
+            .sort({ fullName: 1 });
+        res.status(200).json({ students });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+// @route   PATCH /api/v1/users/me/students
+// @access  Private (schemas.manage_own or schemas.manage)
+exports.updateMyStudents = async (req, res) => {
+    try {
+        const { studentIds } = req.body;
+        if (!Array.isArray(studentIds)) {
+            return res.status(400).json({ message: 'studentIds must be an array.' });
+        }
+
+        await User.updateMany(
+            { assignedLecturers: req.user._id, _id: { $nin: studentIds } },
+            { $pull: { assignedLecturers: req.user._id } }
+        );
+        await User.updateMany(
+            { _id: { $in: studentIds } },
+            { $addToSet: { assignedLecturers: req.user._id } }
+        );
+
+        const students = await User.find({ assignedLecturers: req.user._id })
+            .select('fullName email')
+            .sort({ fullName: 1 });
+        res.status(200).json({ students });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+// @desc    Minimal user search backing the "Add a Student" picker above - deliberately
+//          narrower than the admin users.view search (adminController.listUsers): only
+//          matches plain role:'user' accounts (never other lecturers/admins/managers) and
+//          returns just name+email, so a Lecturer without users.view can find students to
+//          add without being handed the full user-directory search capability.
+// @route   GET /api/v1/users/search-students?search=...
+// @access  Private (schemas.manage_own or schemas.manage)
+exports.searchStudents = async (req, res) => {
+    try {
+        const { search } = req.query;
+        if (!search || search.trim().length < 2) {
+            return res.status(200).json({ users: [] });
+        }
+        const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const users = await User.find({
+            role: 'user',
+            $or: [
+                { fullName: new RegExp(escaped, 'i') },
+                { email: new RegExp(escaped, 'i') }
+            ]
+        }).select('fullName email').limit(10);
+        res.status(200).json({ users });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};

@@ -12,6 +12,7 @@ const Referral = require('../models/Referral');
 const TimelineEvent = require('../models/TimelineEvent');
 const Ticket = require('../models/Ticket');
 const AuditLog = require('../models/AuditLog');
+const profileDocumentsService = require('../services/profileDocumentsService');
 
 const PAGE_SIZE = 25;
 const paginate = (query) => {
@@ -26,7 +27,11 @@ const paginate = (query) => {
 // @access  Private/Admin
 exports.getUserProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id).select('-passwordHash').populate('referredBy', 'fullName email');
+        // Both exclusion and forced inclusion must be in a single .select() call - chaining
+        // two separate .select() calls silently drops the '+kyc.idNumberEncrypted' inclusion.
+        const user = await User.findById(req.params.id)
+            .select('-passwordHash +kyc.idNumberEncrypted')
+            .populate('referredBy', 'fullName email');
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -41,7 +46,16 @@ exports.getUserProfile = async (req, res) => {
             userAgent: req.get('User-Agent')
         });
 
-        res.status(200).json({ user });
+        // Admin sees the full, unmasked ID number (per product decision) plus presigned
+        // document/certificate URLs - same shaping used for the user's own profile so the
+        // two views never drift out of sync.
+        const plain = user.toObject();
+        const [kyc, certifications] = await Promise.all([
+            profileDocumentsService.shapeKyc(user),
+            profileDocumentsService.shapeCertifications(user.certifications)
+        ]);
+
+        res.status(200).json({ user: { ...plain, kyc, certifications } });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }

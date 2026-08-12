@@ -1,4 +1,18 @@
 const User = require('../models/User');
+const { encrypt } = require('../utils/encryption');
+const profileDocumentsService = require('../services/profileDocumentsService');
+
+// Builds the response-safe user object: decrypts kyc.idNumber and resolves private R2 keys
+// (ID document, certification files) into short-lived presigned URLs. `user` must have been
+// fetched with .select('+kyc.idNumberEncrypted') for idNumber to come through.
+const shapeUserResponse = async (user) => {
+    const plain = user.toObject();
+    const [kyc, certifications] = await Promise.all([
+        profileDocumentsService.shapeKyc(user),
+        profileDocumentsService.shapeCertifications(user.certifications)
+    ]);
+    return { ...plain, kyc, certifications };
+};
 
 // @desc    Get current user profile
 // @route   GET /api/v1/users/me
@@ -6,13 +20,19 @@ const User = require('../models/User');
 exports.getMe = async (req, res) => {
     try {
         // req.user is populated by our authMiddleware
-        const user = await User.findById(req.user._id).select('-passwordHash').populate('roleId', 'name slug permissions');
+        // Chaining two .select() calls here silently drops the '+kyc.idNumberEncrypted'
+        // inclusion (a chained exclusion select followed by an inclusion select does not
+        // merge the way separate .select(' -x +y') tokens in one call do) - verified live,
+        // so the exclusion and forced inclusion must be passed in a single .select() call.
+        const user = await User.findById(req.user._id)
+            .select('-passwordHash +kyc.idNumberEncrypted')
+            .populate('roleId', 'name slug permissions');
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        res.status(200).json({ user });
+        res.status(200).json({ user: await shapeUserResponse(user) });
     } catch (error) {
         console.error('Get Me Error:', error);
         res.status(500).json({ message: 'Server Error', error: error.message });
@@ -25,7 +45,11 @@ exports.getMe = async (req, res) => {
 exports.updateMe = async (req, res) => {
     try {
         // Explicit allowlist - never let a user change their own role/status/email/coins via this route
-        const { fullName, title, language, avatarUrl, notificationPrefs } = req.body;
+        const {
+            fullName, title, language, avatarUrl, notificationPrefs,
+            workPhone, personalPhone, address,
+            kycIdType, kycIdNumber, kycIdDocumentKey, certifications
+        } = req.body;
         const update = {};
         if (fullName !== undefined) update.fullName = fullName;
         if (title !== undefined) update.title = title;
@@ -33,17 +57,50 @@ exports.updateMe = async (req, res) => {
         if (language !== undefined) update.preferredLanguage = language;
         if (avatarUrl !== undefined) update.avatarUrl = avatarUrl;
         if (notificationPrefs !== undefined) update.notificationPrefs = notificationPrefs;
+        if (workPhone !== undefined) update.workPhone = workPhone;
+        if (personalPhone !== undefined) update.personalPhone = personalPhone;
+        if (address !== undefined) update.address = address;
+        if (kycIdType !== undefined) update['kyc.idType'] = kycIdType;
+        // Only re-encrypt and overwrite when a new number was actually submitted - an empty
+        // string means "leave the stored number as-is" (the client never sees the decrypted
+        // value change, so it can't round-trip an already-masked/empty field back in).
+        if (kycIdNumber) update['kyc.idNumberEncrypted'] = encrypt(kycIdNumber);
+        // Set after a successful presigned upload (see getDocumentUploadUrl) - the key of the
+        // scan/photo just placed in R2.
+        if (kycIdDocumentKey !== undefined) update['kyc.idDocumentKey'] = kycIdDocumentKey;
+        // Full-array replace, same convention as notificationPrefs - the frontend already
+        // has the complete list (including certificateKey from a prior document upload) and
+        // sends it back whole rather than patching individual entries.
+        if (certifications !== undefined) update.certifications = certifications;
 
         const user = await User.findByIdAndUpdate(req.user._id, update, { new: true, runValidators: true })
-            .select('-passwordHash')
+            .select('-passwordHash +kyc.idNumberEncrypted')
             .populate('roleId', 'name slug permissions');
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        res.status(200).json({ user });
+        res.status(200).json({ user: await shapeUserResponse(user) });
     } catch (error) {
         console.error('Update Me Error:', error);
         res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+// @desc    Presigned upload URL for a KYC document or certification file (private R2
+//          storage) - the browser PUTs directly to R2, then a follow-up PATCH /users/me
+//          persists the returned key into kyc.idDocumentKey or a certifications[] entry.
+// @route   GET /api/v1/users/me/documents/upload-url
+// @access  Private (Requires Token)
+exports.getDocumentUploadUrl = async (req, res) => {
+    try {
+        const { mimeType, purpose } = req.query;
+        if (!mimeType) {
+            return res.status(400).json({ message: 'mimeType is required' });
+        }
+        const result = await profileDocumentsService.getProfileDocumentUploadUrl(req.user._id, mimeType, purpose);
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
     }
 };

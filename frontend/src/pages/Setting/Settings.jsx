@@ -1,8 +1,132 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { logout, updateUser, normalizeUser } from '../../store/slices/authSlice';
 import api from '../../services/api';
+import { MapContainer, TileLayer, Marker, useMapEvents, ZoomControl } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Duplicated from CreateSeminar.jsx's LocationMapPicker rather than extracted into a shared
+// component, per project convention of not refactoring working code beyond what a feature needs.
+const customMarkerIcon = L.divIcon({
+    className: 'bg-transparent border-none',
+    html: `
+        <div class="flex flex-col items-center" style="transform: translate(-50%, -100%); margin-top: 8px;">
+            <div class="w-5 h-5 bg-[#00c2cb] rounded-full border-2 border-white shadow-md flex items-center justify-center relative">
+                <div class="w-1.5 h-1.5 bg-white rounded-full"></div>
+                <div class="absolute inset-0 rounded-full border-2 border-[#00c2cb] animate-ping opacity-50"></div>
+            </div>
+            <div class="w-1 h-3 bg-gradient-to-b from-[#00c2cb] to-transparent mt-0.5"></div>
+        </div>
+    `,
+    iconSize: [0, 0]
+});
+
+function LocationMapPicker({ locationString, setLocationString }) {
+    // Default to Boston center
+    const [position, setPosition] = useState([42.3601, -71.0589]);
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
+    const mapRef = useRef(null);
+
+    const MapEvents = () => {
+        useMapEvents({
+            click(e) {
+                setPosition([e.latlng.lat, e.latlng.lng]);
+                setLocationString(`${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`);
+            },
+        });
+        return null;
+    };
+
+    const handleSearch = async (e) => {
+        e.preventDefault();
+        if (!searchQuery.trim()) return;
+
+        setIsSearching(true);
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`);
+            const data = await res.json();
+            if (data && data.length > 0) {
+                const lat = parseFloat(data[0].lat);
+                const lon = parseFloat(data[0].lon);
+                setPosition([lat, lon]);
+                setLocationString(data[0].display_name);
+                if (mapRef.current) {
+                    mapRef.current.flyTo([lat, lon], 14);
+                }
+            } else {
+                alert("Location not found.");
+            }
+        } catch (err) {
+            console.error("Geocoding error", err);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    // Handle Leaflet resize when expanding or initially loading
+    useEffect(() => {
+        if (mapRef.current) {
+            setTimeout(() => {
+                mapRef.current.invalidateSize();
+            }, 100);
+            setTimeout(() => {
+                mapRef.current.invalidateSize();
+            }, 400); // Wait for CSS transition
+        }
+    }, [isExpanded]);
+
+    return (
+        <div className={`w-full rounded-xl border border-[#c7c5d3] overflow-hidden mt-3 relative z-0 transition-all duration-300 ease-in-out bg-[#e0e2eb] ${isExpanded ? 'h-[65vh] shadow-[0_8px_30px_rgba(34,39,119,0.15)] ring-2 ring-[#00c2cb]/50' : 'h-64 hover:shadow-md'}`}>
+
+            {/* Top Toolbar overlay */}
+            <div className="absolute top-3 left-3 right-3 z-[1000] flex gap-2 sm:gap-3 items-center pointer-events-none">
+                <form onSubmit={handleSearch} className="flex-1 flex shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg overflow-hidden bg-white/95 backdrop-blur pointer-events-auto border border-[#c7c5d3]/50 transition-all focus-within:ring-2 focus-within:ring-[#00c2cb]/50">
+                    <span className="material-symbols-outlined text-[#777682] text-[18px] pl-3 py-2">search</span>
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search for a city, landmark, or address..."
+                        className="flex-1 px-2 py-2 text-[13px] outline-none bg-transparent font-medium text-[#181c22] placeholder:text-[#777682]"
+                    />
+                    <button type="submit" disabled={isSearching} className="bg-transparent px-3 text-[#222777] border-l border-[#e0e2eb]/50 hover:bg-[#f1f3fc] transition-colors flex items-center justify-center">
+                        <span className="material-symbols-outlined text-[18px]">{isSearching ? 'hourglass_empty' : 'arrow_forward'}</span>
+                    </button>
+                </form>
+
+                <button
+                    type="button"
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="bg-white/95 backdrop-blur shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg w-9 h-9 sm:w-10 sm:h-10 text-[#222777] border border-[#c7c5d3]/50 hover:bg-[#f1f3fc] transition-colors flex items-center justify-center pointer-events-auto shrink-0"
+                    title={isExpanded ? "Collapse Map" : "Expand Map"}
+                >
+                    <span className="material-symbols-outlined text-[20px]">{isExpanded ? 'fullscreen_exit' : 'fullscreen'}</span>
+                </button>
+            </div>
+
+            <MapContainer
+                center={position}
+                zoom={13}
+                style={{ height: '100%', width: '100%' }}
+                attributionControl={false}
+                zoomControl={false}
+                ref={mapRef}
+            >
+                <TileLayer
+                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                />
+                <ZoomControl position="bottomright" />
+                <Marker position={position} icon={customMarkerIcon} />
+                <MapEvents />
+            </MapContainer>
+        </div>
+    );
+}
 
 // Mirrors NOTIFICATION_META in components/Navbar.jsx so notification cards look identical in both places
 const NOTIFICATION_META = {
@@ -54,6 +178,21 @@ export default function Settings() {
     });
     const [avatarFile, setAvatarFile] = useState(null);
 
+    // Identity & KYC tab state
+    const [identityData, setIdentityData] = useState({
+        workPhone: '', personalPhone: '', address: '',
+        kycIdType: '', kycIdNumber: '', idDocumentUrl: ''
+    });
+    const [certifications, setCertifications] = useState([]);
+    const [isSavingIdentity, setIsSavingIdentity] = useState(false);
+    const [isUploadingIdDoc, setIsUploadingIdDoc] = useState(false);
+    const [uploadingCertIndex, setUploadingCertIndex] = useState(null);
+    // Only sent to the backend when a fresh document was actually uploaded this session -
+    // GET /users/me never echoes back the raw R2 key (only a presigned idDocumentUrl), so
+    // leaving this null and skipping the field on save avoids blanking an already-saved key.
+    const pendingIdDocumentKeyRef = useRef(null);
+    const idDocInputRef = useRef(null);
+
     // Custom Toast State
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
     const showToast = (message, type = 'success') => {
@@ -82,6 +221,16 @@ export default function Settings() {
                 rewardAlerts: prefs.rewardAlerts !== false,
                 systemUpdates: prefs.systemUpdates !== false
             });
+
+            setIdentityData({
+                workPhone: u.workPhone || '',
+                personalPhone: u.personalPhone || '',
+                address: u.address || '',
+                kycIdType: u.kyc?.idType || '',
+                kycIdNumber: u.kyc?.idNumber || '',
+                idDocumentUrl: u.kyc?.idDocumentUrl || ''
+            });
+            setCertifications(u.certifications || []);
         }).catch(err => console.error('Failed to load profile', err));
     }, [accessToken]);
 
@@ -153,6 +302,104 @@ export default function Settings() {
             showToast('Failed to update profile. Please try again.', 'error');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleIdentityFieldChange = (e) => {
+        const { name, value } = e.target;
+        setIdentityData(prev => ({ ...prev, [name]: value }));
+    };
+
+    // Direct browser -> R2 PUT using a presigned URL, same pattern as SpeechWorkspace's audio
+    // upload - a bare axios call so no auth header/credentials leak to the R2 endpoint.
+    const uploadProfileDocument = async (file, purpose) => {
+        const mimeType = file.type;
+        const { data: presign } = await api.get('/users/me/documents/upload-url', { params: { mimeType, purpose } });
+        await axios.put(presign.uploadUrl, file, { headers: { 'Content-Type': mimeType } });
+        return presign.key;
+    };
+
+    const handleIdDocumentClick = () => idDocInputRef.current.click();
+
+    const handleIdDocumentChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setIsUploadingIdDoc(true);
+        try {
+            const key = await uploadProfileDocument(file, 'kyc');
+            pendingIdDocumentKeyRef.current = key;
+            setIdentityData(prev => ({ ...prev, idDocumentUrl: URL.createObjectURL(file) }));
+            showToast('Document uploaded - click Save to attach it to your profile.', 'success');
+        } catch (error) {
+            console.error('Failed to upload ID document', error);
+            showToast(error.response?.data?.message || 'Failed to upload document.', 'error');
+        } finally {
+            setIsUploadingIdDoc(false);
+            e.target.value = '';
+        }
+    };
+
+    const handleAddCertification = () => {
+        setCertifications(prev => [...prev, { title: '', issuer: '', issueDate: '', certificateKey: '', certificateUrl: '', description: '' }]);
+    };
+
+    const handleCertificationChange = (index, field, value) => {
+        setCertifications(prev => prev.map((c, i) => i === index ? { ...c, [field]: value } : c));
+    };
+
+    const handleRemoveCertification = (index) => {
+        setCertifications(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleCertificationFileChange = async (index, e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setUploadingCertIndex(index);
+        try {
+            const key = await uploadProfileDocument(file, 'certification');
+            setCertifications(prev => prev.map((c, i) => i === index ? { ...c, certificateKey: key, certificateUrl: URL.createObjectURL(file) } : c));
+        } catch (error) {
+            console.error('Failed to upload certificate', error);
+            showToast(error.response?.data?.message || 'Failed to upload certificate.', 'error');
+        } finally {
+            setUploadingCertIndex(null);
+            e.target.value = '';
+        }
+    };
+
+    const handleSaveIdentity = async () => {
+        setIsSavingIdentity(true);
+        try {
+            const res = await api.patch('/users/me', {
+                workPhone: identityData.workPhone,
+                personalPhone: identityData.personalPhone,
+                address: identityData.address,
+                kycIdType: identityData.kycIdType || undefined,
+                kycIdNumber: identityData.kycIdNumber,
+                ...(pendingIdDocumentKeyRef.current ? { kycIdDocumentKey: pendingIdDocumentKeyRef.current } : {}),
+                // Drop empty rows and the display-only certificateUrl before sending
+                certifications: certifications
+                    .filter(c => c.title && c.title.trim())
+                    .map(c => ({ title: c.title, issuer: c.issuer, issueDate: c.issueDate, certificateKey: c.certificateKey, description: c.description }))
+            });
+
+            const u = res.data.user;
+            setIdentityData({
+                workPhone: u.workPhone || '',
+                personalPhone: u.personalPhone || '',
+                address: u.address || '',
+                kycIdType: u.kyc?.idType || '',
+                kycIdNumber: u.kyc?.idNumber || '',
+                idDocumentUrl: u.kyc?.idDocumentUrl || ''
+            });
+            setCertifications(u.certifications || []);
+            pendingIdDocumentKeyRef.current = null;
+            showToast('Identity & contact details saved!', 'success');
+        } catch (error) {
+            console.error('Failed to save identity details', error);
+            showToast(error.response?.data?.message || 'Failed to update. Please try again.', 'error');
+        } finally {
+            setIsSavingIdentity(false);
         }
     };
 
@@ -246,7 +493,7 @@ export default function Settings() {
 
                 {/* Horizontal scroll on mobile, Vertical stack on md+ */}
                 <nav className="flex flex-row md:flex-col gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
-                    {['Profile', 'Security', 'Notifications'].map((tab) => {
+                    {['Profile', 'Identity', 'Security', 'Notifications'].map((tab) => {
                         const tabId = tab.toLowerCase().replace(' ', '-');
                         const isActive = activeTab === tabId;
                         return (
@@ -393,6 +640,216 @@ export default function Settings() {
                             </div>
                         </div>
                     </section>
+                )}
+
+                {/* Render Identity & KYC Tab Content */}
+                {activeTab === 'identity' && (
+                    <div className="space-y-6 sm:space-y-8">
+                        <section className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-gray-100 p-5 sm:p-6 md:p-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">Contact Details</h3>
+                            <p className="font-mono text-[11px] sm:text-xs text-gray-500 mb-5 sm:mb-6">Work and personal phone numbers, plus your postal address.</p>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                                <div>
+                                    <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Work Phone</label>
+                                    <input
+                                        type="tel" name="workPhone" value={identityData.workPhone} onChange={handleIdentityFieldChange}
+                                        placeholder="+1 555 000 0000"
+                                        className="w-full bg-[#f9f9ff] rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Personal Phone</label>
+                                    <input
+                                        type="tel" name="personalPhone" value={identityData.personalPhone} onChange={handleIdentityFieldChange}
+                                        placeholder="+1 555 000 0000"
+                                        className="w-full bg-[#f9f9ff] rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
+                                    />
+                                </div>
+                                <div className="sm:col-span-2">
+                                    <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Postal Address</label>
+                                    <input
+                                        type="text" name="address" value={identityData.address} onChange={handleIdentityFieldChange}
+                                        placeholder="Click map to drop pin or type address"
+                                        className="w-full bg-[#f9f9ff] rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
+                                    />
+                                    <LocationMapPicker
+                                        locationString={identityData.address}
+                                        setLocationString={(val) => setIdentityData(prev => ({ ...prev, address: val }))}
+                                    />
+                                </div>
+                            </div>
+                        </section>
+
+                        <section className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-gray-100 p-5 sm:p-6 md:p-8 animate-in fade-in slide-in-from-bottom-2 duration-300 delay-75">
+                            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">KYC / Identity Verification</h3>
+                            <p className="font-mono text-[11px] sm:text-xs text-gray-500 mb-5 sm:mb-6">Your ID number is encrypted at rest. Only visible to you and admins.</p>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                                <div>
+                                    <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">ID Type</label>
+                                    <select
+                                        name="kycIdType" value={identityData.kycIdType} onChange={handleIdentityFieldChange}
+                                        className="w-full bg-[#f9f9ff] rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
+                                    >
+                                        <option value="">Select type...</option>
+                                        <option value="id_card">National ID Card</option>
+                                        <option value="passport">Passport</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">ID / Passport Number</label>
+                                    <input
+                                        type="text" name="kycIdNumber" value={identityData.kycIdNumber} onChange={handleIdentityFieldChange}
+                                        placeholder="Enter ID or passport number"
+                                        className="w-full bg-[#f9f9ff] rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
+                                    />
+                                </div>
+                                <div className="sm:col-span-2">
+                                    <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">ID Document / Passport Scan</label>
+                                    <input type="file" ref={idDocInputRef} onChange={handleIdDocumentChange} className="hidden" accept="image/png,image/jpeg,image/webp,application/pdf" />
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                        <button
+                                            type="button" onClick={handleIdDocumentClick} disabled={isUploadingIdDoc}
+                                            className="bg-[#f1f3fc] text-[#222777] border border-[#c7c5d3] px-4 py-2.5 rounded-md font-bold text-[13px] hover:bg-[#e0e2eb] transition-colors flex items-center gap-2 shrink-0"
+                                        >
+                                            <span className="material-symbols-outlined text-[18px]">{isUploadingIdDoc ? 'hourglass_empty' : 'upload_file'}</span>
+                                            {isUploadingIdDoc ? 'Uploading...' : 'Upload Scan'}
+                                        </button>
+                                        {identityData.idDocumentUrl && (
+                                            <a href={identityData.idDocumentUrl} target="_blank" rel="noreferrer" className="text-[#00c2cb] hover:text-[#006e73] font-semibold text-[13px] flex items-center gap-1">
+                                                <span className="material-symbols-outlined text-[16px]">visibility</span>
+                                                View current document
+                                            </a>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end pt-5 sm:pt-6">
+                                <button
+                                    onClick={handleSaveIdentity}
+                                    disabled={isSavingIdentity}
+                                    className={`w-full sm:w-auto bg-[#222777] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2
+                                        ${isSavingIdentity ? 'opacity-80 cursor-not-allowed' : 'hover:bg-[#3a3f8f]'}`}
+                                >
+                                    {isSavingIdentity ? (
+                                        <>
+                                            <span className="material-symbols-outlined text-[18px] animate-spin">sync</span>
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        'Save Changes'
+                                    )}
+                                </button>
+                            </div>
+                        </section>
+
+                        <section className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-gray-100 p-5 sm:p-6 md:p-8 animate-in fade-in slide-in-from-bottom-2 duration-300 delay-150">
+                            <div className="flex justify-between items-center mb-1 gap-3">
+                                <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Certifications</h3>
+                                <button
+                                    type="button" onClick={handleAddCertification}
+                                    className="text-[#00c2cb] hover:text-[#006e73] font-semibold text-[13px] transition-colors flex items-center gap-1 whitespace-nowrap"
+                                >
+                                    <span className="material-symbols-outlined text-[18px]">add_circle</span>
+                                    Add Certification
+                                </button>
+                            </div>
+                            <p className="font-mono text-[11px] sm:text-xs text-gray-500 mb-5 sm:mb-6">Any professional certifications you hold - we may use these in the future.</p>
+
+                            {certifications.length === 0 ? (
+                                <p className="text-center text-[13px] text-gray-500 py-6">No certifications added yet.</p>
+                            ) : (
+                                <div className="space-y-4">
+                                    {certifications.map((cert, index) => (
+                                        <div key={cert._id || index} className="p-4 rounded-lg border border-gray-100 bg-[#f9f9ff] relative">
+                                            <button
+                                                type="button" onClick={() => handleRemoveCertification(index)}
+                                                className="absolute top-3 right-3 text-[#777682] hover:text-[#ba1a1a] transition-colors"
+                                                title="Remove certification"
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">delete</span>
+                                            </button>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pr-8">
+                                                <div>
+                                                    <label className="block text-[10px] sm:text-[11px] font-semibold text-gray-600 mb-1 uppercase tracking-wider">Title</label>
+                                                    <input
+                                                        type="text" value={cert.title} onChange={(e) => handleCertificationChange(index, 'title', e.target.value)}
+                                                        placeholder="e.g. PMP Certification"
+                                                        className="w-full bg-white rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2 px-3 text-[13px] outline-none transition-shadow"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] sm:text-[11px] font-semibold text-gray-600 mb-1 uppercase tracking-wider">Issuer</label>
+                                                    <input
+                                                        type="text" value={cert.issuer || ''} onChange={(e) => handleCertificationChange(index, 'issuer', e.target.value)}
+                                                        placeholder="e.g. PMI"
+                                                        className="w-full bg-white rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2 px-3 text-[13px] outline-none transition-shadow"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] sm:text-[11px] font-semibold text-gray-600 mb-1 uppercase tracking-wider">Issue Date</label>
+                                                    <input
+                                                        type="date" value={cert.issueDate ? String(cert.issueDate).slice(0, 10) : ''} onChange={(e) => handleCertificationChange(index, 'issueDate', e.target.value)}
+                                                        className="w-full bg-white rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2 px-3 text-[13px] outline-none transition-shadow"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] sm:text-[11px] font-semibold text-gray-600 mb-1 uppercase tracking-wider">Certificate File</label>
+                                                    <input
+                                                        type="file" id={`cert-file-${index}`} onChange={(e) => handleCertificationFileChange(index, e)}
+                                                        className="hidden" accept="image/png,image/jpeg,image/webp,application/pdf"
+                                                    />
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <button
+                                                            type="button" onClick={() => document.getElementById(`cert-file-${index}`).click()}
+                                                            disabled={uploadingCertIndex === index}
+                                                            className="bg-white text-[#222777] border border-[#c7c5d3] px-3 py-2 rounded-md font-bold text-[12px] hover:bg-[#eef0f9] transition-colors flex items-center gap-1.5 shrink-0"
+                                                        >
+                                                            <span className="material-symbols-outlined text-[16px]">{uploadingCertIndex === index ? 'hourglass_empty' : 'upload_file'}</span>
+                                                            {uploadingCertIndex === index ? 'Uploading...' : 'Upload'}
+                                                        </button>
+                                                        {cert.certificateUrl && (
+                                                            <a href={cert.certificateUrl} target="_blank" rel="noreferrer" className="text-[#00c2cb] hover:text-[#006e73] font-semibold text-[12px]">
+                                                                View file
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="sm:col-span-2">
+                                                    <label className="block text-[10px] sm:text-[11px] font-semibold text-gray-600 mb-1 uppercase tracking-wider">Description</label>
+                                                    <input
+                                                        type="text" value={cert.description || ''} onChange={(e) => handleCertificationChange(index, 'description', e.target.value)}
+                                                        placeholder="Optional notes"
+                                                        className="w-full bg-white rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2 px-3 text-[13px] outline-none transition-shadow"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="flex justify-end pt-5 sm:pt-6">
+                                <button
+                                    onClick={handleSaveIdentity}
+                                    disabled={isSavingIdentity}
+                                    className={`w-full sm:w-auto bg-[#222777] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2
+                                        ${isSavingIdentity ? 'opacity-80 cursor-not-allowed' : 'hover:bg-[#3a3f8f]'}`}
+                                >
+                                    {isSavingIdentity ? (
+                                        <>
+                                            <span className="material-symbols-outlined text-[18px] animate-spin">sync</span>
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        'Save Changes'
+                                    )}
+                                </button>
+                            </div>
+                        </section>
+                    </div>
                 )}
 
                 {/* Render Security Tab Content */}

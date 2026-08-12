@@ -264,6 +264,8 @@ export default function AdminUserDetail() {
     );
 }
 
+const ID_TYPE_LABELS = { id_card: 'National ID Card', passport: 'Passport' };
+
 function OverviewTab({ profile }) {
     const rows = [
         ['Title', profile.title || '—'],
@@ -276,15 +278,82 @@ function OverviewTab({ profile }) {
         ['Last Login', formatDate(profile.lastLoginAt)],
         ['Member Since', formatDate(profile.createdAt)]
     ];
+
+    const contactRows = [
+        ['Work Phone', profile.workPhone || '—'],
+        ['Personal Phone', profile.personalPhone || '—'],
+        ['Postal Address', profile.address || '—']
+    ];
+
+    const kyc = profile.kyc || {};
+    // Full, unmasked ID number - admin visibility for KYC is an explicit product decision.
+    const kycRows = [
+        ['ID Type', ID_TYPE_LABELS[kyc.idType] || '—'],
+        ['ID / Passport Number', kyc.idNumber || '—']
+    ];
+
     return (
-        <SectionCard title="Profile Details">
-            {rows.map(([label, value]) => (
-                <div key={label} className="px-4 sm:px-5 py-3 flex items-center justify-between text-[13px] sm:text-sm">
-                    <span className="text-[#777682] font-semibold">{label}</span>
-                    <span className="text-[#181c22] font-mono text-right truncate max-w-[60%]">{value}</span>
+        <>
+            <SectionCard title="Profile Details">
+                {rows.map(([label, value]) => (
+                    <div key={label} className="px-4 sm:px-5 py-3 flex items-center justify-between text-[13px] sm:text-sm">
+                        <span className="text-[#777682] font-semibold">{label}</span>
+                        <span className="text-[#181c22] font-mono text-right truncate max-w-[60%]">{value}</span>
+                    </div>
+                ))}
+            </SectionCard>
+
+            <SectionCard title="Contact Details">
+                {contactRows.map(([label, value]) => (
+                    <div key={label} className="px-4 sm:px-5 py-3 flex items-center justify-between text-[13px] sm:text-sm">
+                        <span className="text-[#777682] font-semibold">{label}</span>
+                        <span className="text-[#181c22] font-mono text-right truncate max-w-[60%]">{value}</span>
+                    </div>
+                ))}
+            </SectionCard>
+
+            <SectionCard title="KYC / Identity Verification">
+                {kycRows.map(([label, value]) => (
+                    <div key={label} className="px-4 sm:px-5 py-3 flex items-center justify-between text-[13px] sm:text-sm">
+                        <span className="text-[#777682] font-semibold">{label}</span>
+                        <span className="text-[#181c22] font-mono text-right truncate max-w-[60%]">{value}</span>
+                    </div>
+                ))}
+                <div className="px-4 sm:px-5 py-3 flex items-center justify-between text-[13px] sm:text-sm">
+                    <span className="text-[#777682] font-semibold">ID Document</span>
+                    {kyc.idDocumentUrl ? (
+                        <a href={kyc.idDocumentUrl} target="_blank" rel="noreferrer" className="text-[#00c2cb] hover:text-[#006e73] font-semibold">
+                            View document
+                        </a>
+                    ) : (
+                        <span className="text-[#181c22] font-mono">—</span>
+                    )}
                 </div>
-            ))}
-        </SectionCard>
+            </SectionCard>
+
+            <SectionCard title="Certifications" count={profile.certifications?.length ?? 0}>
+                {!profile.certifications || profile.certifications.length === 0 ? (
+                    <EmptyRow label="No certifications added." />
+                ) : (
+                    profile.certifications.map((cert) => (
+                        <div key={cert._id || cert.title} className="px-4 sm:px-5 py-3">
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="font-bold text-[13px] sm:text-sm text-[#181c22]">{cert.title}</span>
+                                {cert.certificateUrl && (
+                                    <a href={cert.certificateUrl} target="_blank" rel="noreferrer" className="text-[#00c2cb] hover:text-[#006e73] font-semibold text-[12px] shrink-0">
+                                        View file
+                                    </a>
+                                )}
+                            </div>
+                            <div className="text-[11px] font-mono text-[#777682] mt-0.5">
+                                {[cert.issuer, cert.issueDate ? formatDate(cert.issueDate) : null].filter(Boolean).join(' · ') || '—'}
+                            </div>
+                            {cert.description && <div className="text-[12px] text-[#464651] mt-1">{cert.description}</div>}
+                        </div>
+                    ))
+                )}
+            </SectionCard>
+        </>
     );
 }
 

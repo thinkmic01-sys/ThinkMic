@@ -97,7 +97,32 @@ const UserSchema = new mongoose.Schema({
         type: Number,
         default: 0,
         min: 0
-    }
+    },
+    workPhone: String,
+    personalPhone: String,
+    // Free-text, deliberately matching Seminar.location's convention (either a "lat, lng"
+    // string from a map click, or a geocoded display name from search) rather than a
+    // structured address schema - reuses the same map-picker UX already built for seminars.
+    address: String,
+    kyc: {
+        idType: { type: String, enum: ['id_card', 'passport'] },
+        // AES-256-GCM ciphertext (see backend/utils/encryption.js) - select: false so it
+        // never appears in a query by accident; only the two controllers that explicitly
+        // .select('+kyc.idNumberEncrypted') and decrypt it ever see the real number.
+        idNumberEncrypted: { type: String, select: false },
+        // Private R2 object key for the uploaded scan/photo - never a public URL directly;
+        // always resolved to a short-lived presigned GET URL on read (see
+        // profileDocumentsService.js), same pattern as recording playback URLs.
+        idDocumentKey: String
+    },
+    certifications: [{
+        title: { type: String, required: true },
+        issuer: String,
+        issueDate: Date,
+        // Private R2 object key for an optional uploaded certificate file/scan
+        certificateKey: String,
+        description: String
+    }]
 }, {
     timestamps: true,
     strict: true

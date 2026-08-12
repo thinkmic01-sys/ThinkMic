@@ -1312,9 +1312,9 @@ export default function SpeechWorkspace() {
                             <span className="md:w-1/2 font-mono text-[10px] sm:text-[11px] font-bold text-[#777682] uppercase tracking-wider">Answer</span>
                         </div>
 
-                        <div className="flex flex-col gap-3 overflow-y-auto max-h-[260px] sm:max-h-[280px] custom-scrollbar pr-1">
+                        <div className="flex flex-col gap-3 overflow-y-auto overflow-x-hidden max-h-[260px] sm:max-h-[280px] custom-scrollbar pr-1">
                             {customPrompts.map((promptObj, index) => (
-                                <div key={promptObj.id} className="flex flex-col md:flex-row gap-3 shrink-0">
+                                <div key={promptObj.id} className="flex flex-col md:flex-row gap-3 shrink-0 min-w-0">
                                     {/* Prompt cell */}
                                     <div className="md:w-1/2 min-w-0 relative border border-[#c7c5d3] rounded-md bg-white overflow-hidden shrink-0">
                                         {customPrompts.length > 1 && (

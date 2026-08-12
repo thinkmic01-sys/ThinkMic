@@ -104,15 +104,13 @@ export default function Navbar({ onMenuClick }) {
             );
         }
 
-        // If inside the Projects/Research workflow
-        if (location.pathname.includes('/app/projects') || location.pathname.includes('/app/research')) {
+        // If inside the Research workflow - Project Hub used to share this tab bar, but now
+        // has its own sidebar entry, so this only ever needs to show the one tab.
+        if (location.pathname.includes('/app/research')) {
             return (
                 <div className="flex space-x-4 sm:space-x-6 h-full items-center overflow-x-auto hide-scrollbar">
                     <Link to="/app/research" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/research') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
                         AI Research Wizard
-                    </Link>
-                    <Link to="/app/projects" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/projects') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
-                        Projects Hub
                     </Link>
                 </div>
             );

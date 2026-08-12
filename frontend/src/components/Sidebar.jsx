@@ -11,9 +11,13 @@ const NavLink = ({ to, icon, label, isManagement }) => {
     // Determine active state
     let isActive = location.pathname === to || location.pathname.startsWith(to + '/');
 
-    // Projects/Research active state grouping
+    // Projects/Research are now two distinct sidebar entries (Project Hub used to be reached
+    // only via a tab inside the Research page's top nav) - keep their active states disjoint.
     if (to === '/app/research') {
-        isActive = (location.pathname.startsWith('/app/projects') || location.pathname.startsWith('/app/research')) && !isCreateSeminar;
+        isActive = location.pathname.startsWith('/app/research');
+    }
+    if (to === '/app/projects') {
+        isActive = location.pathname.startsWith('/app/projects') && !isCreateSeminar;
     }
     if (to === '/app/courses' && isCreateSeminar) {
         isActive = true;
@@ -84,6 +88,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             <nav className="flex flex-col gap-1 overflow-y-auto custom-scrollbar">
                 <NavLink to="/app/dashboard" icon="dashboard" label="Dashboard" />
                 <NavLink to="/app/research" icon="workspaces" label="Projects" />
+                <NavLink to="/app/projects" icon="folder_open" label="Project Hub" />
                 <NavLink to="/app/reports" icon="summarize" label="Reports" />
                 <NavLink to="/app/courses" icon="school" label="Seminars" />
                 <NavLink to="/app/forms" icon="groups" label="Collaboration" />

@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
-const NavLink = ({ to, icon, label, isManagement }) => {
+const NavLink = ({ to, icon, label }) => {
     const location = useLocation();
     // Create Seminar's route is still under /app/projects/* for now, but it belongs to
     // the Seminars section (reached from the Seminar Library), not Projects
@@ -24,12 +24,6 @@ const NavLink = ({ to, icon, label, isManagement }) => {
     if (to === '/app/courses') {
         isActive = (location.pathname.startsWith('/app/courses') && !location.pathname.startsWith('/app/courses/my-learning')) || isCreateSeminar;
     }
-    // Management active state grouping
-    if (isManagement) {
-        isActive = location.pathname.startsWith('/app/admin') && 
-                   !location.pathname.startsWith('/app/admin/analytics') && 
-                   !location.pathname.startsWith('/app/admin/support');
-    }
 
     return (
         <Link
@@ -48,26 +42,27 @@ const NavLink = ({ to, icon, label, isManagement }) => {
     );
 };
 
-// The "Management" nav item covers the Users/Roles/Schemas/Rewards/Keywords tab group
-// (Support and Analytics are reached via their own separate nav entries/routes, not this
-// one) - checked in this order so the link lands on the first section a given permission
-// set can actually open, instead of always pointing at /admin/users regardless of what
-// the role can reach.
-const MANAGEMENT_LANDING_ROUTES = [
-    ['users.view', '/app/admin/users'],
-    ['roles.manage', '/app/admin/roles'],
-    ['schemas.manage', '/app/admin/schemas'],
-    ['rewards.manage_settings', '/app/admin/rewards'],
-    ['rewards.manage_pending', '/app/admin/rewards'],
-    ['rewards.approve_reject', '/app/admin/rewards'],
-    ['rewards.view_history_stats', '/app/admin/rewards'],
-    ['rewards.adjust_coins', '/app/admin/rewards'],
-    ['keywords.manage', '/app/admin/keywords']
+// Each of these is its own sidebar link now (used to be a single combined "Management"
+// entry landing on the first reachable one) - Support and Analytics are reached via their
+// own separate nav entries/routes, not this group.
+const MANAGEMENT_PAGES = [
+    { to: '/app/admin/users', icon: 'group', label: 'Users', permissions: ['users.view'] },
+    { to: '/app/admin/roles', icon: 'shield_person', label: 'Roles', permissions: ['roles.manage'] },
+    { to: '/app/admin/schemas', icon: 'dynamic_form', label: 'Schemas', permissions: ['schemas.manage'] },
+    {
+        to: '/app/admin/rewards', icon: 'redeem', label: 'Rewards', permissions: [
+            'rewards.manage_settings', 'rewards.manage_pending', 'rewards.approve_reject',
+            'rewards.view_history_stats', 'rewards.adjust_coins'
+        ]
+    },
+    { to: '/app/admin/keywords', icon: 'sell', label: 'Keywords', permissions: ['keywords.manage'] }
 ];
 
 export default function Sidebar({ isOpen, setIsOpen }) {
     const permissions = useSelector((state) => state.auth?.user?.permissions) || [];
-    const managementRoute = MANAGEMENT_LANDING_ROUTES.find(([perm]) => permissions.includes(perm))?.[1];
+    // Matches the same admin/regular-user split App.jsx uses to pick Dashboard vs AdminDashboard.
+    const isAdmin = permissions.length > 0;
+    const managementPages = MANAGEMENT_PAGES.filter((page) => page.permissions.some((perm) => permissions.includes(perm)));
 
     return (
         <aside className={`w-[280px] h-screen bg-[#222777] flex flex-col fixed left-0 top-0 text-white z-50 border-r border-[#181c22]/20 transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
@@ -91,16 +86,25 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             {/* Main Nav Links */}
             <nav className="flex flex-col gap-1 overflow-y-auto custom-scrollbar">
                 <NavLink to="/app/dashboard" icon="dashboard" label="Dashboard" />
-                <NavLink to="/app/research" icon="workspaces" label="Projects" />
-                <NavLink to="/app/projects" icon="folder_open" label="Project Hub" />
-                <NavLink to="/app/reports" icon="summarize" label="Reports" />
-                <NavLink to="/app/courses" icon="school" label="Seminars" />
-                <NavLink to="/app/courses/my-learning" icon="bookmark" label="My Learning List" />
-                <NavLink to="/app/forms" icon="groups" label="Collaboration" />
-                {managementRoute && (
-                    <NavLink to={managementRoute} icon="admin_panel_settings" label="Management" isManagement />
+                {isAdmin ? (
+                    // Admins manage the platform rather than use the product features
+                    // themselves (per-user activity is already visible via Users > View Full
+                    // Profile), so the sidebar lists every Management page directly instead of
+                    // Projects/Reports/Seminars/etc.
+                    managementPages.map((page) => (
+                        <NavLink key={page.to} to={page.to} icon={page.icon} label={page.label} />
+                    ))
+                ) : (
+                    <>
+                        <NavLink to="/app/research" icon="workspaces" label="Projects" />
+                        <NavLink to="/app/projects" icon="folder_open" label="Project Hub" />
+                        <NavLink to="/app/reports" icon="summarize" label="Reports" />
+                        <NavLink to="/app/courses" icon="school" label="Seminars" />
+                        <NavLink to="/app/courses/my-learning" icon="bookmark" label="My Learning List" />
+                        <NavLink to="/app/forms" icon="groups" label="Collaboration" />
+                        <NavLink to="/app/achievements" icon="military_tech" label="Achievements" />
+                    </>
                 )}
-                <NavLink to="/app/achievements" icon="military_tech" label="Achievements" />
             </nav>
 
             {/* Footer Area (Configure Mic + Settings/Support) */}

@@ -14,8 +14,11 @@ const protect = async (req, res, next) => {
             const decoded = jwt.verify(token, process.env.JWT_PRIVATE_KEY);
 
             // Fetch the user from the database (excluding the password) and attach to req.user
-            // We use decoded.sub because we defined { sub: user._id } in the authController
-            req.user = await User.findById(decoded.sub).select('-passwordHash');
+            // We use decoded.sub because we defined { sub: user._id } in the authController.
+            // roleId is populated fresh on every request (never cached in the JWT) so a
+            // permission change takes effect immediately, without waiting for token refresh.
+            req.user = await User.findById(decoded.sub).select('-passwordHash').populate('roleId', 'slug name permissions');
+            req.user.permissions = req.user.roleId ? req.user.roleId.permissions : [];
 
             next(); // Move to the next middleware or controller
         } catch (error) {
@@ -29,13 +32,17 @@ const protect = async (req, res, next) => {
     }
 };
 
-const checkRole = (...roles) => {
+// Passes if the caller's role carries ANY of the given permission keys. Permissions are
+// read fresh off req.user (populated by protect() on every request from the DB, never
+// cached in the JWT), so revoking a permission takes effect on the caller's very next request.
+const checkPermission = (...keys) => {
     return (req, res, next) => {
-        if (!req.user || !roles.includes(req.user.role)) {
-            return res.status(403).json({ message: 'Forbidden: Insufficient role permissions' });
+        const userPermissions = (req.user && req.user.permissions) || [];
+        if (!keys.some((key) => userPermissions.includes(key))) {
+            return res.status(403).json({ message: 'Forbidden: Insufficient permissions' });
         }
         next();
     };
 };
 
-module.exports = { protect, checkRole };
+module.exports = { protect, checkPermission };

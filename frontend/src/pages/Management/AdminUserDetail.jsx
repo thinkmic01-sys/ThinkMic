@@ -54,6 +54,10 @@ export default function AdminUserDetail() {
     const [editingRole, setEditingRole] = useState(false);
     const [roleValue, setRoleValue] = useState('user');
     const [isSavingRole, setIsSavingRole] = useState(false);
+    const [roles, setRoles] = useState([]);
+    useEffect(() => {
+        api.get('/admin/roles').then((res) => setRoles(res.data.roles || [])).catch(() => {});
+    }, []);
 
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
     const showToast = (message, type = 'success') => {
@@ -156,7 +160,7 @@ export default function AdminUserDetail() {
                     <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2 mb-1">
                             <h1 className="text-xl sm:text-2xl font-bold text-[#181c22] capitalize truncate">{extractedName}</h1>
-                            <Pill tone={profile.role === 'admin' ? 'good' : 'default'}>{profile.role}</Pill>
+                            <Pill tone={profile.role === 'admin' ? 'good' : 'default'}>{profile.roleId?.name || profile.role}</Pill>
                             <Pill tone={profile.status === 'active' ? 'good' : profile.status === 'invited' ? 'warn' : 'bad'}>{profile.status}</Pill>
                         </div>
                         <p className="text-[#777682] text-[13px] sm:text-sm font-mono truncate">{profile.email}</p>
@@ -197,8 +201,7 @@ export default function AdminUserDetail() {
                             onChange={(e) => setRoleValue(e.target.value)}
                             className="border border-[#c7c5d3] rounded-md py-2 px-3 text-[13px] font-semibold text-[#464651] outline-none focus:border-[#222777]"
                         >
-                            <option value="user">User</option>
-                            <option value="manager">Manager</option>
+                            {roles.map((r) => <option key={r._id} value={r.slug}>{r.name}</option>)}
                         </select>
                         <button
                             onClick={handleSaveRole}

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect, checkRole } = require('../middleware/authMiddleware');
+const { protect, checkPermission } = require('../middleware/authMiddleware');
 const { getTicket, sendMessage, getAllTickets, closeTicket, rateTicket } = require('../controllers/supportController');
 
 router.use(protect);
@@ -13,6 +13,6 @@ router.patch('/:id/close', closeTicket);
 router.patch('/:id/rate', rateTicket);
 
 // Admin/manager routes
-router.get('/all', checkRole('admin', 'manager'), getAllTickets);
+router.get('/all', checkPermission('support.manage_all'), getAllTickets);
 
 module.exports = router;

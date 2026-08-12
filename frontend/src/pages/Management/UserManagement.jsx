@@ -33,6 +33,12 @@ export default function UserManagement() {
     const [editRole, setEditRole] = useState('user');
     const [isSavingRole, setIsSavingRole] = useState(false);
 
+    // All assignable roles (system + custom) - backs every role <select> on this page
+    const [roles, setRoles] = useState([]);
+    useEffect(() => {
+        api.get('/admin/roles').then((res) => setRoles(res.data.roles || [])).catch(() => {});
+    }, []);
+
     const timeAgo = (dateString) => {
         if (!dateString) return 'Never';
         const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
@@ -70,6 +76,7 @@ export default function UserManagement() {
                         initials: extractedName.substring(0, 2).toUpperCase(),
                         email: u.email,
                         role: u.role,
+                        roleName: u.roleId?.name,
                         status: u.status,
                         lastActive: timeAgo(u.lastLoginAt || u.createdAt)
                     };
@@ -224,9 +231,7 @@ export default function UserManagement() {
                                 className="w-full appearance-none bg-[#f9f9ff] border border-[#e0e2eb] rounded-lg py-2 sm:py-2.5 pl-3 pr-8 text-[13px] sm:text-sm font-semibold text-[#464651] focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none cursor-pointer"
                             >
                                 <option value="">All Roles</option>
-                                <option value="admin">Admin</option>
-                                <option value="manager">Manager</option>
-                                <option value="user">User</option>
+                                {roles.map((r) => <option key={r._id} value={r.slug}>{r.name}</option>)}
                             </select>
                             <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none text-[18px]">expand_more</span>
                         </div>
@@ -261,9 +266,10 @@ export default function UserManagement() {
                                     value=""
                                 >
                                     <option value="" disabled>Change Role</option>
-                                    <option value="user">Make User</option>
-                                    <option value="manager">Make Manager</option>
-                                    {/* Exclude admin so they can't maliciously promote to admin easily, or include if desired */}
+                                    {/* Excludes the Admin role so a bulk action can't mass-promote to admin */}
+                                    {roles.filter((r) => r.slug !== 'admin').map((r) => (
+                                        <option key={r._id} value={r.slug}>Make {r.name}</option>
+                                    ))}
                                 </select>
                                 <button
                                     onClick={handleBulkDeactivate}
@@ -333,12 +339,14 @@ export default function UserManagement() {
                                             <span className={`inline-flex items-center gap-1 text-[9px] sm:text-[10px] px-2 py-1 rounded-full uppercase tracking-wider font-bold border
                                                     ${user.role === 'admin' ? 'bg-[#222777] text-white border-[#222777]' : ''}
                                                     ${user.role === 'manager' ? 'bg-[#e6fbfc] text-[#006e73] border-[#00c2cb]/30' : ''}
-                                                    ${user.role === 'user' ? 'bg-white text-[#464651] border-[#c7c5d3]' : ''}`}
+                                                    ${user.role === 'user' ? 'bg-white text-[#464651] border-[#c7c5d3]' : ''}
+                                                    ${!['admin', 'manager', 'user'].includes(user.role) ? 'bg-[#f1f3fc] text-[#222777] border-[#c7c5d3]' : ''}`}
                                             >
                                                     {user.role === 'admin' && <span className="material-symbols-outlined text-[12px]">shield</span>}
                                                 {user.role === 'manager' && <span className="material-symbols-outlined text-[12px]">manage_accounts</span>}
                                                 {user.role === 'user' && <span className="material-symbols-outlined text-[12px]">person</span>}
-                                                {user.role}
+                                                {!['admin', 'manager', 'user'].includes(user.role) && <span className="material-symbols-outlined text-[12px]">badge</span>}
+                                                {user.roleName || user.role}
                                                 </span>
                                         </td>
                                         <td className="py-3 px-4 whitespace-nowrap">
@@ -472,9 +480,9 @@ export default function UserManagement() {
                                         onChange={(e) => setInviteRole(e.target.value)}
                                         className="w-full appearance-none bg-[#f9f9ff] border border-[#c7c5d3] rounded-lg py-2.5 sm:py-3 pl-3 pr-8 text-[13px] sm:text-sm focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none cursor-pointer text-[#181c22]"
                                     >
-                                        <option value="user">User (Standard Access)</option>
-                                        <option value="manager">Manager (Can manage projects)</option>
-                                        <option value="admin">Admin (Full system access)</option>
+                                        {roles.map((r) => (
+                                            <option key={r._id} value={r.slug}>{r.name}{r.description ? ` (${r.description})` : ''}</option>
+                                        ))}
                                     </select>
                                     <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none">expand_more</span>
                                 </div>
@@ -554,9 +562,9 @@ export default function UserManagement() {
                                         onChange={(e) => setEditRole(e.target.value)}
                                         className="w-full appearance-none bg-[#f9f9ff] border border-[#c7c5d3] rounded-lg py-2.5 sm:py-3 pl-3 pr-8 text-[13px] sm:text-sm focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none cursor-pointer text-[#181c22]"
                                     >
-                                        <option value="user">User (Standard Access)</option>
-                                        <option value="manager">Manager (Can manage projects)</option>
-                                        <option value="admin">Admin (Full system access)</option>
+                                        {roles.map((r) => (
+                                            <option key={r._id} value={r.slug}>{r.name}{r.description ? ` (${r.description})` : ''}</option>
+                                        ))}
                                     </select>
                                     <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none">expand_more</span>
                                 </div>

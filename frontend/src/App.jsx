@@ -17,6 +17,7 @@ import Achievements from "./pages/Achievement/Achievements.jsx";
 import Courses from "./pages/Courses/Courses.jsx";
 import UserManagement from "./pages/Management/UserManagement.jsx";
 import AdminUserDetail from "./pages/Management/AdminUserDetail.jsx";
+import RolesManagement from "./pages/Management/RolesManagement.jsx";
 import Collaboration from "./pages/Collaboration/Collaboration.jsx";
 import ResearchResults from "./pages/projects/ResearchResults.jsx";
 import SchemaBuilder from "./pages/Management/SchemaBuilder.jsx";
@@ -41,9 +42,13 @@ const Placeholder = ({ title }) => (
     </div>
 );
 
-// Redirects away from a route if the current user's role isn't in `allowed`
-function RequireRole({ allowed, role, children }) {
-    return allowed.includes(role) ? children : <Navigate to="/app/dashboard" replace />;
+// Redirects away from a route unless the current user's role carries at least one of the
+// given permission keys. Permissions come fresh from the backend on every login/refresh
+// (never decoded from the JWT), so a permission revoked mid-session takes effect on the
+// user's next silent refresh, same as the backend's own checkPermission() middleware.
+function RequireRole({ anyOf, permissions, children }) {
+    const granted = permissions || [];
+    return anyOf.some((key) => granted.includes(key)) ? children : <Navigate to="/app/dashboard" replace />;
 }
 
 // Inner component to handle Redux logic and route protection
@@ -53,6 +58,7 @@ function AppRoutes() {
     // Safely check if user is authenticated via Redux
     const isAuthenticated = useSelector((state) => state.auth?.isAuthenticated);
     const role = useSelector((state) => state.auth?.user?.role);
+    const permissions = useSelector((state) => state.auth?.user?.permissions);
 
     // State to block rendering until the backend confirms the cookie
     const [isAuthReady, setIsAuthReady] = useState(false);
@@ -109,7 +115,7 @@ function AppRoutes() {
                     <Layout>
                         <Routes>
                             {/* Live Modules we have built */}
-                            <Route path="dashboard" element={role === 'admin' ? <AdminDashboard /> : <Dashboard />} />
+                            <Route path="dashboard" element={(permissions && permissions.length > 0) ? <AdminDashboard /> : <Dashboard />} />
 
                             {/* The Research Pipeline (Step 1 & 2) */}
                             <Route path="research" element={<SpeechWorkspace />} />
@@ -142,14 +148,15 @@ function AppRoutes() {
                             {/* ADMIN ZONE (Nested Routes) */}
                             <Route path="admin">
                                 <Route index element={<Navigate to="users" replace />} />
-                                <Route path="users" element={<RequireRole allowed={['admin']} role={role}><UserManagement /></RequireRole>} />
-                                <Route path="users/:userId" element={<RequireRole allowed={['admin']} role={role}><AdminUserDetail /></RequireRole>} />
-                                <Route path="schemas" element={<RequireRole allowed={['admin']} role={role}><SchemaLibrary /></RequireRole>} />
-                                <Route path="schemas/new" element={<RequireRole allowed={['admin']} role={role}><SchemaBuilder /></RequireRole>} />
-                                <Route path="schemas/edit/:id" element={<RequireRole allowed={['admin']} role={role}><SchemaBuilder /></RequireRole>} />
-                                <Route path="support" element={<RequireRole allowed={['admin', 'manager']} role={role}><SupportInbox /></RequireRole>} />
-                                <Route path="rewards" element={<RequireRole allowed={['admin']} role={role}><ReferralCoinManagement /></RequireRole>} />
-                                <Route path="analytics" element={<RequireRole allowed={['admin']} role={role}><Dashboard /></RequireRole>} />
+                                <Route path="users" element={<RequireRole anyOf={['users.view']} permissions={permissions}><UserManagement /></RequireRole>} />
+                                <Route path="users/:userId" element={<RequireRole anyOf={['users.view_full_profile']} permissions={permissions}><AdminUserDetail /></RequireRole>} />
+                                <Route path="roles" element={<RequireRole anyOf={['roles.manage']} permissions={permissions}><RolesManagement /></RequireRole>} />
+                                <Route path="schemas" element={<RequireRole anyOf={['schemas.manage']} permissions={permissions}><SchemaLibrary /></RequireRole>} />
+                                <Route path="schemas/new" element={<RequireRole anyOf={['schemas.manage']} permissions={permissions}><SchemaBuilder /></RequireRole>} />
+                                <Route path="schemas/edit/:id" element={<RequireRole anyOf={['schemas.manage']} permissions={permissions}><SchemaBuilder /></RequireRole>} />
+                                <Route path="support" element={<RequireRole anyOf={['support.manage_all']} permissions={permissions}><SupportInbox /></RequireRole>} />
+                                <Route path="rewards" element={<RequireRole anyOf={['rewards.manage_settings', 'rewards.manage_pending', 'rewards.approve_reject', 'rewards.view_history_stats', 'rewards.adjust_coins']} permissions={permissions}><ReferralCoinManagement /></RequireRole>} />
+                                <Route path="analytics" element={<RequireRole anyOf={['analytics.view']} permissions={permissions}><Dashboard /></RequireRole>} />
                             </Route>
                         </Routes>
                     </Layout>

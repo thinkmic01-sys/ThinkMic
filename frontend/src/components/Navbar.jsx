@@ -133,11 +133,14 @@ export default function Navbar({ onMenuClick }) {
         }
 
         // If inside Management workflow
-        if (location.pathname.startsWith('/app/admin/users') || location.pathname.startsWith('/app/admin/schemas') || location.pathname.startsWith('/app/admin/rewards')) {
+        if (location.pathname.startsWith('/app/admin/users') || location.pathname.startsWith('/app/admin/schemas') || location.pathname.startsWith('/app/admin/rewards') || location.pathname.startsWith('/app/admin/roles')) {
             return (
                 <div className="flex space-x-4 sm:space-x-6 h-full items-center overflow-x-auto hide-scrollbar">
                     <Link to="/app/admin/users" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/admin/users') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
                         Users
+                    </Link>
+                    <Link to="/app/admin/roles" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/admin/roles') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
+                        Roles
                     </Link>
                     <Link to="/app/admin/schemas" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/admin/schemas') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
                         Schemas
@@ -247,7 +250,7 @@ export default function Navbar({ onMenuClick }) {
                         <div className="flex items-center gap-2 sm:gap-3 border-l border-[#e0e2eb] pl-3 sm:pl-6 cursor-pointer hover:opacity-80 transition-opacity shrink-0">
                             <div className="hidden lg:flex flex-col items-end">
                                 <span className="text-[14px] font-bold text-[#181c22] leading-none">{user.name}</span>
-                                <span className="text-[12px] text-[#777682] font-semibold">{user.role}</span>
+                                <span className="text-[12px] text-[#777682] font-semibold">{user.roleName || user.role}</span>
                             </div>
                             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#f1f3fc] overflow-hidden ring-2 ring-[#6bf6ff] ring-offset-1 sm:ring-offset-2 shrink-0">
                                 <img src={user.avatar} alt="User profile" className="w-full h-full object-cover" />

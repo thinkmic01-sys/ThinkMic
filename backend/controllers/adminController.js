@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Role = require('../models/Role');
 const crypto = require('crypto');
 
 // Distinct Professional Title values currently in use - backs the Schema Builder's
@@ -27,6 +28,7 @@ exports.listUsers = async (req, res) => {
 
         const users = await User.find(query)
             .select('-passwordHash')
+            .populate('roleId', 'name slug permissions')
             .sort({ createdAt: -1 })
             .limit(25)
             .skip((page - 1) * 25);
@@ -40,7 +42,12 @@ exports.listUsers = async (req, res) => {
 
 exports.inviteUsers = async (req, res) => {
     try {
-        const { emails, role } = req.body;
+        const { emails, role, roleId } = req.body;
+        const roleDoc = roleId ? await Role.findById(roleId) : await Role.findOne({ slug: role || 'user' });
+        if (!roleDoc) {
+            return res.status(400).json({ message: 'Role not found.' });
+        }
+
         // In a real scenario, this would create an invite token and send emails via SendGrid
         const invited = [];
         const failed = [];
@@ -52,7 +59,8 @@ exports.inviteUsers = async (req, res) => {
                     // Random, unguessable placeholder (hashed by the pre-save hook) - never a real login credential.
                     // The real password is set when the invitee completes registration.
                     passwordHash: crypto.randomBytes(32).toString('hex'),
-                    role,
+                    role: roleDoc.slug,
+                    roleId: roleDoc._id,
                     status: 'invited'
                 });
                 const safeUser = user.toObject();
@@ -71,7 +79,7 @@ exports.inviteUsers = async (req, res) => {
 exports.updateUserRoleStatus = async (req, res) => {
     try {
         const { id } = req.params;
-        const { role, status } = req.body;
+        const { roleId, role, status } = req.body;
 
         // An admin editing their own role/status here could lock themselves out
         // (e.g. accidental self-demotion or self-deactivation) with no one left
@@ -81,10 +89,22 @@ exports.updateUserRoleStatus = async (req, res) => {
         }
 
         const updateData = {};
-        if (role) updateData.role = role;
+        // roleId is the modern path (any system or custom role); a bare `role` slug is
+        // still accepted for backward compatibility and resolved to its Role document -
+        // User.role stays a denormalized mirror of roleId's slug either way.
+        if (roleId || role) {
+            const roleDoc = roleId ? await Role.findById(roleId) : await Role.findOne({ slug: role });
+            if (!roleDoc) {
+                return res.status(400).json({ message: 'Role not found.' });
+            }
+            updateData.roleId = roleDoc._id;
+            updateData.role = roleDoc.slug;
+        }
         if (status) updateData.status = status;
 
-        const user = await User.findByIdAndUpdate(id, updateData, { new: true }).select('-passwordHash');
+        const user = await User.findByIdAndUpdate(id, updateData, { new: true })
+            .select('-passwordHash')
+            .populate('roleId', 'name slug permissions');
         res.status(200).json({ user });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });

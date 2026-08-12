@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect, checkRole } = require('../middleware/authMiddleware');
+const { protect, checkPermission } = require('../middleware/authMiddleware');
 const { listUsers, getDistinctTitles, inviteUsers, updateUserRoleStatus, deleteUser } = require('../controllers/adminController');
 const {
     getSettings, updateSettings, listPendingRewards, updatePendingReward,
@@ -10,36 +10,51 @@ const {
     getUserProfile, getUserResearch, getUserReports, getUserNotes, getUserSeminars,
     getUserCollaboration, getUserCoins, getUserTimeline, getUserTickets
 } = require('../controllers/adminUserDetailController');
+const {
+    getPermissionCatalog, listRoles, createRole, updateRole, deleteRole
+} = require('../controllers/roleController');
 
 router.use(protect);
-router.use(checkRole('admin'));
+// Every route below carries its own checkPermission() - there is deliberately no
+// router-level gate here (unlike the old single checkRole('admin')), since custom roles
+// need to be able to reach exactly the subset of these routes their permissions grant.
 
-router.get('/users', listUsers);
-router.get('/users/titles', getDistinctTitles);
-router.post('/users/invite', inviteUsers);
-router.patch('/users/:id', updateUserRoleStatus);
-router.delete('/users/:id', deleteUser);
+router.get('/users', checkPermission('users.view'), listUsers);
+router.get('/users/titles', checkPermission('users.view'), getDistinctTitles);
+router.post('/users/invite', checkPermission('users.invite'), inviteUsers);
+router.patch('/users/:id', checkPermission('users.manage_role_status'), updateUserRoleStatus);
+router.delete('/users/:id', checkPermission('users.delete'), deleteUser);
 
 // Full-access admin view of a single user - each tab on the frontend page lazy-loads
 // its own section rather than one giant join across every collection.
-router.get('/users/:id/profile', getUserProfile);
-router.get('/users/:id/research', getUserResearch);
-router.get('/users/:id/reports', getUserReports);
-router.get('/users/:id/notes', getUserNotes);
-router.get('/users/:id/seminars', getUserSeminars);
-router.get('/users/:id/collaboration', getUserCollaboration);
-router.get('/users/:id/coins', getUserCoins);
-router.get('/users/:id/timeline', getUserTimeline);
-router.get('/users/:id/tickets', getUserTickets);
+router.get('/users/:id/profile', checkPermission('users.view_full_profile'), getUserProfile);
+router.get('/users/:id/research', checkPermission('users.view_full_profile'), getUserResearch);
+router.get('/users/:id/reports', checkPermission('users.view_full_profile'), getUserReports);
+router.get('/users/:id/notes', checkPermission('users.view_full_profile'), getUserNotes);
+router.get('/users/:id/seminars', checkPermission('users.view_full_profile'), getUserSeminars);
+router.get('/users/:id/collaboration', checkPermission('users.view_full_profile'), getUserCollaboration);
+router.get('/users/:id/coins', checkPermission('users.view_full_profile'), getUserCoins);
+router.get('/users/:id/timeline', checkPermission('users.view_full_profile'), getUserTimeline);
+router.get('/users/:id/tickets', checkPermission('users.view_full_profile'), getUserTickets);
 
-router.get('/rewards/settings', getSettings);
-router.patch('/rewards/settings', updateSettings);
-router.get('/rewards/pending', listPendingRewards);
-router.patch('/rewards/pending/:id', updatePendingReward);
-router.post('/rewards/pending/:id/approve', approveReward);
-router.post('/rewards/pending/:id/reject', rejectReward);
-router.get('/rewards/history', getApprovalHistory);
-router.get('/rewards/stats', getStats);
-router.post('/rewards/adjust/:userId', adjustUserCoins);
+router.get('/rewards/settings', checkPermission('rewards.manage_settings'), getSettings);
+router.patch('/rewards/settings', checkPermission('rewards.manage_settings'), updateSettings);
+router.get('/rewards/pending', checkPermission('rewards.manage_pending'), listPendingRewards);
+router.patch('/rewards/pending/:id', checkPermission('rewards.manage_pending'), updatePendingReward);
+router.post('/rewards/pending/:id/approve', checkPermission('rewards.approve_reject'), approveReward);
+router.post('/rewards/pending/:id/reject', checkPermission('rewards.approve_reject'), rejectReward);
+router.get('/rewards/history', checkPermission('rewards.view_history_stats'), getApprovalHistory);
+router.get('/rewards/stats', checkPermission('rewards.view_history_stats'), getStats);
+router.post('/rewards/adjust/:userId', checkPermission('rewards.adjust_coins'), adjustUserCoins);
+
+// Roles & Permissions - creating/editing/deleting custom roles, and the catalog that
+// backs the permission checklist UI. getPermissionCatalog is deliberately gated the same
+// as the rest (roles.manage) rather than left open, since it reveals every capability
+// the app has.
+router.get('/roles/catalog', checkPermission('roles.manage'), getPermissionCatalog);
+router.get('/roles', checkPermission('roles.manage'), listRoles);
+router.post('/roles', checkPermission('roles.manage'), createRole);
+router.patch('/roles/:id', checkPermission('roles.manage'), updateRole);
+router.delete('/roles/:id', checkPermission('roles.manage'), deleteRole);
 
 module.exports = router;

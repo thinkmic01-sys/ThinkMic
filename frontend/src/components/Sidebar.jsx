@@ -43,7 +43,7 @@ const NavLink = ({ to, icon, label, isManagement }) => {
 };
 
 export default function Sidebar({ isOpen, setIsOpen }) {
-    const role = useSelector((state) => state.auth?.user?.role);
+    const permissions = useSelector((state) => state.auth?.user?.permissions) || [];
 
     return (
         <aside className={`w-[280px] h-screen bg-[#222777] flex flex-col fixed left-0 top-0 text-white z-50 border-r border-[#181c22]/20 transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
@@ -71,7 +71,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 <NavLink to="/app/reports" icon="summarize" label="Reports" />
                 <NavLink to="/app/courses" icon="school" label="Seminars" />
                 <NavLink to="/app/forms" icon="groups" label="Collaboration" />
-                {role === 'admin' && (
+                {permissions.length > 0 && (
                     <NavLink to="/app/admin/users" icon="admin_panel_settings" label="Management" isManagement />
                 )}
                 <NavLink to="/app/achievements" icon="military_tech" label="Achievements" />
@@ -87,7 +87,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
 
                 <nav className="flex flex-col gap-1">
                     <NavLink to="/app/settings" icon="settings" label="Settings" />
-                    {role === 'admin' || role === 'manager' ? (
+                    {permissions.includes('support.manage_all') ? (
                         <NavLink to="/app/admin/support" icon="support_agent" label="Support Inbox" />
                     ) : (
                         <NavLink to="/app/support" icon="help_outline" label="Support" />

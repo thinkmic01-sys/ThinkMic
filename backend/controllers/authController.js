@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Role = require('../models/Role');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const referralService = require('../services/referralService');
@@ -8,6 +9,16 @@ const googleAuthService = require('../services/googleAuthService');
 // Helper to generate access token
 const generateAccessToken = (id, role) => {
     return jwt.sign({ sub: id, role }, process.env.JWT_PRIVATE_KEY, { expiresIn: '7d' }); // 7-day expiry
+};
+
+// The "User" system role's _id never changes post-seed (backend/seedRoles.js), so this is
+// safe to cache for the process lifetime rather than querying it on every signup.
+let cachedDefaultUserRoleId = null;
+const getDefaultUserRoleId = async () => {
+    if (cachedDefaultUserRoleId) return cachedDefaultUserRoleId;
+    const role = await Role.findOne({ slug: 'user' }).select('_id');
+    cachedDefaultUserRoleId = role ? role._id : null;
+    return cachedDefaultUserRoleId;
 };
 
 const VERIFICATION_CODE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -24,7 +35,11 @@ const SKIP_EMAIL_VERIFICATION = process.env.SKIP_EMAIL_VERIFICATION === 'true';
 // Shared response shape for anything that logs a user in (login, verify-email
 // auto-login, google auth): sets the HttpOnly refresh cookie and returns the
 // access token + public user fields.
-const issueAuthSession = (res, user) => {
+const issueAuthSession = async (res, user) => {
+    // roleId is never populated by the callers above this point - populate() only fetches
+    // if the field still holds a raw ObjectId, so this is a no-op if it somehow already is.
+    await user.populate({ path: 'roleId', select: 'name slug permissions' });
+
     const accessToken = generateAccessToken(user._id, user.role);
     const refreshToken = jwt.sign({ sub: user._id }, process.env.JWT_PRIVATE_KEY, { expiresIn: '7d' });
 
@@ -48,6 +63,8 @@ const issueAuthSession = (res, user) => {
             email: user.email,
             fullName: user.fullName,
             role: user.role,
+            roleName: user.roleId ? user.roleId.name : undefined,
+            permissions: user.roleId ? user.roleId.permissions : [],
             coins: user.coins,
             referralCode: user.referralCode,
             avatarUrl: user.avatarUrl,
@@ -101,7 +118,8 @@ exports.register = async (req, res) => {
                 status: 'pending_verification',
                 isEmailVerified: false,
                 emailVerificationCode: verificationCode,
-                emailVerificationExpires: verificationExpires
+                emailVerificationExpires: verificationExpires,
+                roleId: await getDefaultUserRoleId()
             });
         }
 
@@ -116,7 +134,7 @@ exports.register = async (req, res) => {
             user.emailVerificationCode = undefined;
             user.emailVerificationExpires = undefined;
             await user.save();
-            return res.status(201).json(issueAuthSession(res, user));
+            return res.status(201).json(await issueAuthSession(res, user));
         }
 
         try {
@@ -176,7 +194,7 @@ exports.verifyEmail = async (req, res) => {
         user.lastLoginAt = Date.now();
         await user.save();
 
-        res.status(200).json(issueAuthSession(res, user));
+        res.status(200).json(await issueAuthSession(res, user));
     } catch (error) {
         console.error('Verify Email Error:', error);
         res.status(500).json({ message: 'Server Error', error: error.message });
@@ -260,7 +278,8 @@ exports.googleAuth = async (req, res) => {
                 googleId: profile.googleId,
                 isEmailVerified: true,
                 status: 'active',
-                referralCode: crypto.randomBytes(4).toString('hex')
+                referralCode: crypto.randomBytes(4).toString('hex'),
+                roleId: await getDefaultUserRoleId()
             });
         }
 
@@ -269,7 +288,7 @@ exports.googleAuth = async (req, res) => {
             await referralService.createPendingRewardsForNewUser(user);
         }
 
-        res.status(200).json(issueAuthSession(res, user));
+        res.status(200).json(await issueAuthSession(res, user));
     } catch (error) {
         console.error('Google Auth Error:', error);
         res.status(500).json({ message: 'Server Error', error: error.message });
@@ -375,7 +394,7 @@ exports.login = async (req, res) => {
         user.lastLoginAt = Date.now();
         await user.save();
 
-        res.status(200).json(issueAuthSession(res, user));
+        res.status(200).json(await issueAuthSession(res, user));
     } catch (error) {
         console.error("LOGIN ERROR: ", error);
         res.status(500).json({ message: 'Server Error', error: error.message });
@@ -397,7 +416,7 @@ exports.refresh = async (req, res) => {
         const decoded = jwt.verify(refreshToken, process.env.JWT_PRIVATE_KEY);
 
         // Find the user[cite: 1]
-        const user = await User.findById(decoded.sub).select('-passwordHash');
+        const user = await User.findById(decoded.sub).select('-passwordHash').populate('roleId', 'name slug permissions');
         if (!user) {
             return res.status(401).json({ message: 'User no longer exists' });
         }
@@ -422,6 +441,8 @@ exports.refresh = async (req, res) => {
                 email: user.email,
                 fullName: user.fullName,
                 role: user.role,
+                roleName: user.roleId ? user.roleId.name : undefined,
+                permissions: user.roleId ? user.roleId.permissions : [],
                 coins: user.coins,
                 referralCode: user.referralCode,
                 avatarUrl: user.avatarUrl,

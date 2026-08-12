@@ -20,6 +20,12 @@ export function normalizeUser(rawUser) {
         name: rawUser.fullName,
         email: rawUser.email,
         role: rawUser.role,
+        // Auth endpoints (login/register/refresh) return roleName/permissions flat; the
+        // self-profile endpoints (GET/PATCH /users/me) return a populated roleId object
+        // instead - accept either shape so a Settings save never wipes out permissions
+        // that just weren't present in that particular response.
+        roleName: rawUser.roleName || rawUser.roleId?.name,
+        permissions: rawUser.permissions || rawUser.roleId?.permissions || [],
         title: rawUser.title,
         coins: rawUser.coins || 0,
         referralCode: rawUser.referralCode,

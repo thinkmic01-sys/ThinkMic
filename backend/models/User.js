@@ -46,11 +46,19 @@ const UserSchema = new mongoose.Schema({
         required: true,
         text: true // Text index for search
     },
+    // Denormalized from roleId.slug for cheap filtering/display (e.g. adminController's
+    // ?role= query param) - roleId is the actual source of truth for permissions. Kept in
+    // sync every time a user's role is (re)assigned. Free text (not an enum) since custom
+    // roles can use any slug, not just 'admin'/'manager'/'user'.
     role: {
         type: String,
-        enum: ['admin', 'manager', 'user'],
         required: true,
         default: 'user'
+    },
+    roleId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Role',
+        index: true
     },
     status: {
         type: String,

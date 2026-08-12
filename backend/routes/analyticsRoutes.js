@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { protect, checkRole } = require('../middleware/authMiddleware');
+const { protect, checkPermission } = require('../middleware/authMiddleware');
 const { getUsageKPIs, getSubmissionAnalytics } = require('../controllers/analyticsController');
 
 router.use(protect);
 
 router.get('/usage', getUsageKPIs);
-router.get('/submissions', checkRole('manager', 'admin'), getSubmissionAnalytics);
+router.get('/submissions', checkPermission('analytics.view'), getSubmissionAnalytics);
 
 module.exports = router;

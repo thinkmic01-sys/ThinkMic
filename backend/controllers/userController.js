@@ -6,7 +6,7 @@ const User = require('../models/User');
 exports.getMe = async (req, res) => {
     try {
         // req.user is populated by our authMiddleware
-        const user = await User.findById(req.user._id).select('-passwordHash');
+        const user = await User.findById(req.user._id).select('-passwordHash').populate('roleId', 'name slug permissions');
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -34,7 +34,9 @@ exports.updateMe = async (req, res) => {
         if (avatarUrl !== undefined) update.avatarUrl = avatarUrl;
         if (notificationPrefs !== undefined) update.notificationPrefs = notificationPrefs;
 
-        const user = await User.findByIdAndUpdate(req.user._id, update, { new: true, runValidators: true }).select('-passwordHash');
+        const user = await User.findByIdAndUpdate(req.user._id, update, { new: true, runValidators: true })
+            .select('-passwordHash')
+            .populate('roleId', 'name slug permissions');
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }

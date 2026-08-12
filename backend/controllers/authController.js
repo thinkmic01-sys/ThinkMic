@@ -11,14 +11,25 @@ const generateAccessToken = (id, role) => {
     return jwt.sign({ sub: id, role }, process.env.JWT_PRIVATE_KEY, { expiresIn: '7d' }); // 7-day expiry
 };
 
-// The "User" system role's _id never changes post-seed (backend/seedRoles.js), so this is
-// safe to cache for the process lifetime rather than querying it on every signup.
-let cachedDefaultUserRoleId = null;
+// Every new signup lands on the "User" system role. It used to be permanently protected
+// (isSystem roles couldn't be edited/deleted), so its _id was cached for the process
+// lifetime as a safe assumption - now that only the Admin role is actually protected
+// (roleController.js), an admin can delete the User role from the Roles page, which would
+// silently orphan every new registration's roleId. No caching, and self-healing: if the
+// role is missing, recreate it with the same defaults seedRoles.js uses rather than let
+// registration hand out a dangling/null roleId.
 const getDefaultUserRoleId = async () => {
-    if (cachedDefaultUserRoleId) return cachedDefaultUserRoleId;
-    const role = await Role.findOne({ slug: 'user' }).select('_id');
-    cachedDefaultUserRoleId = role ? role._id : null;
-    return cachedDefaultUserRoleId;
+    let role = await Role.findOne({ slug: 'user' }).select('_id');
+    if (!role) {
+        role = await Role.create({
+            name: 'User',
+            slug: 'user',
+            description: 'Standard platform access, no admin permissions.',
+            permissions: [],
+            isSystem: true
+        });
+    }
+    return role._id;
 };
 
 const VERIFICATION_CODE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours

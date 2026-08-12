@@ -61,8 +61,8 @@ module.exports = {
             socket.on('join', async (room) => {
                 if (!room || room === socket.userId) return;
                 if (room === 'admin_support') {
-                    const user = await User.findById(socket.userId).select('role');
-                    if (user && ['admin', 'manager'].includes(user.role)) {
+                    const user = await User.findById(socket.userId).select('roleId').populate('roleId', 'permissions');
+                    if (user?.roleId?.permissions?.includes('support.manage_all')) {
                         socket.join('admin_support');
                     }
                 }

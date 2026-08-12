@@ -1,6 +1,14 @@
 const Ticket = require('../models/Ticket');
 const socket = require('../utils/socket');
 
+// sendMessage/closeTicket are shared routes (both a ticket's owner and support staff hit
+// the same endpoint), so this in-controller check is the actual authorization boundary, not
+// just defense-in-depth. Used to be a hardcoded ['admin','manager'].includes(req.user.role)
+// string check - permission-based instead, so it stays correct for any role (a custom one,
+// or Manager/User now that they're editable/deletable - see roleController.js) that's been
+// granted support.manage_all, rather than only ever recognizing those two exact role slugs.
+const isSupportStaff = (req) => (req.user.permissions || []).includes('support.manage_all');
+
 exports.getTicket = async (req, res) => {
     try {
         const ticket = await Ticket.findOne({ user: req.user._id, status: 'open' })
@@ -27,8 +35,8 @@ exports.sendMessage = async (req, res) => {
             ticket = await Ticket.findById(ticketId);
             if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
 
-            // Check auth (only ticket owner or admin/manager can reply)
-            if (ticket.user.toString() !== req.user._id.toString() && !['admin', 'manager'].includes(req.user.role)) {
+            // Check auth (only the ticket owner or support staff can reply)
+            if (ticket.user.toString() !== req.user._id.toString() && !isSupportStaff(req)) {
                 return res.status(403).json({ message: 'Not authorized to reply to this ticket' });
             }
             if (category) ticket.category = category;
@@ -60,8 +68,8 @@ exports.sendMessage = async (req, res) => {
         // Emit to socket room for real-time updates
         const io = socket.getIO();
         if (io) {
-            // If sender is admin, emit to user's room
-            if (req.user.role === 'admin' || req.user.role === 'manager') {
+            // If sender is support staff, emit to the user's room
+            if (isSupportStaff(req)) {
                 io.to(ticket.user.toString()).emit('new_support_message', { ticketId: ticket._id, message: populatedMessage });
             } else {
                 // If sender is user, emit to a general 'admin_support' room or all admins
@@ -100,8 +108,7 @@ exports.closeTicket = async (req, res) => {
         if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
 
         const isOwner = ticket.user.toString() === req.user._id.toString();
-        const isStaff = ['admin', 'manager'].includes(req.user.role);
-        if (!isOwner && !isStaff) {
+        if (!isOwner && !isSupportStaff(req)) {
             return res.status(403).json({ message: 'Not authorized to close this ticket' });
         }
 

@@ -27,10 +27,12 @@ const RoleSchema = new mongoose.Schema({
         enum: PERMISSION_KEYS,
         default: []
     },
-    // System roles (Admin/Manager/User) are seeded once and permanently protected -
-    // not editable or deletable via the Roles admin page. This is the safety rail that
-    // guarantees there's always a known-good Admin role no custom-role misconfiguration
-    // can ever touch. Only custom roles (isSystem: false) are user-editable.
+    // Admin/Manager/User are seeded once via seedRoles.js. Of the three, only the one with
+    // slug 'admin' is actually protected from editing/deleting (see roleController.js) - the
+    // safety rail that guarantees a known-good full-access role always exists. Manager and
+    // User are editable/deletable like any custom role despite isSystem being true here;
+    // this flag now only affects the "System" badge/sort order in the Roles admin page, not
+    // edit/delete permission.
     isSystem: {
         type: Boolean,
         default: false

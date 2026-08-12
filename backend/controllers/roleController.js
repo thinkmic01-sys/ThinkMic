@@ -67,7 +67,9 @@ exports.createRole = async (req, res) => {
     }
 };
 
-// @desc    Edit a custom role's name/description/permissions - system roles are protected
+// @desc    Edit a role's name/description/permissions - only the Admin role is protected
+//          (it's the safety rail guaranteeing a known-good full-access role always exists);
+//          Manager/User, despite being seeded system roles, are editable like any custom one.
 // @route   PATCH /api/v1/admin/roles/:id
 exports.updateRole = async (req, res) => {
     try {
@@ -78,8 +80,8 @@ exports.updateRole = async (req, res) => {
         if (!role) {
             return res.status(404).json({ message: 'Role not found.' });
         }
-        if (role.isSystem) {
-            return res.status(400).json({ message: 'System roles (Admin, Manager, User) cannot be edited.' });
+        if (role.slug === 'admin') {
+            return res.status(400).json({ message: 'The Admin role cannot be edited.' });
         }
 
         const before = { name: role.name, permissions: role.permissions };
@@ -103,7 +105,7 @@ exports.updateRole = async (req, res) => {
     }
 };
 
-// @desc    Delete a custom role - blocked for system roles and roles still assigned to users
+// @desc    Delete a role - blocked only for the Admin role and roles still assigned to users
 // @route   DELETE /api/v1/admin/roles/:id
 exports.deleteRole = async (req, res) => {
     try {
@@ -112,8 +114,8 @@ exports.deleteRole = async (req, res) => {
         if (!role) {
             return res.status(404).json({ message: 'Role not found.' });
         }
-        if (role.isSystem) {
-            return res.status(400).json({ message: 'System roles (Admin, Manager, User) cannot be deleted.' });
+        if (role.slug === 'admin') {
+            return res.status(400).json({ message: 'The Admin role cannot be deleted.' });
         }
 
         const assignedCount = await User.countDocuments({ roleId: role._id });

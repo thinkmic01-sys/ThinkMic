@@ -156,7 +156,7 @@ export default function RolesManagement() {
                                     <td className="py-3 px-4 font-mono text-[#777682]">{role.permissions.length}</td>
                                     <td className="py-3 px-4 font-mono text-[#777682]">{role.userCount}</td>
                                     <td className="py-3 px-4 text-right">
-                                        {role.isSystem ? (
+                                        {role.slug === 'admin' ? (
                                             <span className="text-[10px] text-[#c7c5d3] font-bold uppercase tracking-wider">Protected</span>
                                         ) : (
                                             <div className="flex items-center justify-end gap-1">

@@ -2,13 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import api from '../../services/api';
 
-const TABS = [
-    { id: 'settings', label: 'Settings' },
-    { id: 'pending', label: 'Pending Rewards' },
-    { id: 'history', label: 'Approval History' },
-    { id: 'stats', label: 'Statistics' }
-];
-
 const STATUS_CLASSES = {
     approved: 'bg-[#e6fbfc] text-[#006e73] border-[#6bf6ff]/50',
     rejected: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ffb4ab]',
@@ -17,7 +10,26 @@ const STATUS_CLASSES = {
 
 export default function ReferralCoinManagement() {
     const accessToken = useSelector((state) => state.auth?.accessToken);
-    const [activeTab, setActiveTab] = useState('settings');
+    const permissions = useSelector((state) => state.auth?.user?.permissions) || [];
+
+    // This page bundles 5 distinct permissions (settings, pending, approve/reject, history/
+    // stats, adjust coins) behind one route-level gate ("has any rewards.* permission" in
+    // App.jsx) - these flags hide the specific tabs/sections/actions a given role wasn't
+    // granted, on top of the backend already rejecting the underlying API calls either way.
+    const canManageSettings = permissions.includes('rewards.manage_settings');
+    const canAdjustCoins = permissions.includes('rewards.adjust_coins');
+    const canManagePending = permissions.includes('rewards.manage_pending');
+    const canApproveReject = permissions.includes('rewards.approve_reject');
+    const canViewHistoryStats = permissions.includes('rewards.view_history_stats');
+
+    const TABS = [
+        (canManageSettings || canAdjustCoins) && { id: 'settings', label: 'Settings' },
+        (canManagePending || canApproveReject) && { id: 'pending', label: 'Pending Rewards' },
+        canViewHistoryStats && { id: 'history', label: 'Approval History' },
+        canViewHistoryStats && { id: 'stats', label: 'Statistics' }
+    ].filter(Boolean);
+
+    const [activeTab, setActiveTab] = useState(() => TABS[0]?.id);
 
     // Custom Toast State
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -208,11 +220,14 @@ export default function ReferralCoinManagement() {
     }, [accessToken]);
 
     useEffect(() => {
-        if (activeTab === 'settings') fetchSettings();
-        if (activeTab === 'pending') fetchPending();
-        if (activeTab === 'history') fetchHistory();
-        if (activeTab === 'stats') fetchStats();
-    }, [activeTab, fetchSettings, fetchPending, fetchHistory, fetchStats]);
+        // Only fetch what the current permission set actually has access to - e.g. a role
+        // with rewards.adjust_coins but not rewards.manage_settings still lands on the
+        // Settings tab (for the coin-adjustment card) but shouldn't call the settings API.
+        if (activeTab === 'settings' && canManageSettings) fetchSettings();
+        if (activeTab === 'pending' && (canManagePending || canApproveReject)) fetchPending();
+        if (activeTab === 'history' && canViewHistoryStats) fetchHistory();
+        if (activeTab === 'stats' && canViewHistoryStats) fetchStats();
+    }, [activeTab, canManageSettings, canManagePending, canApproveReject, canViewHistoryStats, fetchSettings, fetchPending, fetchHistory, fetchStats]);
 
     return (
         <div className="w-full h-[calc(100vh-64px)] overflow-y-auto bg-[#f9f9ff] font-sans custom-scrollbar">
@@ -248,6 +263,7 @@ export default function ReferralCoinManagement() {
                 {/* --- SETTINGS TAB --- */}
                 {activeTab === 'settings' && (
                     <div className="flex flex-col gap-6">
+                        {canManageSettings && (
                         <div className="bg-white p-5 sm:p-6 rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb]">
                             <h3 className="text-[16px] sm:text-[18px] font-bold text-[#222777] mb-4">Referral Reward Amounts</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -273,7 +289,9 @@ export default function ReferralCoinManagement() {
                             </button>
                             <p className="text-[12px] text-[#777682] mt-3">Changes apply to future referrals only. Already-pending rewards keep the amount they were created with.</p>
                         </div>
+                        )}
 
+                        {canAdjustCoins && (
                         <div className="bg-white p-5 sm:p-6 rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb]">
                             <h3 className="text-[16px] sm:text-[18px] font-bold text-[#222777] mb-4">Manual Coin Adjustment</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -323,6 +341,7 @@ export default function ReferralCoinManagement() {
                                 {adjustLoading ? 'Applying...' : 'Apply Adjustment'}
                             </button>
                         </div>
+                        )}
                     </div>
                 )}
 
@@ -351,22 +370,30 @@ export default function ReferralCoinManagement() {
                                         </td>
                                         <td className="py-3 px-4 font-mono text-[12px] text-[#464651]">L{r.level}</td>
                                         <td className="py-3 px-4">
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                value={editingAmounts[r._id] ?? r.coinAmount}
-                                                onChange={(e) => handleEditAmount(r._id, e.target.value)}
-                                                className="w-24 border border-[#c7c5d3] rounded p-1.5 text-[13px] font-mono outline-none focus:border-[#222777]"
-                                            />
+                                            {canManagePending ? (
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    value={editingAmounts[r._id] ?? r.coinAmount}
+                                                    onChange={(e) => handleEditAmount(r._id, e.target.value)}
+                                                    className="w-24 border border-[#c7c5d3] rounded p-1.5 text-[13px] font-mono outline-none focus:border-[#222777]"
+                                                />
+                                            ) : (
+                                                <span className="font-mono text-[13px] text-[#464651]">{r.coinAmount}</span>
+                                            )}
                                         </td>
                                         <td className="py-3 px-4 font-mono text-[11px] text-[#777682] whitespace-nowrap">{new Date(r.createdAt).toLocaleDateString()}</td>
                                         <td className="py-3 px-4">
                                             <div className="flex items-center justify-end gap-2">
-                                                {editingAmounts[r._id] !== undefined && Number(editingAmounts[r._id]) !== r.coinAmount && (
+                                                {canManagePending && editingAmounts[r._id] !== undefined && Number(editingAmounts[r._id]) !== r.coinAmount && (
                                                     <button onClick={() => handleSaveAmount(r._id)} className="text-[11px] font-bold text-[#222777] hover:underline">Save</button>
                                                 )}
-                                                <button onClick={() => handleApprove(r._id)} className="bg-[#e6fbfc] text-[#006e73] border border-[#00c2cb]/30 text-[11px] font-bold py-1.5 px-3 rounded hover:bg-[#d4f7f9] transition-colors">Approve</button>
-                                                <button onClick={() => handleReject(r._id)} className="bg-[#ffdad6] text-[#ba1a1a] border border-[#ffb4ab] text-[11px] font-bold py-1.5 px-3 rounded hover:bg-[#ffc9c4] transition-colors">Reject</button>
+                                                {canApproveReject && (
+                                                    <>
+                                                        <button onClick={() => handleApprove(r._id)} className="bg-[#e6fbfc] text-[#006e73] border border-[#00c2cb]/30 text-[11px] font-bold py-1.5 px-3 rounded hover:bg-[#d4f7f9] transition-colors">Approve</button>
+                                                        <button onClick={() => handleReject(r._id)} className="bg-[#ffdad6] text-[#ba1a1a] border border-[#ffb4ab] text-[11px] font-bold py-1.5 px-3 rounded hover:bg-[#ffc9c4] transition-colors">Reject</button>
+                                                    </>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

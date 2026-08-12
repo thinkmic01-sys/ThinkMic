@@ -42,8 +42,24 @@ const NavLink = ({ to, icon, label, isManagement }) => {
     );
 };
 
+// The "Management" nav item covers the Users/Roles/Schemas/Rewards tab group (Support and
+// Analytics are reached via their own separate nav entries/routes, not this one) - checked
+// in this order so the link lands on the first section a given permission set can actually
+// open, instead of always pointing at /admin/users regardless of what the role can reach.
+const MANAGEMENT_LANDING_ROUTES = [
+    ['users.view', '/app/admin/users'],
+    ['roles.manage', '/app/admin/roles'],
+    ['schemas.manage', '/app/admin/schemas'],
+    ['rewards.manage_settings', '/app/admin/rewards'],
+    ['rewards.manage_pending', '/app/admin/rewards'],
+    ['rewards.approve_reject', '/app/admin/rewards'],
+    ['rewards.view_history_stats', '/app/admin/rewards'],
+    ['rewards.adjust_coins', '/app/admin/rewards']
+];
+
 export default function Sidebar({ isOpen, setIsOpen }) {
     const permissions = useSelector((state) => state.auth?.user?.permissions) || [];
+    const managementRoute = MANAGEMENT_LANDING_ROUTES.find(([perm]) => permissions.includes(perm))?.[1];
 
     return (
         <aside className={`w-[280px] h-screen bg-[#222777] flex flex-col fixed left-0 top-0 text-white z-50 border-r border-[#181c22]/20 transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
@@ -71,8 +87,8 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 <NavLink to="/app/reports" icon="summarize" label="Reports" />
                 <NavLink to="/app/courses" icon="school" label="Seminars" />
                 <NavLink to="/app/forms" icon="groups" label="Collaboration" />
-                {permissions.length > 0 && (
-                    <NavLink to="/app/admin/users" icon="admin_panel_settings" label="Management" isManagement />
+                {managementRoute && (
+                    <NavLink to={managementRoute} icon="admin_panel_settings" label="Management" isManagement />
                 )}
                 <NavLink to="/app/achievements" icon="military_tech" label="Achievements" />
             </nav>

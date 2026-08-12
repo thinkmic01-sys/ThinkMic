@@ -94,3 +94,32 @@ exports.translateSummary = async (req, res) => {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };
+
+// @desc    Answer a "Processing Intent" prompt against the transcript (e.g. "Extract Action
+//          Items") - deliberately separate from regenerateSummary so it never overwrites the
+//          main Intelligence Summary. Synchronous and never persisted, same pattern as
+//          translateSummary above - the frontend shows the answer in its own panel.
+// @route   POST /api/v1/summaries/transcript/:transcriptId/intent
+// @access  Private
+exports.answerIntent = async (req, res) => {
+    try {
+        const { transcriptId } = req.params;
+        const { prompt, language } = req.body;
+
+        if (!prompt || !prompt.trim()) {
+            return res.status(400).json({ message: 'prompt is required' });
+        }
+
+        // Confirm the transcript actually belongs to the caller, same ownership check as regenerateSummary
+        const transcript = await Transcript.findOne({ _id: transcriptId, userId: req.user._id });
+        if (!transcript) {
+            return res.status(404).json({ message: 'Transcript not found' });
+        }
+
+        const answer = await openaiService.answerAboutTranscript(transcript.editedText || transcript.text, prompt, language);
+        res.status(200).json({ answer });
+    } catch (error) {
+        console.error('Answer Intent Error:', error);
+        res.status(500).json({ message: error.message || 'Server Error' });
+    }
+};

@@ -117,6 +117,49 @@ CRITICAL INSTRUCTION: ${langInstruction}`;
     }
 };
 
+// Answers a specific "Processing Intent" prompt (e.g. "Extract Action Items") against a
+// transcript, kept separate from generateSummary's JSON summary/tags/queries schema since
+// this is free-form Q&A, not a formatted summary - plain text response, never persisted
+// (mirrors translateText's synchronous, ephemeral pattern).
+exports.answerAboutTranscript = async (transcriptText, prompt, language = null) => {
+    if (!transcriptText || !transcriptText.trim()) {
+        throw new Error('No transcript text is available to process yet.');
+    }
+    if (!prompt || !prompt.trim()) {
+        throw new Error('A prompt is required.');
+    }
+
+    if (isMock) {
+        console.log(`[MOCK] Answering intent prompt: ${prompt}`);
+        return new Promise((resolve) => {
+            setTimeout(() => resolve(`[MOCK ANSWER] Based on the transcript, here is the response to "${prompt}".`), 1000);
+        });
+    }
+
+    let langInstruction = 'Detect the language of the transcript and answer in that same language. If ambiguous, default to English.';
+    if (language) {
+        langInstruction = `You MUST answer entirely in ${language}, regardless of the transcript's source language.`;
+    }
+
+    try {
+        console.log(`[OpenAI] Answering intent prompt against transcript...`);
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+                {
+                    role: 'system',
+                    content: `You are a highly skilled AI assistant analyzing a meeting/audio transcript. The user will give you a specific instruction or question - respond to it directly and concisely, using only information present in the transcript. If the transcript doesn't contain enough information to answer, say so plainly. ${langInstruction} Return plain text only - no JSON, no markdown code fences.`
+                },
+                { role: 'user', content: `Transcript:\n\n${transcriptText}\n\nInstruction/Question:\n${prompt}` }
+            ]
+        });
+        return response.choices[0].message.content.trim();
+    } catch (error) {
+        console.error('[OpenAI Intent Answer Error]:', error);
+        throw error;
+    }
+};
+
 exports.translateText = async (text, targetLanguageName) => {
     if (!text || !text.trim()) {
         throw new Error('No text provided to translate.');

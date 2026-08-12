@@ -107,7 +107,10 @@ export default function SpeechWorkspace() {
     const dispatch = useDispatch();
     // Functionality States
     const [intentMode, setIntentMode] = useState('User-Defined');
-    const [customPrompts, setCustomPrompts] = useState([{ id: Date.now(), text: '' }]);
+    // Each entry's `answer` is filled by handleRunIntentPrompt via the dedicated /intent
+    // endpoint - deliberately never touches summaryText, so running a Processing Intent
+    // prompt can never clobber the main Intelligence Summary.
+    const [customPrompts, setCustomPrompts] = useState([{ id: Date.now(), text: '', answer: '', isAnswering: false }]);
     const [summaryLength, setSummaryLength] = useState('Detailed');
     const [summaryStyle, setSummaryStyle] = useState('Bullets');
 
@@ -861,14 +864,13 @@ export default function SpeechWorkspace() {
         });
     };
 
-    const triggerAIProcessing = async (promptOverride = '') => {
+    const triggerAIProcessing = async () => {
         if (!currentTranscriptId) {
             return showToast("No transcript available to process yet. Wait for upload to finish.", "error");
         }
         showToast(`Requesting AI processing...`, 'success');
         try {
-            const response = await api.post(`/summaries/transcript/${currentTranscriptId}/regenerate`, {
-                customPrompt: promptOverride || customPrompts[0].text,
+            await api.post(`/summaries/transcript/${currentTranscriptId}/regenerate`, {
                 length: summaryLength,
                 style: summaryStyle,
                 language: localeToLanguageName(language)
@@ -880,6 +882,32 @@ export default function SpeechWorkspace() {
     };
 
     const handleSummarize = () => triggerAIProcessing();
+
+    // Runs a single Processing Intent prompt against the transcript captured so far and shows
+    // the answer in that prompt's own card in the Answers panel - deliberately synchronous
+    // (not queued) and never persisted, same pattern as the transcript/summary translate calls,
+    // and deliberately kept separate from triggerAIProcessing so it can never overwrite the
+    // main Intelligence Summary.
+    const handleRunIntentPrompt = async (promptId) => {
+        const promptObj = customPrompts.find(p => p.id === promptId);
+        if (!promptObj || !promptObj.text.trim()) {
+            return showToast("Enter a prompt first.", "error");
+        }
+        if (!currentTranscriptId) {
+            return showToast("No transcript available to process yet. Wait for upload to finish.", "error");
+        }
+        setCustomPrompts(prev => prev.map(p => p.id === promptId ? { ...p, isAnswering: true } : p));
+        try {
+            const response = await api.post(`/summaries/transcript/${currentTranscriptId}/intent`, {
+                prompt: promptObj.text,
+                language: localeToLanguageName(language)
+            });
+            setCustomPrompts(prev => prev.map(p => p.id === promptId ? { ...p, answer: response.data.answer, isAnswering: false } : p));
+        } catch (err) {
+            showToast(err.response?.data?.message || "Server error processing prompt.", "error");
+            setCustomPrompts(prev => prev.map(p => p.id === promptId ? { ...p, isAnswering: false } : p));
+        }
+    };
 
     const handleRunResearch = async () => {
         if (!queries || queries.length === 0) {
@@ -1265,59 +1293,90 @@ export default function SpeechWorkspace() {
                         )}
                     </div>
 
-                    {/* Processing Intent Box */}
+                    {/* Processing Intent Box - split in half: prompts on the left, their AI answers on the right */}
                     <div className="bg-white rounded-lg shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-5 flex flex-col gap-4">
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                             <h3 className="font-mono text-[13px] sm:text-[14px] font-bold text-[#222777] tracking-widest uppercase">Processing Intent</h3>
-                            <button 
-                                onClick={() => setCustomPrompts([...customPrompts, { id: Date.now(), text: '' }])}
+                            <button
+                                onClick={() => setCustomPrompts([...customPrompts, { id: Date.now(), text: '', answer: '', isAnswering: false }])}
                                 className="text-[#222777] text-[12px] sm:text-[13px] font-bold flex items-center gap-1 hover:text-[#3a3f8f] transition-colors"
                             >
                                 <span className="material-symbols-outlined text-[16px] sm:text-[18px]">add</span> Add Section
                             </button>
                         </div>
 
-                        <div className="flex flex-col gap-3 overflow-y-auto max-h-[105px] sm:max-h-[120px] custom-scrollbar pr-1">
-                            {customPrompts.map((promptObj, index) => (
-                                <div key={promptObj.id} className="relative border border-[#c7c5d3] rounded-md bg-white overflow-hidden shrink-0">
-                                    {customPrompts.length > 1 && (
-                                        <button 
-                                            onClick={() => setCustomPrompts(customPrompts.filter((_, i) => i !== index))}
-                                            className="absolute top-2 right-2 text-[#c7c5d3] hover:text-[#ba1a1a] transition-colors z-10"
-                                            title="Remove section"
-                                        >
-                                            <span className="material-symbols-outlined text-[16px]">close</span>
-                                        </button>
-                                    )}
-                                    <textarea
-                                        value={promptObj.text}
-                                        onChange={(e) => {
-                                            const newPrompts = [...customPrompts];
-                                            newPrompts[index].text = e.target.value;
-                                            setCustomPrompts(newPrompts);
-                                        }}
-                                        placeholder="Enter custom prompt or select a saved template..."
-                                        className="w-full h-20 sm:h-24 p-3 sm:p-4 text-[14px] sm:text-[16px] text-[#464651] outline-none resize-none bg-transparent placeholder:text-[#c7c5d3]"
-                                    />
-                                    <button
-                                        onClick={() => triggerAIProcessing(promptObj.text)}
-                                        className="absolute bottom-2 right-2 bg-[#61f4fd] text-[#004f53] text-[12px] sm:text-[14px] font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-[6px] hover:bg-[#3edae3] transition-colors flex items-center gap-1 shadow-sm">
-                                        <span className="material-symbols-outlined text-[14px] sm:text-[16px]">magic_button</span> <span className="hidden sm:inline">Run Prompt</span>
-                                    </button>
+                        <div className="flex flex-col md:flex-row gap-4">
+                            {/* LEFT HALF: prompt inputs */}
+                            <div className="md:w-1/2 min-w-0 flex flex-col gap-3">
+                                <div className="flex flex-col gap-3 overflow-y-auto max-h-[105px] sm:max-h-[120px] custom-scrollbar pr-1">
+                                    {customPrompts.map((promptObj, index) => (
+                                        <div key={promptObj.id} className="relative border border-[#c7c5d3] rounded-md bg-white overflow-hidden shrink-0">
+                                            {customPrompts.length > 1 && (
+                                                <button
+                                                    onClick={() => setCustomPrompts(customPrompts.filter((_, i) => i !== index))}
+                                                    className="absolute top-2 right-2 text-[#c7c5d3] hover:text-[#ba1a1a] transition-colors z-10"
+                                                    title="Remove section"
+                                                >
+                                                    <span className="material-symbols-outlined text-[16px]">close</span>
+                                                </button>
+                                            )}
+                                            <textarea
+                                                value={promptObj.text}
+                                                onChange={(e) => {
+                                                    const newPrompts = [...customPrompts];
+                                                    newPrompts[index] = { ...newPrompts[index], text: e.target.value };
+                                                    setCustomPrompts(newPrompts);
+                                                }}
+                                                placeholder="Enter custom prompt or select a saved template..."
+                                                className="w-full h-20 sm:h-24 p-3 sm:p-4 text-[14px] sm:text-[16px] text-[#464651] outline-none resize-none bg-transparent placeholder:text-[#c7c5d3]"
+                                            />
+                                            <button
+                                                onClick={() => handleRunIntentPrompt(promptObj.id)}
+                                                disabled={promptObj.isAnswering || !promptObj.text.trim() || !currentTranscriptId}
+                                                title="Answers this prompt against the transcript captured so far, without touching the Intelligence Summary."
+                                                className="absolute bottom-2 right-2 bg-[#61f4fd] text-[#004f53] text-[12px] sm:text-[14px] font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-[6px] hover:bg-[#3edae3] transition-colors flex items-center gap-1 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                                                <span className={`material-symbols-outlined text-[14px] sm:text-[16px] ${promptObj.isAnswering ? 'animate-spin' : ''}`}>{promptObj.isAnswering ? 'sync' : 'magic_button'}</span> <span className="hidden sm:inline">{promptObj.isAnswering ? 'Running...' : 'Run Prompt'}</span>
+                                            </button>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
 
-                        <div className="flex flex-wrap gap-2">
-                            {['Extract Action Items', 'Identify Key Entities', 'Sentiment Analysis'].map(tag => (
-                                <button
-                                    key={tag}
-                                    onClick={() => handleIntentTagClick(tag)}
-                                    className="bg-[#e0e2eb] text-[#464651] font-bold text-[11px] sm:text-[12px] px-3 py-1.5 rounded-full hover:bg-[#c7c5d3] transition-colors"
-                                >
-                                    {tag}
-                                </button>
-                            ))}
+                                <div className="flex flex-wrap gap-2">
+                                    {['Extract Action Items', 'Identify Key Entities', 'Sentiment Analysis'].map(tag => (
+                                        <button
+                                            key={tag}
+                                            onClick={() => handleIntentTagClick(tag)}
+                                            className="bg-[#e0e2eb] text-[#464651] font-bold text-[11px] sm:text-[12px] px-3 py-1.5 rounded-full hover:bg-[#c7c5d3] transition-colors"
+                                        >
+                                            {tag}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* RIGHT HALF: each prompt's answer, kept out of the Intelligence Summary entirely */}
+                            <div className="md:w-1/2 min-w-0 border-t md:border-t-0 md:border-l border-[#e0e2eb] pt-3 md:pt-0 md:pl-4 flex flex-col gap-2">
+                                <span className="font-mono text-[10px] sm:text-[11px] font-bold text-[#777682] uppercase tracking-wider">Answers</span>
+                                <div className="flex flex-col gap-2 overflow-y-auto max-h-[150px] sm:max-h-[165px] custom-scrollbar pr-1">
+                                    {customPrompts.filter(p => p.answer || p.isAnswering).length === 0 ? (
+                                        <p className="text-[12px] text-[#c7c5d3] italic">Run a prompt to see its answer here.</p>
+                                    ) : (
+                                        customPrompts.filter(p => p.answer || p.isAnswering).map((promptObj) => (
+                                            <div key={promptObj.id} className="border border-[#e0e2eb] rounded-md p-2.5 sm:p-3 bg-[#f9f9ff]">
+                                                <p className="text-[10px] font-bold text-[#777682] uppercase tracking-wide mb-1 truncate" title={promptObj.text}>{promptObj.text}</p>
+                                                {promptObj.isAnswering ? (
+                                                    <div className="space-y-1.5 animate-pulse">
+                                                        <div className="h-2.5 bg-[#e0e2eb] rounded w-full"></div>
+                                                        <div className="h-2.5 bg-[#e0e2eb] rounded w-4/5"></div>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-[12px] sm:text-[13px] text-[#464651] whitespace-pre-wrap">{promptObj.answer}</p>
+                                                )}
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
 

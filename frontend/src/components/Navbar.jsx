@@ -131,29 +131,6 @@ export default function Navbar({ onMenuClick }) {
             );
         }
 
-        // If inside Management workflow
-        if (location.pathname.startsWith('/app/admin/users') || location.pathname.startsWith('/app/admin/schemas') || location.pathname.startsWith('/app/admin/rewards') || location.pathname.startsWith('/app/admin/roles') || location.pathname.startsWith('/app/admin/keywords')) {
-            return (
-                <div className="flex space-x-4 sm:space-x-6 h-full items-center overflow-x-auto hide-scrollbar">
-                    <Link to="/app/admin/users" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/admin/users') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
-                        Users
-                    </Link>
-                    <Link to="/app/admin/roles" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/admin/roles') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
-                        Roles
-                    </Link>
-                    <Link to="/app/admin/schemas" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/admin/schemas') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
-                        Schemas
-                    </Link>
-                    <Link to="/app/admin/rewards" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/admin/rewards') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
-                        Rewards
-                    </Link>
-                    <Link to="/app/admin/keywords" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/admin/keywords') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
-                        Keywords
-                    </Link>
-                </div>
-            );
-        }
-
         // If inside the Seminars (Course Library) section - route is still /app/courses/*,
         // but the section is branded "Seminars" so the breadcrumb shouldn't read "Courses"
         if (location.pathname.includes('/app/courses')) {

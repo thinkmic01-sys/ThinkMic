@@ -13,7 +13,8 @@ export const MANAGEMENT_PAGES = [
             'rewards.view_history_stats', 'rewards.adjust_coins'
         ]
     },
-    { to: '/app/admin/keywords', icon: 'sell', label: 'Keywords', permissions: ['keywords.manage'] }
+    { to: '/app/admin/keywords', icon: 'sell', label: 'Keywords', permissions: ['keywords.manage'] },
+    { to: '/app/admin/prompts', icon: 'psychology', label: 'AI Prompts', permissions: ['prompts.manage'] }
 ];
 
 export const isManagementUser = (permissions = []) =>

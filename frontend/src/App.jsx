@@ -19,6 +19,7 @@ import UserManagement from "./pages/Management/UserManagement.jsx";
 import AdminUserDetail from "./pages/Management/AdminUserDetail.jsx";
 import RolesManagement from "./pages/Management/RolesManagement.jsx";
 import KeywordsManagement from "./pages/Management/KeywordsManagement.jsx";
+import PromptSettings from "./pages/Management/PromptSettings.jsx";
 import Collaboration from "./pages/Collaboration/Collaboration.jsx";
 import ResearchResults from "./pages/projects/ResearchResults.jsx";
 import SchemaBuilder from "./pages/Management/SchemaBuilder.jsx";
@@ -156,6 +157,7 @@ function AppRoutes() {
                                 <Route path="users/:userId" element={<RequireRole anyOf={['users.view_full_profile']} permissions={permissions}><AdminUserDetail /></RequireRole>} />
                                 <Route path="roles" element={<RequireRole anyOf={['roles.manage']} permissions={permissions}><RolesManagement /></RequireRole>} />
                                 <Route path="keywords" element={<RequireRole anyOf={['keywords.manage']} permissions={permissions}><KeywordsManagement /></RequireRole>} />
+                                <Route path="prompts" element={<RequireRole anyOf={['prompts.manage']} permissions={permissions}><PromptSettings /></RequireRole>} />
                                 <Route path="schemas" element={<RequireRole anyOf={['schemas.manage', 'schemas.manage_own']} permissions={permissions}><SchemaLibrary /></RequireRole>} />
                                 <Route path="schemas/new" element={<RequireRole anyOf={['schemas.manage', 'schemas.manage_own']} permissions={permissions}><SchemaBuilder /></RequireRole>} />
                                 <Route path="schemas/edit/:id" element={<RequireRole anyOf={['schemas.manage', 'schemas.manage_own']} permissions={permissions}><SchemaBuilder /></RequireRole>} />

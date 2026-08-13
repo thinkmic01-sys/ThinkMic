@@ -14,6 +14,9 @@ const {
     getPermissionCatalog, listRoles, createRole, updateRole, deleteRole
 } = require('../controllers/roleController');
 const { createKeyword, deleteKeyword } = require('../controllers/keywordsController');
+const {
+    getSettings: getPromptSettings, updateSettings: updatePromptSettings
+} = require('../controllers/promptSettingsAdminController');
 
 router.use(protect);
 // Every route below carries its own checkPermission() - there is deliberately no
@@ -68,5 +71,10 @@ router.delete('/roles/:id', checkPermission('roles.manage'), deleteRole);
 // dropdown) is open to any authenticated user via GET /api/v1/keywords instead.
 router.post('/keywords', checkPermission('keywords.manage'), createKeyword);
 router.delete('/keywords/:id', checkPermission('keywords.manage'), deleteKeyword);
+
+// AI Prompts - the admin-editable persona/mission sentence for each AI generation step
+// (see backend/services/openaiService.js and models/PromptSettings.js).
+router.get('/prompts/settings', checkPermission('prompts.manage'), getPromptSettings);
+router.patch('/prompts/settings', checkPermission('prompts.manage'), updatePromptSettings);
 
 module.exports = router;

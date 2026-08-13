@@ -1,6 +1,7 @@
 // backend/services/openaiService.js
 const fs = require('fs');
 const { OpenAI } = require('openai');
+const promptSettingsService = require('./promptSettingsService');
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
@@ -74,9 +75,16 @@ exports.generateSummary = async (transcriptText, customPrompt = null, length = n
 
     try {
         console.log(`[OpenAI] Sending transcript to GPT for summarization...`);
-        
+
+        // The persona/mission sentences (summaryPrompt, queryExtractionPrompt) are
+        // admin-editable (see PromptSettings/promptSettingsAdminController) - everything
+        // else here is a technical contract (JSON schema, language instruction) the code
+        // depends on to parse the response, so it stays hardcoded.
+        const promptSettings = await promptSettingsService.getPromptSettings();
+
         let systemPrompt = `You are a highly skilled AI assistant that analyzes meeting transcripts and audio logs.
-Your job is to provide a comprehensive summary and extract key topics/tags and suggested follow-up questions/queries.
+${promptSettings.summaryPrompt}
+${promptSettings.queryExtractionPrompt}
 Return your response STRICTLY as a JSON object with the following schema:
 {
   "summary": "String containing the formatted summary",
@@ -215,7 +223,12 @@ exports.generateReport = async (summaryText, transcriptText, templateType, secti
         const normalizedTemplate = REPORT_TEMPLATE_STRUCTURES[templateType] ? templateType : 'standard';
         console.log(`[OpenAI] Generating ${normalizedTemplate} report...`);
 
-        let systemPrompt = `You are a highly skilled AI research analyst who writes publication-ready professional reports by synthesizing meeting audio transcripts, AI-generated summaries, and live web research.
+        // reportPrompt (the persona/mission sentence) is admin-editable (see PromptSettings/
+        // promptSettingsAdminController) - the output-format contract below it stays
+        // hardcoded since the PDF/DOCX renderer depends on it being real semantic HTML.
+        const promptSettings = await promptSettingsService.getPromptSettings();
+
+        let systemPrompt = `${promptSettings.reportPrompt}
 
 Return ONLY raw semantic HTML suitable for injecting directly into a <div> - never markdown, never JSON, and never \`\`\` code fences.
 Use only these tags: <h1>, <h2>, <h3>, <p>, <ul>, <li>, <blockquote>, <table>, <tr>, <td>, <th>, <a>, <strong>, <em>.

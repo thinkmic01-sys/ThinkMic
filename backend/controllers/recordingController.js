@@ -270,6 +270,48 @@ exports.getMyRecordings = async (req, res) => {
     }
 };
 
+// @desc    Recent recording "sessions" for the History page - each past recording with a
+//          transcript snippet, its summary, and the research queries extracted from it
+//          (Summary.queries), so a past session can be understood at a glance without
+//          opening it. A dedicated shape/endpoint rather than reusing getMyRecordings so
+//          existing callers of that one aren't affected by adding transcript text to every
+//          response.
+// @route   GET /api/v1/recordings/history
+// @access  Private
+exports.getRecordingHistory = async (req, res) => {
+    try {
+        const recordings = await Recording.find({ userId: req.user._id })
+            .sort({ createdAt: -1 })
+            .limit(50)
+            .select('title status createdAt durationSeconds projectId transcriptId summaryId')
+            .populate('transcriptId', 'text editedText')
+            .populate('summaryId', 'summaryText editedSummaryText tags queries');
+
+        const snippet = (text) => (text || '').trim().slice(0, 240);
+
+        const history = recordings.map((rec) => {
+            const transcriptText = rec.transcriptId?.editedText || rec.transcriptId?.text || '';
+            const summaryText = rec.summaryId?.editedSummaryText || rec.summaryId?.summaryText || '';
+            return {
+                _id: rec._id,
+                title: rec.title,
+                status: rec.status,
+                createdAt: rec.createdAt,
+                durationSeconds: rec.durationSeconds,
+                projectId: rec.projectId,
+                transcriptSnippet: snippet(transcriptText),
+                summarySnippet: snippet(summaryText),
+                tags: rec.summaryId?.tags || [],
+                queries: rec.summaryId?.queries || []
+            };
+        });
+
+        res.status(200).json({ history });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
 // @desc    Get a single recording with its transcript and summary populated
 // @route   GET /api/v1/recordings/:id
 // @access  Private

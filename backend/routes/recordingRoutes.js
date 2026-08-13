@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const { getMyRecordings, uploadAudioLocal, getRecordingById, getUploadUrl, createRecordingDraft, deleteRecording, initLiveSession } = require('../controllers/recordingController');
+const { getMyRecordings, uploadAudioLocal, getRecordingById, getUploadUrl, createRecordingDraft, deleteRecording, initLiveSession, getRecordingHistory } = require('../controllers/recordingController');
 const { protect } = require('../middleware/authMiddleware');
 const { expensiveOperationLimiter } = require('../middleware/rateLimiters');
 
@@ -81,6 +81,9 @@ router.post('/', expensiveOperationLimiter, handleAudioUpload, uploadAudioLocal)
 
 // Get recordings
 router.get('/', getMyRecordings);
+
+// Session History page - must come before the /:id catch-all below
+router.get('/history', getRecordingHistory);
 
 // Get a single recording (with transcript + summary populated), for session resumption
 router.get('/:id', getRecordingById);

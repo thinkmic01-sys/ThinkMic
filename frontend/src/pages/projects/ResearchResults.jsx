@@ -187,6 +187,20 @@ export default function ResearchResults() {
         };
     }, [userId, activeSessionId]);
 
+    // Refresh/close guard: a source selection the user hasn't turned into a report yet lives
+    // only in this page's state - refreshing silently loses it (same browser-native-prompt-only
+    // limitation as SpeechWorkspace.jsx's guard).
+    useEffect(() => {
+        if (selectedResultIds.length === 0) return;
+        const handleBeforeUnload = (e) => {
+            e.preventDefault();
+            e.returnValue = '';
+            return '';
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [selectedResultIds]);
+
     // Filter States
     const [languageFilter, setLanguageFilter] = useState('English (US)');
     const [regionFilter, setRegionFilter] = useState('Any Region');

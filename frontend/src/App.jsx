@@ -27,6 +27,7 @@ import SupportInbox from "./pages/Management/SupportInbox.jsx";
 import ReferralCoinManagement from "./pages/Management/ReferralCoinManagement.jsx";
 import AdminDashboard from "./pages/dahboard/AdminDashboard.jsx";
 import ProjectsList from "./pages/projects/ProjectsList.jsx";
+import SessionHistory from "./pages/projects/SessionHistory.jsx";
 import ProjectDashboard from "./pages/projects/ProjectDashboard.jsx";
 import UserTimeline from "./pages/Achievement/UserTimeline.jsx";
 import CreateSeminar from "./pages/projects/CreateSeminar.jsx";
@@ -125,6 +126,7 @@ function AppRoutes() {
 
                             {/* The Projects Hub */}
                             <Route path="projects" element={<ProjectsList />} />
+                            <Route path="projects/history" element={<SessionHistory />} />
                             <Route path="projects/:id" element={<ProjectDashboard />} />
                             <Route path="projects/create-seminar" element={<CreateSeminar />} />
 

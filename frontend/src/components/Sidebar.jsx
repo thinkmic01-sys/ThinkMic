@@ -17,8 +17,10 @@ const NavLink = ({ to, icon, label }) => {
     if (to === '/app/research') {
         isActive = location.pathname.startsWith('/app/research');
     }
+    // Session History now has its own sidebar entry (used to only be reachable, if at all,
+    // by manually navigating) - keep it from also lighting up the "Project Hub" entry.
     if (to === '/app/projects') {
-        isActive = location.pathname.startsWith('/app/projects') && !isCreateSeminar;
+        isActive = location.pathname.startsWith('/app/projects') && !isCreateSeminar && !location.pathname.startsWith('/app/projects/history');
     }
     // My Learning List now has its own sidebar entry (used to only be reachable via a button
     // on the Seminar Library page) - keep it from also lighting up the "Seminars" entry.
@@ -87,6 +89,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                     <>
                         <NavLink to="/app/research" icon="workspaces" label="Projects" />
                         <NavLink to="/app/projects" icon="folder_open" label="Project Hub" />
+                        <NavLink to="/app/projects/history" icon="history" label="History" />
                         <NavLink to="/app/reports" icon="summarize" label="Reports" />
                         <NavLink to="/app/courses" icon="school" label="Seminars" />
                         <NavLink to="/app/courses/my-learning" icon="bookmark" label="My Learning List" />

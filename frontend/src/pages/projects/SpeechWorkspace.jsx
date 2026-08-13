@@ -384,10 +384,13 @@ export default function SpeechWorkspace() {
 
     // --- REFRESH/CLOSE GUARD: browsers only allow the native confirmation prompt on
     // beforeunload (custom text/button labels are ignored for security reasons), but
-    // triggering it at all stops an accidental refresh mid-seminar from silently wiping data ---
+    // triggering it at all stops an accidental refresh from silently wiping in-progress work.
+    // Covers the whole active-session lifecycle, not just live recording: summary generation,
+    // file upload, translation, an in-progress transcript edit, and saving that edit.
     useEffect(() => {
         const isLive = recordingState === 'recording' || recordingState === 'paused';
-        if (!isLive) return;
+        const isBusy = isLive || isGeneratingSummary || isUploading || isTranslating || isSavingEdit || isEditingTranscript;
+        if (!isBusy) return;
 
         const handleBeforeUnload = (e) => {
             e.preventDefault();
@@ -396,7 +399,7 @@ export default function SpeechWorkspace() {
         };
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [recordingState]);
+    }, [recordingState, isGeneratingSummary, isUploading, isTranslating, isSavingEdit, isEditingTranscript]);
 
     // --- UPLOAD LOGIC TO BACKEND ---
     // Uploads the audio bytes directly from the browser to R2 (bypassing our backend

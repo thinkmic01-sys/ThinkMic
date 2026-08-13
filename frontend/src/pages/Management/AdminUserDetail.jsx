@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import api from '../../services/api';
 import StudentRosterPanel from '../../components/StudentRosterPanel';
 
@@ -135,9 +135,18 @@ export default function AdminUserDetail() {
 
     if (profileError || !profile) {
         return (
-            <div className="w-full p-4 sm:p-6 md:p-8 text-center py-20">
-                <span className="material-symbols-outlined text-4xl text-[#c7c5d3] mb-2">person_off</span>
-                <p className="font-bold text-[#464651]">{profileError || 'User not found.'}</p>
+            <div className="w-full p-4 sm:p-6 md:p-8">
+                <Link
+                    to="/app/admin/users"
+                    className="inline-flex items-center gap-1.5 text-[13px] font-bold text-[#777682] hover:text-[#222777] transition-colors mb-4"
+                >
+                    <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                    Back to User Management
+                </Link>
+                <div className="text-center py-20">
+                    <span className="material-symbols-outlined text-4xl text-[#c7c5d3] mb-2">person_off</span>
+                    <p className="font-bold text-[#464651]">{profileError || 'User not found.'}</p>
+                </div>
             </div>
         );
     }
@@ -146,12 +155,21 @@ export default function AdminUserDetail() {
     const initials = extractedName.substring(0, 2).toUpperCase();
 
     return (
-        <div className="w-full p-4 sm:p-6 md:p-8 pb-20">
+        <div className="w-full h-[calc(100vh-64px)] overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-8 pb-20">
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c7c5d3; border-radius: 10px; }
             `}</style>
+
+            <Link
+                to="/app/admin/users"
+                className="inline-flex items-center gap-1.5 text-[13px] font-bold text-[#777682] hover:text-[#222777] transition-colors mb-4"
+            >
+                <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                Back to User Management
+            </Link>
+
             {/* Profile Header */}
             <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-5 sm:p-6 mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
@@ -370,12 +388,15 @@ function OverviewTab({ profile }) {
 }
 
 function ResearchTab({ data }) {
+    const [expandedId, setExpandedId] = useState(null);
+
     if (!data || data.recordings.length === 0) return <SectionCard title="Recordings"><EmptyRow label="No recordings yet." /></SectionCard>;
     return (
         <SectionCard title="Recordings & Transcripts" count={data.total}>
             {data.recordings.map((rec) => {
                 const transcriptText = rec.transcriptId?.editedText || rec.transcriptId?.text;
                 const summaryText = rec.summaryId?.editedSummaryText || rec.summaryId?.summaryText;
+                const isExpanded = expandedId === rec._id;
                 return (
                     <div key={rec._id} className="px-4 sm:px-5 py-4">
                         <div className="flex items-center justify-between gap-2 mb-1">
@@ -383,8 +404,20 @@ function ResearchTab({ data }) {
                             <span className="text-[11px] font-mono text-[#777682] shrink-0">{formatDate(rec.createdAt)}</span>
                         </div>
                         <Pill tone={rec.status === 'transcribed' ? 'good' : rec.status === 'failed' ? 'bad' : 'default'}>{rec.status}</Pill>
-                        {transcriptText && <p className="text-[12px] sm:text-[13px] text-[#464651] mt-2 line-clamp-2">{transcriptText}</p>}
-                        {summaryText && <p className="text-[12px] sm:text-[13px] text-[#006e73] mt-1 line-clamp-2 italic">Summary: {summaryText}</p>}
+                        {transcriptText && (
+                            <p className={`text-[12px] sm:text-[13px] text-[#464651] mt-2 whitespace-pre-wrap ${isExpanded ? '' : 'line-clamp-2'}`}>{transcriptText}</p>
+                        )}
+                        {summaryText && (
+                            <p className={`text-[12px] sm:text-[13px] text-[#006e73] mt-1 italic whitespace-pre-wrap ${isExpanded ? '' : 'line-clamp-2'}`}>Summary: {summaryText}</p>
+                        )}
+                        {(transcriptText || summaryText) && (
+                            <button
+                                onClick={() => setExpandedId(isExpanded ? null : rec._id)}
+                                className="text-[11px] font-bold text-[#3a3f8f] hover:text-[#222777] mt-1.5"
+                            >
+                                {isExpanded ? 'Show less' : 'Show full transcript'}
+                            </button>
+                        )}
                     </div>
                 );
             })}

@@ -921,8 +921,14 @@ export default function SpeechWorkspace() {
                 config: { gl: "us", hl: "en" }
             });
             
-            // Navigate to Research module
-            navigate('/app/research/results' + (projectId ? `?projectId=${projectId}` : ''));
+            // Navigate to Research module - carries transcriptId through so a report created
+            // from these results can reliably link back to this transcript (see
+            // ResearchResults.jsx/reportGenWorker.js) instead of having no way to find it.
+            const resultParams = new URLSearchParams();
+            if (projectId) resultParams.set('projectId', projectId);
+            if (currentTranscriptId) resultParams.set('transcriptId', currentTranscriptId);
+            const queryString = resultParams.toString();
+            navigate('/app/research/results' + (queryString ? `?${queryString}` : ''));
         } catch (error) {
             showToast(error.response?.data?.message || "Failed to start research", "error");
         }

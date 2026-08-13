@@ -86,10 +86,10 @@ export default function SchemaLibrary() {
     };
 
     return (
-        <div className="p-4 sm:p-6 md:p-8 w-full font-sans">
+        <div className="w-full h-[calc(100vh-64px)] overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-8 font-sans">
 
             <style>{`
-                .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c7c5d3; border-radius: 10px; }
             `}</style>
@@ -117,6 +117,7 @@ export default function SchemaLibrary() {
                     searchEndpoint="/users/search-students"
                     showToast={showToast}
                     title="My Students"
+                    maxHeight="70vh"
                 />
             )}
 

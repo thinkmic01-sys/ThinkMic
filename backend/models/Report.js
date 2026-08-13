@@ -28,13 +28,22 @@ const ReportSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Summary'
     },
+    // Direct link to the transcript this report's "Full Transcript" section should pull
+    // from - set at creation time from whatever transcript the source research session
+    // came from (see ResearchResults.jsx/SpeechWorkspace.jsx). Optional: reportGenWorker.js
+    // falls back to resolving via summaryId/recordingId when this isn't set (e.g. reports
+    // created before this field existed).
+    transcriptId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Transcript'
+    },
     searchSessionIds: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'SearchResult'
     }],
     template: {
         type: String,
-        enum: ['standard', 'executive', 'academic'],
+        enum: ['standard', 'executive', 'academic', 'clinical', 'narrative', 'technical'],
         required: true
     },
     // Natural-language instruction to the AI ("English"/"Urdu"), not a locale code - mirrors

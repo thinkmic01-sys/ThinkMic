@@ -82,7 +82,14 @@ const COLORS = {
     tableAltRow: '#fbfbfd'
 };
 
-const TEMPLATE_LABELS = { academic: 'Standard Academic', executive: 'Executive Brief', standard: 'Data Dense' };
+const TEMPLATE_LABELS = {
+    academic: 'Standard Academic',
+    executive: 'Executive Brief',
+    standard: 'Data Dense',
+    clinical: 'Clinical Case Report',
+    narrative: 'Narrative Summary',
+    technical: 'Technical Brief'
+};
 const SECTION_LABELS = { summary: 'Executive Summary', research: 'Research Findings', transcript: 'Transcripts', sources: 'Sources' };
 
 // ============================================================

@@ -7,7 +7,10 @@ import { API_BASE_URL } from '../../config';
 const TEMPLATE_OPTIONS = [
     { value: 'academic', label: 'Standard Academic' },
     { value: 'executive', label: 'Executive Brief' },
-    { value: 'standard', label: 'Data Dense' }
+    { value: 'standard', label: 'Data Dense' },
+    { value: 'clinical', label: 'Clinical Case Report' },
+    { value: 'narrative', label: 'Narrative Summary' },
+    { value: 'technical', label: 'Technical Brief' }
 ];
 const TEMPLATE_LABEL = TEMPLATE_OPTIONS.reduce((acc, t) => ({ ...acc, [t.value]: t.label }), {});
 

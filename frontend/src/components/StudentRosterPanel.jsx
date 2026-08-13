@@ -6,7 +6,7 @@ import api from '../services/api';
 // self-managing their own roster (SchemaLibrary, hitting /users/me/students). A student can
 // be assigned to more than one lecturer (see backend User.assignedLecturers), so adding one
 // here is a roster membership toggle, not an exclusive ownership transfer.
-export default function StudentRosterPanel({ getEndpoint, patchEndpoint, searchEndpoint, showToast, title = 'Assigned Students' }) {
+export default function StudentRosterPanel({ getEndpoint, patchEndpoint, searchEndpoint, showToast, title = 'Assigned Students', maxHeight = '520px' }) {
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [savingId, setSavingId] = useState(null);
@@ -83,7 +83,7 @@ export default function StudentRosterPanel({ getEndpoint, patchEndpoint, searchE
                 <h3 className="font-bold text-[13px] sm:text-sm text-[#222777] tracking-wide">{title}</h3>
                 {!loading && <span className="text-[11px] font-mono text-[#777682]">{students.length}</span>}
             </div>
-            <div className="divide-y divide-[#e0e2eb] max-h-[520px] overflow-y-auto custom-scrollbar">
+            <div className="divide-y divide-[#e0e2eb] overflow-y-auto custom-scrollbar" style={{ maxHeight }}>
                 <div className="px-4 sm:px-5 py-4 relative">
                     <label className="block text-[11px] font-bold text-[#464651] mb-2 uppercase tracking-wider">Add a Student</label>
                     <input

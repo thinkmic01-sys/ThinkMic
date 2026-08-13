@@ -19,7 +19,9 @@ const classifyResultType = (domain) => {
     if (VIDEO_DOMAINS.some((v) => d.includes(v))) return 'Video';
     if (ACADEMIC_HINTS.some((a) => d.includes(a))) return 'Academic';
     if (NEWS_DOMAINS.some((n) => d.includes(n))) return 'News';
-    if (BLOG_DOMAINS.some((b) => d.includes(b))) return 'Blog';
+    // Named platforms first, then the common "blog.company.com" subdomain convention
+    // (e.g. blog.logrocket.com) that no fixed domain list can fully enumerate.
+    if (BLOG_DOMAINS.some((b) => d.includes(b)) || d.startsWith('blog.')) return 'Blog';
     return 'Article';
 };
 
@@ -36,7 +38,10 @@ const ICON_BY_TYPE = {
 const REPORT_TEMPLATE_OPTIONS = [
     { value: 'academic', label: 'Standard Academic' },
     { value: 'executive', label: 'Executive Brief' },
-    { value: 'standard', label: 'Data Dense' }
+    { value: 'standard', label: 'Data Dense' },
+    { value: 'clinical', label: 'Clinical Case Report' },
+    { value: 'narrative', label: 'Narrative Summary' },
+    { value: 'technical', label: 'Technical Brief' }
 ];
 const REPORT_LANGUAGE_OPTIONS = [
     { value: '', label: 'Auto-detect' },
@@ -49,7 +54,11 @@ export default function ResearchResults() {
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const projectId = queryParams.get('projectId');
-    
+    // Carried over from SpeechWorkspace.jsx's "Run Research" action - the transcript this
+    // research session came from, so a report created here can actually find it (see
+    // handleProceedToReport below and reportGenWorker.js's report.transcriptId lookup).
+    const transcriptId = queryParams.get('transcriptId');
+
     const accessToken = useSelector((state) => state.auth?.accessToken);
     const userId = useSelector((state) => state.auth?.user?.id);
     
@@ -65,6 +74,9 @@ export default function ResearchResults() {
     // be changed afterward via ReportExport.jsx's regenerate flow.
     const [reportTemplate, setReportTemplate] = useState('academic');
     const [reportLanguage, setReportLanguage] = useState('');
+    // Off by default (transcript can be long) - only meaningful when a transcriptId actually
+    // came through from the originating research session.
+    const [includeTranscript, setIncludeTranscript] = useState(false);
     
     // --- RESPONSIVE TOGGLE STATES ---
     const [isQueriesOpen, setIsQueriesOpen] = useState(false);
@@ -221,11 +233,14 @@ export default function ResearchResults() {
                 title: "Research Report",
                 sessionIds: [activeSessionId],
                 template: reportTemplate,
-                sections: { summary: true, transcript: false, research: true, sources: true }
+                sections: { summary: true, transcript: includeTranscript, research: true, sources: true }
             };
             if (reportLanguage) payload.language = reportLanguage;
             if (projectId) {
                 payload.projectId = projectId;
+            }
+            if (transcriptId) {
+                payload.transcriptId = transcriptId;
             }
             const res = await api.post('/reports', payload);
             if (res.data.reportId) {
@@ -534,6 +549,19 @@ export default function ResearchResults() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2 sm:gap-3">
+                        <label
+                            className={`hidden md:flex items-center gap-1.5 text-[12px] font-bold border rounded-lg px-3 py-2 ${transcriptId ? 'text-gray-700 border-gray-200 cursor-pointer' : 'text-gray-300 border-gray-100 cursor-not-allowed'}`}
+                            title={transcriptId ? 'Include the full transcript as an appendix' : 'No transcript available for this research session'}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={includeTranscript}
+                                disabled={!transcriptId}
+                                onChange={(e) => setIncludeTranscript(e.target.checked)}
+                                className="accent-primary"
+                            />
+                            Full Transcript
+                        </label>
                         <div className="relative hidden md:block">
                             <select
                                 value={reportTemplate}

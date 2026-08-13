@@ -15,7 +15,13 @@ const TEMPLATE_ALIASES = {
     'executive brief': 'executive',
     'executive': 'executive',
     'data dense': 'standard',
-    'standard': 'standard'
+    'standard': 'standard',
+    'clinical case report': 'clinical',
+    'clinical': 'clinical',
+    'narrative summary': 'narrative',
+    'narrative': 'narrative',
+    'technical brief': 'technical',
+    'technical': 'technical'
 };
 
 function normalizeTemplate(value) {
@@ -57,7 +63,7 @@ exports.listUserReports = async (req, res) => {
 
 exports.createAndGenerateReport = async (req, res) => {
     try {
-        const { title, subtitle, summaryId, sessionIds, template, sections, language } = req.body;
+        const { title, subtitle, summaryId, recordingId, transcriptId, sessionIds, template, sections, language } = req.body;
 
         const reportData = {
             userId: req.user._id,
@@ -70,6 +76,8 @@ exports.createAndGenerateReport = async (req, res) => {
         };
         if (subtitle !== undefined) reportData.subtitle = subtitle;
         if (language !== undefined) reportData.language = language;
+        if (recordingId !== undefined) reportData.recordingId = recordingId;
+        if (transcriptId !== undefined) reportData.transcriptId = transcriptId;
 
         if (req.body.projectId) {
             reportData.projectId = req.body.projectId;

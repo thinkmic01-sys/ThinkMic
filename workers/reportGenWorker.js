@@ -81,16 +81,23 @@ const worker = new Worker('report-generation', async (job) => {
                 }).join('\n\n---\n\n');
         }
 
-        // 3c. Audio transcript material - only gathered when the transcript section is requested
+        // 3c. Audio transcript material - only gathered when the transcript section is requested.
+        // report.transcriptId (set at creation from whatever transcript the source research
+        // session came from - see ResearchResults.jsx) is the direct, reliable link; fall back
+        // to resolving via summaryId/recordingId for reports created before that field existed.
         let transcriptText = '';
-        if (report.sections?.transcript && (recordingId || summary?.transcriptId)) {
-            const orConditions = [];
-            if (summary?.transcriptId) orConditions.push({ _id: summary.transcriptId });
-            if (recordingId) orConditions.push({ recordingId });
-
-            const transcript = orConditions.length > 0
-                ? await Transcript.findOne({ $or: orConditions })
-                : null;
+        if (report.sections?.transcript && (report.transcriptId || recordingId || summary?.transcriptId)) {
+            let transcript = null;
+            if (report.transcriptId) {
+                transcript = await Transcript.findById(report.transcriptId);
+            } else {
+                const orConditions = [];
+                if (summary?.transcriptId) orConditions.push({ _id: summary.transcriptId });
+                if (recordingId) orConditions.push({ recordingId });
+                transcript = orConditions.length > 0
+                    ? await Transcript.findOne({ $or: orConditions })
+                    : null;
+            }
 
             if (transcript) {
                 if (Array.isArray(transcript.segments) && transcript.segments.length > 0) {

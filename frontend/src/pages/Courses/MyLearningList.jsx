@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 
 // Keywords are admin-curated (Management > Keywords) - following one here notifies you
@@ -7,10 +8,26 @@ import api from '../../services/api';
 // hardcoded fake courses/streaks/saved items, which was removed rather than kept as
 // fabricated data.
 export default function MyLearningList() {
+    const navigate = useNavigate();
     const [allKeywords, setAllKeywords] = useState([]);
     const [myKeywordIds, setMyKeywordIds] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [savingId, setSavingId] = useState(null);
+
+    // Projects other users have shared under a keyword this user follows (see
+    // ProjectDashboard.jsx's "Share My Project") - pay sharePriceCoins to unlock the whole
+    // project, or open it straight away if already unlocked.
+    const [sharedProjects, setSharedProjects] = useState([]);
+    const [unlockingId, setUnlockingId] = useState(null);
+
+    const fetchSharedProjects = async () => {
+        try {
+            const res = await api.get('/projects/shared');
+            setSharedProjects(res.data.projects || []);
+        } catch {
+            // Non-critical - the keywords section above is the primary content of this page
+        }
+    };
 
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
     const showToast = (message, type = 'success') => {
@@ -35,6 +52,7 @@ export default function MyLearningList() {
             }
         };
         fetchData();
+        fetchSharedProjects();
     }, []);
 
     const toggleKeyword = async (keywordId) => {
@@ -45,10 +63,28 @@ export default function MyLearningList() {
         try {
             await api.patch('/users/me', { learningKeywords: nextIds });
             setMyKeywordIds(nextIds);
+            fetchSharedProjects(); // following/unfollowing a keyword can reveal or hide shared projects
         } catch (err) {
             showToast(err.response?.data?.message || 'Failed to update your learning list.', 'error');
         } finally {
             setSavingId(null);
+        }
+    };
+
+    const handleUnlockProject = async (project) => {
+        if (project.hasUnlocked) {
+            navigate(`/app/projects/${project._id}`);
+            return;
+        }
+        setUnlockingId(project._id);
+        try {
+            await api.post(`/projects/${project._id}/unlock`);
+            setSharedProjects((prev) => prev.map((p) => p._id === project._id ? { ...p, hasUnlocked: true } : p));
+            navigate(`/app/projects/${project._id}`);
+        } catch (err) {
+            showToast(err.response?.data?.message || 'Failed to unlock project.', 'error');
+        } finally {
+            setUnlockingId(null);
         }
     };
 
@@ -123,6 +159,47 @@ export default function MyLearningList() {
                         </div>
                     )}
                 </section>
+
+                {sharedProjects.length > 0 && (
+                    <section className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-5 sm:p-6 mb-6 sm:mb-8">
+                        <h3 className="text-[20px] sm:text-[24px] font-semibold text-[#222777] mb-1 flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-[20px] sm:text-[24px]">folder_shared</span> Shared Projects
+                        </h3>
+                        <p className="text-[13px] sm:text-[14px] text-[#777682] mb-4">Projects shared by other users under a keyword you follow.</p>
+
+                        <div className="space-y-3">
+                            {sharedProjects.map((project) => (
+                                <div key={project._id} className="flex items-center justify-between gap-3 border border-[#e0e2eb] rounded-lg p-3.5">
+                                    <div className="min-w-0">
+                                        <p className="font-bold text-[13px] sm:text-sm text-[#181c22] truncate">{project.name}</p>
+                                        <p className="text-[12px] text-[#777682] truncate">by {project.ownerName}{project.description ? ` · ${project.description}` : ''}</p>
+                                        {project.keywords?.length > 0 && (
+                                            <div className="flex flex-wrap gap-1 mt-1.5">
+                                                {project.keywords.map((kw) => (
+                                                    <span key={kw._id} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#f1f3fc] text-[#464651] border border-[#e0e2eb]">{kw.text}</span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={() => handleUnlockProject(project)}
+                                        disabled={unlockingId === project._id}
+                                        className={`shrink-0 inline-flex items-center gap-1.5 text-[12px] font-bold px-3.5 py-2 rounded-full transition-colors disabled:opacity-60 ${
+                                            project.hasUnlocked
+                                                ? 'bg-[#e6fbfc] text-[#006e73] border border-[#6bf6ff]/50 hover:bg-[#d0f6f8]'
+                                                : 'bg-[#222777] text-white hover:bg-[#3a3f8f]'
+                                        }`}
+                                    >
+                                        <span className="material-symbols-outlined text-[15px]">
+                                            {unlockingId === project._id ? 'hourglass_empty' : project.hasUnlocked ? 'visibility' : 'toll'}
+                                        </span>
+                                        {unlockingId === project._id ? 'Unlocking...' : project.hasUnlocked ? 'View' : `Unlock · ${project.sharePriceCoins}`}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
             </div>
 
             {toast.show && (

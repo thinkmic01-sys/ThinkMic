@@ -25,7 +25,7 @@ const transactionSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['referral_l1', 'referral_l2', 'referral_l3', 'seminar_reward_reserved', 'seminar_reward_received', 'seminar_reward_refunded', 'coin_purchase', 'admin_adjustment', 'other'],
+        enum: ['referral_l1', 'referral_l2', 'referral_l3', 'seminar_reward_reserved', 'seminar_reward_received', 'seminar_reward_refunded', 'coin_purchase', 'admin_adjustment', 'project_unlock_paid', 'project_unlock_received', 'other'],
         default: 'other'
     },
     relatedUserId: {
@@ -34,7 +34,7 @@ const transactionSchema = new mongoose.Schema({
     },
     relatedEntityType: {
         type: String,
-        enum: ['Referral', 'Seminar', 'Registration']
+        enum: ['Referral', 'Seminar', 'Registration', 'Project']
     },
     relatedEntityId: {
         type: mongoose.Schema.Types.ObjectId,

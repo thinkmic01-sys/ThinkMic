@@ -8,29 +8,46 @@ export default function ProjectDashboard() {
     const { id } = useParams();
     const navigate = useNavigate();
     const token = useSelector(state => state.auth?.accessToken);
-    
+    const currentUserId = useSelector(state => state.auth?.user?.id);
+
     const [project, setProject] = useState(null);
     const [recordings, setRecordings] = useState([]);
     const [reports, setReports] = useState([]);
     const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'data', 'reports'
-    
+    const [isLocked, setIsLocked] = useState(false);
+
     const [notesHtml, setNotesHtml] = useState('');
     const [isSavingNotes, setIsSavingNotes] = useState(false);
 
-    useEffect(() => {
-        if (!token) return;
-        const fetchProject = async () => {
-            try {
-                const res = await api.get(`/projects/${id}`);
-                setProject(res.data.project);
+    // Sharing (owner only) - set/change the coin price others pay to unlock this project
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [sharePriceInput, setSharePriceInput] = useState('');
+    const [isSharing, setIsSharing] = useState(false);
+    const [shareError, setShareError] = useState('');
+
+    // Unlocking (non-owner, locked view) - pay the project's coin price for full access
+    const [isUnlocking, setIsUnlocking] = useState(false);
+    const [unlockError, setUnlockError] = useState('');
+
+    const fetchProject = async () => {
+        try {
+            const res = await api.get(`/projects/${id}`);
+            setProject(res.data.project);
+            setIsLocked(!!res.data.locked);
+            if (!res.data.locked) {
                 setNotesHtml(res.data.project.notesHtml || '');
                 setRecordings(res.data.recordings || []);
                 setReports(res.data.reports || []);
-            } catch (err) {
-                console.error("Failed to fetch project", err);
             }
-        };
+        } catch (err) {
+            console.error("Failed to fetch project", err);
+        }
+    };
+
+    useEffect(() => {
+        if (!token) return;
         fetchProject();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token, id]);
 
     const handleSaveNotes = async () => {
@@ -45,11 +62,101 @@ export default function ProjectDashboard() {
         }
     };
 
+    const openShareModal = () => {
+        setSharePriceInput(project.sharePriceCoins ? String(project.sharePriceCoins) : '');
+        setShareError('');
+        setIsShareModalOpen(true);
+    };
+
+    const handleShare = async () => {
+        const price = Number(sharePriceInput);
+        if (!Number.isFinite(price) || price < 1) {
+            setShareError('Enter a coin price of at least 1.');
+            return;
+        }
+        setIsSharing(true);
+        setShareError('');
+        try {
+            const res = await api.post(`/projects/${id}/share`, { priceCoins: price });
+            setProject((prev) => ({ ...prev, isShared: true, sharePriceCoins: res.data.project.sharePriceCoins }));
+            setIsShareModalOpen(false);
+        } catch (err) {
+            setShareError(err.response?.data?.message || 'Failed to share project.');
+        } finally {
+            setIsSharing(false);
+        }
+    };
+
+    const handleUnshare = async () => {
+        setIsSharing(true);
+        setShareError('');
+        try {
+            await api.post(`/projects/${id}/unshare`);
+            setProject((prev) => ({ ...prev, isShared: false }));
+            setIsShareModalOpen(false);
+        } catch (err) {
+            setShareError(err.response?.data?.message || 'Failed to stop sharing.');
+        } finally {
+            setIsSharing(false);
+        }
+    };
+
+    const handleUnlock = async () => {
+        setIsUnlocking(true);
+        setUnlockError('');
+        try {
+            await api.post(`/projects/${id}/unlock`);
+            await fetchProject();
+        } catch (err) {
+            setUnlockError(err.response?.data?.message || 'Failed to unlock project.');
+        } finally {
+            setIsUnlocking(false);
+        }
+    };
+
     if (!project) return (
         <div className="flex-1 w-full h-[calc(100vh-64px)] flex items-center justify-center">
             <span className="material-symbols-outlined animate-spin text-[32px] text-[#222777]">sync</span>
         </div>
     );
+
+    const isOwner = !isLocked && project.userId && (project.userId._id || project.userId) === currentUserId;
+
+    if (isLocked) {
+        return (
+            <div className="w-full h-[calc(100vh-64px)] bg-[#f9f9ff] flex items-center justify-center font-sans p-4">
+                <div className="bg-white rounded-xl shadow-sm border border-[#e0e2eb] max-w-md w-full p-8 text-center">
+                    <div className="w-16 h-16 rounded-full bg-[#eef0f9] flex items-center justify-center mx-auto mb-4">
+                        <span className="material-symbols-outlined text-[32px] text-[#222777]">lock</span>
+                    </div>
+                    <h2 className="text-[22px] font-bold text-[#181c22] mb-1">{project.name}</h2>
+                    <p className="text-[13px] text-[#777682] mb-4">Shared by {project.ownerName}</p>
+                    {project.description && (
+                        <p className="text-[14px] text-[#464651] mb-5">{project.description}</p>
+                    )}
+                    {project.keywords?.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 justify-center mb-6">
+                            {project.keywords.map((kw) => (
+                                <span key={kw._id} className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#f1f3fc] text-[#464651] border border-[#e0e2eb]">{kw.text}</span>
+                            ))}
+                        </div>
+                    )}
+                    {unlockError && <p className="text-[12px] text-[#ba1a1a] font-semibold mb-3">{unlockError}</p>}
+                    <button
+                        onClick={handleUnlock}
+                        disabled={isUnlocking}
+                        className="w-full bg-[#222777] text-white px-6 py-3 rounded-lg text-[14px] font-bold shadow-sm hover:bg-[#3a3f8f] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">toll</span>
+                        {isUnlocking ? 'Unlocking...' : `Unlock for ${project.sharePriceCoins} coins`}
+                    </button>
+                    <button onClick={() => navigate('/app/courses/my-learning')} className="mt-3 text-[13px] font-bold text-[#777682] hover:text-[#181c22]">
+                        Back to My Learning List
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex-1 w-full bg-[#f9f9ff] h-[calc(100vh-64px)] overflow-y-auto font-sans flex flex-col">
@@ -67,12 +174,27 @@ export default function ProjectDashboard() {
                                 <p className="text-[14px] sm:text-[15px] text-[#464651] mt-1">{project.description}</p>
                             )}
                         </div>
-                        <button
-                            onClick={() => navigate(`/app/research?projectId=${id}`)}
-                            className="w-full sm:w-auto bg-[#00c2cb] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm hover:bg-[#00a8b0] transition-colors flex items-center justify-center gap-2 shrink-0"
-                        >
-                            <span className="material-symbols-outlined text-[18px]">mic</span> Start New Session
-                        </button>
+                        <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2">
+                            {isOwner && (
+                                <button
+                                    onClick={openShareModal}
+                                    className={`w-full sm:w-auto px-6 py-2.5 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm transition-colors flex items-center justify-center gap-2 shrink-0 border ${
+                                        project.isShared
+                                            ? 'bg-[#e6fbfc] text-[#006e73] border-[#6bf6ff]/50 hover:bg-[#d0f6f8]'
+                                            : 'bg-white text-[#222777] border-[#e0e2eb] hover:bg-[#f1f3fc]'
+                                    }`}
+                                >
+                                    <span className="material-symbols-outlined text-[18px]">{project.isShared ? 'toll' : 'share'}</span>
+                                    {project.isShared ? `Sharing · ${project.sharePriceCoins} coins` : 'Share My Project'}
+                                </button>
+                            )}
+                            <button
+                                onClick={() => navigate(`/app/research?projectId=${id}`)}
+                                className="w-full sm:w-auto bg-[#00c2cb] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm hover:bg-[#00a8b0] transition-colors flex items-center justify-center gap-2 shrink-0"
+                            >
+                                <span className="material-symbols-outlined text-[18px]">mic</span> Start New Session
+                            </button>
+                        </div>
                     </div>
 
                     {/* Tabs */}
@@ -180,6 +302,58 @@ export default function ProjectDashboard() {
                 )}
 
             </div>
+
+            {isShareModalOpen && (
+                <div className="fixed inset-0 bg-[#181c22]/50 flex items-center justify-center z-[100] backdrop-blur-sm px-4">
+                    <div className="bg-white rounded-xl shadow-lg w-full max-w-sm overflow-hidden">
+                        <div className="px-6 py-5 border-b border-[#e0e2eb] flex items-center justify-between">
+                            <h3 className="text-[16px] font-bold text-[#181c22]">Share My Project</h3>
+                            <button type="button" onClick={() => setIsShareModalOpen(false)} className="text-[#777682] hover:text-[#181c22]">
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div className="px-6 py-5 space-y-3">
+                            <p className="text-[13px] text-[#464651]">
+                                {project.isShared
+                                    ? 'This project is visible to users following one of its keywords on My Learning List. Update the price, or stop sharing.'
+                                    : 'Set a coin price - users following one of this project\'s keywords will see it on My Learning List and can pay to unlock full access.'}
+                            </p>
+                            <div>
+                                <label className="block text-[13px] font-bold text-[#181c22] mb-1.5">Price (coins)</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    value={sharePriceInput}
+                                    onChange={(e) => setSharePriceInput(e.target.value)}
+                                    className="w-full bg-[#f9f9ff] border border-[#c7c5d3] rounded-md px-3 py-2 text-[14px] font-semibold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none"
+                                    placeholder="e.g. 50"
+                                />
+                            </div>
+                            {shareError && <p className="text-[12px] text-[#ba1a1a] font-semibold">{shareError}</p>}
+                        </div>
+                        <div className="px-6 py-4 bg-[#f9f9ff] flex justify-end gap-3 border-t border-[#e0e2eb]">
+                            {project.isShared && (
+                                <button
+                                    type="button"
+                                    onClick={handleUnshare}
+                                    disabled={isSharing}
+                                    className="px-4 py-2 rounded-lg text-[13px] font-bold text-[#ba1a1a] hover:bg-[#ffdad6] transition-colors disabled:opacity-60"
+                                >
+                                    Stop Sharing
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={handleShare}
+                                disabled={isSharing}
+                                className="bg-[#222777] text-white px-5 py-2 rounded-lg text-[13px] font-bold shadow-sm hover:bg-[#3a3f8f] transition-colors disabled:opacity-60"
+                            >
+                                {isSharing ? 'Saving...' : project.isShared ? 'Update Price' : 'Share Project'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

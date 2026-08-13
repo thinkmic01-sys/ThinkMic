@@ -10,6 +10,10 @@ export default function ProjectsList() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newProjectName, setNewProjectName] = useState('');
     const [newProjectDesc, setNewProjectDesc] = useState('');
+    // Optional, same admin-curated keywords as My Learning List - tagging a project here is
+    // what lets it later be shared and found by other users following the same keyword.
+    const [availableKeywords, setAvailableKeywords] = useState([]);
+    const [selectedKeywordIds, setSelectedKeywordIds] = useState([]);
 
     useEffect(() => {
         if (!token) return;
@@ -22,16 +26,22 @@ export default function ProjectsList() {
             }
         };
         fetchProjects();
+        api.get('/keywords').then((res) => setAvailableKeywords(res.data.keywords || [])).catch(() => {});
     }, [token]);
+
+    const toggleKeyword = (keywordId) => {
+        setSelectedKeywordIds((prev) => prev.includes(keywordId) ? prev.filter((id) => id !== keywordId) : [...prev, keywordId]);
+    };
 
     const handleCreateProject = async (e) => {
         e.preventDefault();
         try {
-            const res = await api.post('/projects', { name: newProjectName, description: newProjectDesc });
+            const res = await api.post('/projects', { name: newProjectName, description: newProjectDesc, keywords: selectedKeywordIds });
             setProjects([res.data.project, ...projects]);
             setIsCreateModalOpen(false);
             setNewProjectName('');
             setNewProjectDesc('');
+            setSelectedKeywordIds([]);
             navigate(`/app/projects/${res.data.project._id}`);
         } catch (err) {
             console.error("Failed to create project", err);
@@ -134,6 +144,31 @@ export default function ProjectsList() {
                                     placeholder="Brief details about this initiative..."
                                 />
                             </div>
+                            {availableKeywords.length > 0 && (
+                                <div>
+                                    <label className="block text-[13px] font-bold text-[#181c22] mb-1.5">Keywords (Optional)</label>
+                                    <p className="text-[11px] text-[#777682] mb-2">Lets you later share this project with users following the same keyword on My Learning List.</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {availableKeywords.map((kw) => {
+                                            const isSelected = selectedKeywordIds.includes(kw._id);
+                                            return (
+                                                <button
+                                                    key={kw._id}
+                                                    type="button"
+                                                    onClick={() => toggleKeyword(kw._id)}
+                                                    className={`text-[12px] font-bold px-3 py-1.5 rounded-full border transition-colors ${
+                                                        isSelected
+                                                            ? 'bg-[#e6fbfc] text-[#006e73] border-[#6bf6ff]/50'
+                                                            : 'bg-[#f9f9ff] text-[#464651] border-[#e0e2eb] hover:border-[#c7c5d3]'
+                                                    }`}
+                                                >
+                                                    {kw.text}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         <div className="px-6 py-4 bg-[#f9f9ff] flex justify-end gap-3 border-t border-[#e0e2eb]">
                             <button

@@ -30,7 +30,48 @@ function LocationMapPicker({ locationString, setLocationString }) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
+    const [isLocating, setIsLocating] = useState(false);
+    const [locateError, setLocateError] = useState('');
     const mapRef = useRef(null);
+
+    // Lets the user share their actual current location (via the browser's own permission
+    // prompt - never silently) rather than manually searching/clicking, so the address saved
+    // here is precise enough for an admin to act on (e.g. mailing a physical gift).
+    // Reverse-geocodes to a readable address, same Nominatim service the search box already
+    // uses, falling back to raw coordinates (matching the map-click handler) if that fails.
+    const handleUseMyLocation = () => {
+        if (!navigator.geolocation) {
+            setLocateError('Location sharing is not supported by this browser.');
+            return;
+        }
+        setIsLocating(true);
+        setLocateError('');
+        navigator.geolocation.getCurrentPosition(
+            async (geoPosition) => {
+                const { latitude, longitude } = geoPosition.coords;
+                setPosition([latitude, longitude]);
+                if (mapRef.current) {
+                    mapRef.current.flyTo([latitude, longitude], 15);
+                }
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+                    const data = await res.json();
+                    setLocationString(data?.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+                } catch {
+                    setLocationString(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+                } finally {
+                    setIsLocating(false);
+                }
+            },
+            (err) => {
+                setIsLocating(false);
+                setLocateError(err.code === err.PERMISSION_DENIED
+                    ? 'Location access was denied. You can still search or click the map instead.'
+                    : 'Could not determine your location. Please try again or use the map/search instead.');
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    };
 
     const MapEvents = () => {
         useMapEvents({
@@ -101,6 +142,16 @@ function LocationMapPicker({ locationString, setLocationString }) {
 
                 <button
                     type="button"
+                    onClick={handleUseMyLocation}
+                    disabled={isLocating}
+                    className="bg-white/95 backdrop-blur shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg w-9 h-9 sm:w-10 sm:h-10 text-[#00c2cb] border border-[#c7c5d3]/50 hover:bg-[#f1f3fc] transition-colors flex items-center justify-center pointer-events-auto shrink-0 disabled:opacity-60"
+                    title="Share my current location"
+                >
+                    <span className={`material-symbols-outlined text-[20px] ${isLocating ? 'animate-spin' : ''}`}>{isLocating ? 'progress_activity' : 'my_location'}</span>
+                </button>
+
+                <button
+                    type="button"
                     onClick={() => setIsExpanded(!isExpanded)}
                     className="bg-white/95 backdrop-blur shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg w-9 h-9 sm:w-10 sm:h-10 text-[#222777] border border-[#c7c5d3]/50 hover:bg-[#f1f3fc] transition-colors flex items-center justify-center pointer-events-auto shrink-0"
                     title={isExpanded ? "Collapse Map" : "Expand Map"}
@@ -108,6 +159,12 @@ function LocationMapPicker({ locationString, setLocationString }) {
                     <span className="material-symbols-outlined text-[20px]">{isExpanded ? 'fullscreen_exit' : 'fullscreen'}</span>
                 </button>
             </div>
+
+            {locateError && (
+                <div className="absolute top-16 left-3 right-3 z-[1000] bg-[#ba1a1a] text-white text-[12px] font-semibold px-3 py-2 rounded-lg shadow-md pointer-events-none">
+                    {locateError}
+                </div>
+            )}
 
             <MapContainer
                 center={position}
@@ -670,9 +727,10 @@ export default function Settings() {
                                 </div>
                                 <div className="sm:col-span-2">
                                     <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Postal Address</label>
+                                    <p className="text-[11px] text-gray-500 mb-1.5">Share your location so an admin knows where to send physical gifts or rewards.</p>
                                     <input
                                         type="text" name="address" value={identityData.address} onChange={handleIdentityFieldChange}
-                                        placeholder="Click map to drop pin or type address"
+                                        placeholder="Share your location, click the map, or type an address"
                                         className="w-full bg-[#f9f9ff] rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
                                     />
                                     <LocationMapPicker

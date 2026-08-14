@@ -28,6 +28,27 @@ body {
   color: #181c22;
 }
 
+/* Tailwind's preflight does NOT give <button> a pointer cursor (only <a> gets it natively
+   from the browser) - without this, every button in the app shows the default arrow cursor
+   on hover instead of a clickable one. One global rule here covers every button/native
+   interactive control at once, instead of adding cursor-pointer by hand to hundreds of
+   individual buttons across the codebase. Non-button clickable elements (a div/span/tr with
+   an onClick handler) aren't covered by this - those need cursor-pointer added directly. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+select,
+input[type="checkbox"],
+input[type="radio"],
+input[type="submit"],
+input[type="button"],
+label {
+  cursor: pointer;
+}
+button:disabled,
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 @layer utilities {
   .font-urdu {
     font-family: 'Jameel Noori Nastaleeq', 'Jameel Noori Kasheeda', 'Noto Nastaliq Urdu Draft', serif;

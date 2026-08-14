@@ -4,6 +4,7 @@ const Recording = require('../models/Recording');
 const Report = require('../models/Report');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const Keyword = require('../models/Keyword');
 const coinWalletService = require('../services/coinWalletService');
 const socket = require('../utils/socket');
 
@@ -50,6 +51,16 @@ exports.listProjects = async (req, res) => {
 exports.createProject = async (req, res) => {
     try {
         const { name, description, keywords } = req.body;
+
+        // Required, but only enforceable once at least one keyword actually exists to pick
+        // from - mirrors the same exception ProjectsList.jsx's client-side check makes.
+        if (!Array.isArray(keywords) || keywords.length === 0) {
+            const anyKeywordExists = await Keyword.exists({});
+            if (anyKeywordExists) {
+                return res.status(400).json({ message: 'Select at least one keyword.' });
+            }
+        }
+
         const project = new Project({
             userId: req.user._id,
             name: name || 'Untitled Project',

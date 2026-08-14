@@ -1317,15 +1317,15 @@ export default function SpeechWorkspace() {
                         </div>
 
                         <div className="hidden md:flex gap-4 px-1">
-                            <span className="md:w-1/2 font-mono text-[10px] sm:text-[11px] font-bold text-[#777682] uppercase tracking-wider">Prompt</span>
-                            <span className="md:w-1/2 font-mono text-[10px] sm:text-[11px] font-bold text-[#777682] uppercase tracking-wider">Answer</span>
+                            <span className="flex-1 min-w-0 font-mono text-[10px] sm:text-[11px] font-bold text-[#777682] uppercase tracking-wider">Prompt</span>
+                            <span className="flex-1 min-w-0 font-mono text-[10px] sm:text-[11px] font-bold text-[#777682] uppercase tracking-wider">Answer</span>
                         </div>
 
                         <div className="flex flex-col gap-3 overflow-y-auto overflow-x-hidden max-h-[260px] sm:max-h-[280px] custom-scrollbar pr-1">
                             {customPrompts.map((promptObj, index) => (
                                 <div key={promptObj.id} className="flex flex-col md:flex-row gap-3 shrink-0 min-w-0">
                                     {/* Prompt cell */}
-                                    <div className="md:w-1/2 min-w-0 relative border border-[#c7c5d3] rounded-md bg-white overflow-hidden shrink-0">
+                                    <div className="flex-1 min-w-0 relative border border-[#c7c5d3] rounded-md bg-white overflow-hidden">
                                         {customPrompts.length > 1 && (
                                             <button
                                                 onClick={() => setCustomPrompts(customPrompts.filter((_, i) => i !== index))}
@@ -1355,7 +1355,7 @@ export default function SpeechWorkspace() {
                                     </div>
 
                                     {/* Answer cell - always rendered so every prompt has a visible, paired answer slot */}
-                                    <div className="md:w-1/2 min-w-0 border border-[#e0e2eb] rounded-md p-3 bg-[#f9f9ff] flex flex-col justify-center shrink-0">
+                                    <div className="flex-1 min-w-0 border border-[#e0e2eb] rounded-md p-3 bg-[#f9f9ff] flex flex-col justify-center">
                                         {promptObj.isAnswering ? (
                                             <div className="space-y-1.5 animate-pulse">
                                                 <div className="h-2.5 bg-[#e0e2eb] rounded w-full"></div>

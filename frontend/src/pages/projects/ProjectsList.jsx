@@ -10,10 +10,12 @@ export default function ProjectsList() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newProjectName, setNewProjectName] = useState('');
     const [newProjectDesc, setNewProjectDesc] = useState('');
-    // Optional, same admin-curated keywords as My Learning List - tagging a project here is
-    // what lets it later be shared and found by other users following the same keyword.
+    // Required (whenever at least one exists to pick from) - same admin-curated keywords as
+    // My Learning List, tagging a project is what lets it later be shared and found by other
+    // users following the same keyword.
     const [availableKeywords, setAvailableKeywords] = useState([]);
     const [selectedKeywordIds, setSelectedKeywordIds] = useState([]);
+    const [keywordError, setKeywordError] = useState('');
 
     useEffect(() => {
         if (!token) return;
@@ -31,10 +33,17 @@ export default function ProjectsList() {
 
     const toggleKeyword = (keywordId) => {
         setSelectedKeywordIds((prev) => prev.includes(keywordId) ? prev.filter((id) => id !== keywordId) : [...prev, keywordId]);
+        setKeywordError('');
     };
 
     const handleCreateProject = async (e) => {
         e.preventDefault();
+        // Can't require picking a keyword that doesn't exist yet - only enforced once an
+        // admin has actually added at least one (mirrors the same exception the backend checks).
+        if (availableKeywords.length > 0 && selectedKeywordIds.length === 0) {
+            setKeywordError('Select at least one keyword.');
+            return;
+        }
         try {
             const res = await api.post('/projects', { name: newProjectName, description: newProjectDesc, keywords: selectedKeywordIds });
             setProjects([res.data.project, ...projects]);
@@ -42,8 +51,10 @@ export default function ProjectsList() {
             setNewProjectName('');
             setNewProjectDesc('');
             setSelectedKeywordIds([]);
+            setKeywordError('');
             navigate(`/app/projects/${res.data.project._id}`);
         } catch (err) {
+            setKeywordError(err.response?.data?.message || '');
             console.error("Failed to create project", err);
         }
     };
@@ -146,8 +157,8 @@ export default function ProjectsList() {
                             </div>
                             {availableKeywords.length > 0 && (
                                 <div>
-                                    <label className="block text-[13px] font-bold text-[#181c22] mb-1.5">Keywords (Optional)</label>
-                                    <p className="text-[11px] text-[#777682] mb-2">Lets you later share this project with users following the same keyword on My Learning List.</p>
+                                    <label className="block text-[13px] font-bold text-[#181c22] mb-1.5">Keywords</label>
+                                    <p className="text-[11px] text-[#777682] mb-2">Required - lets you later share this project with users following the same keyword on My Learning List.</p>
                                     <div className="flex flex-wrap gap-1.5">
                                         {availableKeywords.map((kw) => {
                                             const isSelected = selectedKeywordIds.includes(kw._id);
@@ -167,6 +178,7 @@ export default function ProjectsList() {
                                             );
                                         })}
                                     </div>
+                                    {keywordError && <p className="text-[11px] text-[#ba1a1a] font-semibold mt-2">{keywordError}</p>}
                                 </div>
                             )}
                         </div>

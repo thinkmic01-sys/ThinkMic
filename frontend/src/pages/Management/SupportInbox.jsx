@@ -176,18 +176,20 @@ export default function SupportInbox() {
                             
                             <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
                                 {activeTicket.messages.map((msg, idx) => {
-                                    const isMine = msg.sender?._id === currentUser?.id;
+                                    const isMine = !msg.isBot && msg.sender?._id === currentUser?.id;
                                     return (
                                         <div key={msg._id || idx} className={`flex flex-col max-w-[70%] ${isMine ? 'self-end items-end' : 'self-start items-start'}`}>
                                             <div className={`px-4 py-2.5 rounded-2xl text-[13px] sm:text-[14px] leading-relaxed shadow-sm ${
-                                                isMine 
-                                                ? 'bg-[#222777] text-white rounded-br-sm' 
+                                                isMine
+                                                ? 'bg-[#222777] text-white rounded-br-sm'
+                                                : msg.isBot
+                                                ? 'bg-[#e6fbfc] border border-[#00c2cb]/30 text-[#181c22] rounded-bl-sm'
                                                 : 'bg-[#f9f9ff] border border-[#e0e2eb] text-[#181c22] rounded-bl-sm'
                                             }`}>
                                                 {msg.text}
                                             </div>
                                             <span className="text-[10px] text-[#777682] font-semibold mt-1 px-1">
-                                                {isMine ? 'You' : msg.sender?.fullName || 'User'} • {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                {isMine ? 'You' : msg.isBot ? 'ThinkMic AI' : (msg.sender?.fullName || 'User')} • {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                             </span>
                                         </div>
                                     );

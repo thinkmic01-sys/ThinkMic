@@ -1,5 +1,6 @@
 const Ticket = require('../models/Ticket');
 const socket = require('../utils/socket');
+const openaiService = require('../services/openaiService');
 
 // sendMessage/closeTicket are shared routes (both a ticket's owner and support staff hit
 // the same endpoint), so this in-controller check is the actual authorization boundary, not
@@ -51,9 +52,16 @@ exports.sendMessage = async (req, res) => {
             }
         }
 
+        const senderIsStaff = isSupportStaff(req);
+        // Whether the 24/7 AI assistant should chime in - only while no human staff member
+        // has engaged with this ticket yet (checked BEFORE pushing the current message, so a
+        // staff member's very first reply still stops the AI from also answering it).
+        const shouldTriggerAI = !senderIsStaff && !ticket.messages.some((m) => m.isStaff);
+
         const newMessage = {
             sender: req.user._id,
             text,
+            isStaff: senderIsStaff,
             createdAt: new Date()
         };
 
@@ -69,7 +77,7 @@ exports.sendMessage = async (req, res) => {
         const io = socket.getIO();
         if (io) {
             // If sender is support staff, emit to the user's room
-            if (isSupportStaff(req)) {
+            if (senderIsStaff) {
                 io.to(ticket.user.toString()).emit('new_support_message', { ticketId: ticket._id, message: populatedMessage });
             } else {
                 // If sender is user, emit to a general 'admin_support' room or all admins
@@ -78,10 +86,41 @@ exports.sendMessage = async (req, res) => {
         }
 
         res.status(201).json({ ticket, message: populatedMessage });
+
+        // Fire-and-forget: the AI reply can take a second or two, so it's generated after the
+        // response above (keeps the user's own message send snappy) and delivered over the
+        // same socket path a staff reply would use, rather than blocking this request.
+        if (shouldTriggerAI) {
+            generateAIReply(ticket).catch((err) => console.error('[Support AI] Failed to generate reply:', err));
+        }
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };
+
+async function generateAIReply(ticket) {
+    const conversationText = ticket.messages
+        .map((m) => `${m.isBot ? 'Assistant' : (m.isStaff ? 'Staff' : 'User')}: ${m.text}`)
+        .join('\n');
+
+    const replyText = await openaiService.answerSupportQuestion(conversationText, ticket.category);
+
+    // Re-fetch rather than reusing the in-memory `ticket` - it may have been closed, or
+    // received another message, in the time the AI call took.
+    const freshTicket = await Ticket.findById(ticket._id);
+    if (!freshTicket || freshTicket.status !== 'open') return;
+
+    freshTicket.messages.push({ text: replyText, isBot: true, createdAt: new Date() });
+    await freshTicket.save();
+
+    const aiMessage = freshTicket.messages[freshTicket.messages.length - 1];
+
+    const io = socket.getIO();
+    if (io) {
+        io.to(freshTicket.user.toString()).emit('new_support_message', { ticketId: freshTicket._id, message: aiMessage });
+        io.to('admin_support').emit('new_support_message', { ticketId: freshTicket._id, message: aiMessage });
+    }
+}
 
 exports.getAllTickets = async (req, res) => {
     try {

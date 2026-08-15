@@ -266,20 +266,23 @@ export default function SupportSidebar({ isOpen, onClose }) {
                                     </div>
                                 ) : (
                                     messages.map((msg, idx) => {
-                                        const isMine = msg.sender?._id === currentUser?.id;
+                                        const isMine = !msg.isBot && msg.sender?._id === currentUser?.id;
                                         const staffRole = !isMine && msg.sender?.role === 'manager' ? 'Manager' : (!isMine && msg.sender?.role === 'admin' ? 'Staff' : null);
                                         return (
                                             <div key={msg._id || idx} className={`flex flex-col max-w-[85%] ${isMine ? 'self-end items-end' : 'self-start items-start'}`}>
                                                 {!isMine && (
                                                     <div className="flex items-center gap-1.5 mb-1 px-1">
                                                         <div className="w-5 h-5 rounded-full bg-[#eef0f9] overflow-hidden shrink-0 flex items-center justify-center">
-                                                            {msg.sender?.avatarUrl ? (
+                                                            {msg.isBot ? (
+                                                                <span className="material-symbols-outlined text-[12px] text-[#00c2cb]">smart_toy</span>
+                                                            ) : msg.sender?.avatarUrl ? (
                                                                 <img src={msg.sender.avatarUrl} alt="" className="w-full h-full object-cover" />
                                                             ) : (
                                                                 <span className="material-symbols-outlined text-[12px] text-[#222777]">support_agent</span>
                                                             )}
                                                         </div>
-                                                        <span className="text-[10px] font-bold text-[#464651]">{msg.sender?.fullName || 'Support'}</span>
+                                                        <span className="text-[10px] font-bold text-[#464651]">{msg.isBot ? 'ThinkMic AI' : (msg.sender?.fullName || 'Support')}</span>
+                                                        {msg.isBot && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#e6fbfc] text-[#006e73]">AI · Instant</span>}
                                                         {staffRole && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#eef0f9] text-[#222777]">{staffRole}</span>}
                                                     </div>
                                                 )}

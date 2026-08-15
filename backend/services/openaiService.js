@@ -168,6 +168,36 @@ exports.answerAboutTranscript = async (transcriptText, prompt, language = null) 
     }
 };
 
+const SUPPORT_SYSTEM_PROMPT = `You are the ThinkMic 24/7 AI support assistant. ThinkMic is an AI-driven audio intelligence and research platform. Its features: live audio recording and file-upload transcription (English and Urdu), AI-generated summaries and reports (PDF/DOCX, multiple templates), web research tied to a recording session, a coin wallet with referral rewards, seminars (live seminars with attendee registration, plus a "Nearby Seminars" map), a Schema Builder / Collaboration area for custom data-collection forms, and account Settings (profile, identity/KYC, notifications, security).
+
+Answer the user's support question helpfully and concisely (2-4 sentences) using only what's listed above. If it's something you cannot know from this context (their specific account data, an exact coin balance, order status, a bug only staff can investigate), say so plainly and let them know a human team member will follow up - do not invent account-specific facts. Be warm but brief. Return plain text only, no markdown formatting.`;
+
+// A real human staff member can jump into any ticket at any time (see supportController.js
+// - isStaff messages don't stop this from firing again on the *next* user message unless
+// staff has already replied at least once in the ticket).
+exports.answerSupportQuestion = async (conversationText, category) => {
+    if (isMock) {
+        console.log(`[MOCK] Answering support question for category: ${category}`);
+        return new Promise((resolve) => {
+            setTimeout(() => resolve(`[MOCK AI SUPPORT REPLY] Thanks for reaching out about "${category || 'General'}" - a real answer would appear here once OPENAI_API_KEY is configured.`), 800);
+        });
+    }
+
+    try {
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [
+                { role: 'system', content: SUPPORT_SYSTEM_PROMPT },
+                { role: 'user', content: `Support category: ${category || 'General'}\n\nConversation so far:\n${conversationText}\n\nWrite the next reply from the assistant.` }
+            ]
+        });
+        return response.choices[0].message.content.trim();
+    } catch (error) {
+        console.error('[OpenAI Support Answer Error]:', error);
+        throw error;
+    }
+};
+
 exports.translateText = async (text, targetLanguageName) => {
     if (!text || !text.trim()) {
         throw new Error('No text provided to translate.');

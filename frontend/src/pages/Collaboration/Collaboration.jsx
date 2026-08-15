@@ -210,6 +210,14 @@ export default function Collaboration() {
         });
     };
 
+    const REFERRAL_SHARE_TEXT = "Join me on ThinkMic - the AI research and audio intelligence platform:";
+    const handleShareEmail = () => {
+        window.location.href = `mailto:?subject=${encodeURIComponent('Join me on ThinkMic')}&body=${encodeURIComponent(`${REFERRAL_SHARE_TEXT}\n\n${referralLink}`)}`;
+    };
+    const handleShareChat = () => {
+        window.open(`https://wa.me/?text=${encodeURIComponent(`${REFERRAL_SHARE_TEXT} ${referralLink}`)}`, '_blank', 'noopener,noreferrer');
+    };
+
     const handleFormSubmit = async () => {
         if (!selectedSchema) return;
 
@@ -395,8 +403,8 @@ export default function Collaboration() {
                         </div>
                         <div className="flex items-center gap-3 sm:gap-4">
                             <span className="text-[13px] sm:text-[14px] font-bold text-[#464651]">Share via:</span>
-                            <button className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#f1f3fc] border border-[#c7c5d3] text-[#222777] hover:bg-[#e0e2eb] flex items-center justify-center transition-colors"><span className="material-symbols-outlined text-[18px] sm:text-[20px]">mail</span></button>
-                            <button className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#f1f3fc] border border-[#c7c5d3] text-[#222777] hover:bg-[#e0e2eb] flex items-center justify-center transition-colors"><span className="material-symbols-outlined text-[18px] sm:text-[20px]">chat</span></button>
+                            <button onClick={handleShareEmail} title="Share via Email" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#f1f3fc] border border-[#c7c5d3] text-[#222777] hover:bg-[#e0e2eb] flex items-center justify-center transition-colors"><span className="material-symbols-outlined text-[18px] sm:text-[20px]">mail</span></button>
+                            <button onClick={handleShareChat} title="Share via WhatsApp" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#f1f3fc] border border-[#c7c5d3] text-[#222777] hover:bg-[#e0e2eb] flex items-center justify-center transition-colors"><span className="material-symbols-outlined text-[18px] sm:text-[20px]">chat</span></button>
                         </div>
                     </div>
 

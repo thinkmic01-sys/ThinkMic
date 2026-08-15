@@ -4,7 +4,8 @@ const { protect, checkPermission } = require('../middleware/authMiddleware');
 const { listUsers, getDistinctTitles, inviteUsers, updateUserRoleStatus, deleteUser, getLecturerStudents, updateLecturerStudents } = require('../controllers/adminController');
 const {
     getSettings, updateSettings, listPendingRewards, updatePendingReward,
-    approveReward, rejectReward, getApprovalHistory, getStats, adjustUserCoins
+    approveReward, rejectReward, getApprovalHistory, getStats, adjustUserCoins,
+    getRankTiers, updateRankTiers
 } = require('../controllers/rewardsAdminController');
 const {
     getUserProfile, getUserResearch, getUserReports, getUserNotes, getUserSeminars,
@@ -56,6 +57,8 @@ router.post('/rewards/pending/:id/reject', checkPermission('rewards.approve_reje
 router.get('/rewards/history', checkPermission('rewards.view_history_stats'), getApprovalHistory);
 router.get('/rewards/stats', checkPermission('rewards.view_history_stats'), getStats);
 router.post('/rewards/adjust/:userId', checkPermission('rewards.adjust_coins'), adjustUserCoins);
+router.get('/rewards/rank-tiers', checkPermission('rewards.manage_rank_tiers'), getRankTiers);
+router.put('/rewards/rank-tiers', checkPermission('rewards.manage_rank_tiers'), updateRankTiers);
 
 // Roles & Permissions - creating/editing/deleting custom roles, and the catalog that
 // backs the permission checklist UI. getPermissionCatalog is deliberately gated the same

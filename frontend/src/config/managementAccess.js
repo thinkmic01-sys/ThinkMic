@@ -10,7 +10,7 @@ export const MANAGEMENT_PAGES = [
     {
         to: '/app/admin/rewards', icon: 'redeem', label: 'Rewards', permissions: [
             'rewards.manage_settings', 'rewards.manage_pending', 'rewards.approve_reject',
-            'rewards.view_history_stats', 'rewards.adjust_coins'
+            'rewards.view_history_stats', 'rewards.adjust_coins', 'rewards.manage_rank_tiers'
         ]
     },
     { to: '/app/admin/keywords', icon: 'sell', label: 'Keywords', permissions: ['keywords.manage'] },

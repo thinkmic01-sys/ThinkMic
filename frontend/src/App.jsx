@@ -162,7 +162,7 @@ function AppRoutes() {
                                 <Route path="schemas/new" element={<RequireRole anyOf={['schemas.manage', 'schemas.manage_own']} permissions={permissions}><SchemaBuilder /></RequireRole>} />
                                 <Route path="schemas/edit/:id" element={<RequireRole anyOf={['schemas.manage', 'schemas.manage_own']} permissions={permissions}><SchemaBuilder /></RequireRole>} />
                                 <Route path="support" element={<RequireRole anyOf={['support.manage_all']} permissions={permissions}><SupportInbox /></RequireRole>} />
-                                <Route path="rewards" element={<RequireRole anyOf={['rewards.manage_settings', 'rewards.manage_pending', 'rewards.approve_reject', 'rewards.view_history_stats', 'rewards.adjust_coins']} permissions={permissions}><ReferralCoinManagement /></RequireRole>} />
+                                <Route path="rewards" element={<RequireRole anyOf={['rewards.manage_settings', 'rewards.manage_pending', 'rewards.approve_reject', 'rewards.view_history_stats', 'rewards.adjust_coins', 'rewards.manage_rank_tiers']} permissions={permissions}><ReferralCoinManagement /></RequireRole>} />
                                 <Route path="analytics" element={<RequireRole anyOf={['analytics.view']} permissions={permissions}><Dashboard /></RequireRole>} />
                             </Route>
                         </Routes>

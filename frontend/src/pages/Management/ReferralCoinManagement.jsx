@@ -21,12 +21,14 @@ export default function ReferralCoinManagement() {
     const canManagePending = permissions.includes('rewards.manage_pending');
     const canApproveReject = permissions.includes('rewards.approve_reject');
     const canViewHistoryStats = permissions.includes('rewards.view_history_stats');
+    const canManageRankTiers = permissions.includes('rewards.manage_rank_tiers');
 
     const TABS = [
         (canManageSettings || canAdjustCoins) && { id: 'settings', label: 'Settings' },
         (canManagePending || canApproveReject) && { id: 'pending', label: 'Pending Rewards' },
         canViewHistoryStats && { id: 'history', label: 'Approval History' },
-        canViewHistoryStats && { id: 'stats', label: 'Statistics' }
+        canViewHistoryStats && { id: 'stats', label: 'Statistics' },
+        canManageRankTiers && { id: 'rankTiers', label: 'Rank Tiers' }
     ].filter(Boolean);
 
     const [activeTab, setActiveTab] = useState(() => TABS[0]?.id);
@@ -219,6 +221,50 @@ export default function ReferralCoinManagement() {
         }
     }, [accessToken]);
 
+    // --- RANK TIERS TAB ---
+    // Admin-authored coin-based tiers (name + minimum coin threshold, e.g. Bronze from 0,
+    // Silver from 501, ...) shown on the Achievements page's Tier stat and Leaderboard in
+    // place of a plain numeric position - see backend/controllers/achievementsController.js
+    // resolveRankTier().
+    const [rankTiers, setRankTiers] = useState([]);
+    const [rankTiersLoading, setRankTiersLoading] = useState(false);
+
+    const fetchRankTiers = useCallback(async () => {
+        if (!accessToken) return;
+        try {
+            const res = await api.get('/admin/rewards/rank-tiers');
+            setRankTiers(res.data.rankTiers || []);
+        } catch (err) {
+            console.error(err);
+        }
+    }, [accessToken]);
+
+    const handleRankTierField = (index, field, value) => {
+        setRankTiers(prev => prev.map((t, i) => i === index ? { ...t, [field]: value } : t));
+    };
+
+    const handleAddRankTier = () => {
+        setRankTiers(prev => [...prev, { name: '', minCoins: 0 }]);
+    };
+
+    const handleRemoveRankTier = (index) => {
+        setRankTiers(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleSaveRankTiers = async () => {
+        setRankTiersLoading(true);
+        try {
+            const payload = rankTiers.map(t => ({ name: t.name, minCoins: Number(t.minCoins) }));
+            const res = await api.put('/admin/rewards/rank-tiers', { rankTiers: payload });
+            setRankTiers(res.data.rankTiers);
+            showToast('Rank tiers updated!', 'success');
+        } catch (err) {
+            showToast(errMsg(err, 'Failed to update rank tiers'), 'error');
+        } finally {
+            setRankTiersLoading(false);
+        }
+    };
+
     useEffect(() => {
         // Only fetch what the current permission set actually has access to - e.g. a role
         // with rewards.adjust_coins but not rewards.manage_settings still lands on the
@@ -227,7 +273,8 @@ export default function ReferralCoinManagement() {
         if (activeTab === 'pending' && (canManagePending || canApproveReject)) fetchPending();
         if (activeTab === 'history' && canViewHistoryStats) fetchHistory();
         if (activeTab === 'stats' && canViewHistoryStats) fetchStats();
-    }, [activeTab, canManageSettings, canManagePending, canApproveReject, canViewHistoryStats, fetchSettings, fetchPending, fetchHistory, fetchStats]);
+        if (activeTab === 'rankTiers' && canManageRankTiers) fetchRankTiers();
+    }, [activeTab, canManageSettings, canManagePending, canApproveReject, canViewHistoryStats, canManageRankTiers, fetchSettings, fetchPending, fetchHistory, fetchStats, fetchRankTiers]);
 
     return (
         <div className="w-full h-[calc(100vh-64px)] overflow-y-auto bg-[#f9f9ff] font-sans custom-scrollbar">
@@ -516,6 +563,67 @@ export default function ReferralCoinManagement() {
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* --- RANK TIERS TAB --- */}
+                {activeTab === 'rankTiers' && (
+                    <div className="bg-white p-5 sm:p-6 rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb]">
+                        <h3 className="text-[16px] sm:text-[18px] font-bold text-[#222777] mb-1">Rank Tiers</h3>
+                        <p className="text-[12px] text-[#777682] mb-4">Define named tiers (e.g. Bronze, Silver, Gold) by minimum lifetime coins. A user's tier is the highest one whose threshold their lifetime coins meet or exceed. Shown on the Achievements page's Tier stat and Leaderboard.</p>
+
+                        <div className="flex flex-col gap-3">
+                            {rankTiers.map((tier, i) => (
+                                <div key={i} className="flex items-center gap-3">
+                                    <div className="flex-1">
+                                        <input
+                                            type="text"
+                                            value={tier.name}
+                                            onChange={(e) => handleRankTierField(i, 'name', e.target.value)}
+                                            placeholder="Tier name (e.g. Bronze)"
+                                            className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[14px] outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777]"
+                                        />
+                                    </div>
+                                    <div className="w-40">
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={tier.minCoins}
+                                            onChange={(e) => handleRankTierField(i, 'minCoins', e.target.value)}
+                                            placeholder="Min coins"
+                                            className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[14px] outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777]"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={() => handleRemoveRankTier(i)}
+                                        className="w-9 h-9 shrink-0 rounded-md border border-[#ffb4ab] text-[#ba1a1a] hover:bg-[#ffdad6] transition-colors flex items-center justify-center"
+                                        title="Remove tier"
+                                    >
+                                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                                    </button>
+                                </div>
+                            ))}
+                            {rankTiers.length === 0 && (
+                                <p className="text-[13px] text-[#777682] py-4 text-center">No rank tiers configured yet.</p>
+                            )}
+                        </div>
+
+                        <button
+                            onClick={handleAddRankTier}
+                            className="mt-4 text-[13px] font-bold text-[#222777] hover:underline flex items-center gap-1"
+                        >
+                            <span className="material-symbols-outlined text-[16px]">add</span> Add Tier
+                        </button>
+
+                        <div>
+                            <button
+                                onClick={handleSaveRankTiers}
+                                disabled={rankTiersLoading}
+                                className="mt-5 bg-[#222777] text-white text-[13px] font-bold py-2.5 px-6 rounded-lg hover:bg-[#3a3f8f] transition-colors disabled:opacity-50"
+                            >
+                                {rankTiersLoading ? 'Saving...' : 'Save Rank Tiers'}
+                            </button>
                         </div>
                     </div>
                 )}

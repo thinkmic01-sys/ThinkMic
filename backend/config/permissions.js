@@ -15,6 +15,7 @@ const PERMISSIONS = [
     { key: 'rewards.approve_reject', label: 'Approve/Reject Rewards', category: 'Rewards & Coins', description: 'Approve or reject pending referral rewards' },
     { key: 'rewards.view_history_stats', label: 'View Reward History & Stats', category: 'Rewards & Coins', description: 'View reward approval history and statistics' },
     { key: 'rewards.adjust_coins', label: 'Adjust User Coins', category: 'Rewards & Coins', description: 'Manually credit or debit a user\'s coin balance' },
+    { key: 'rewards.manage_rank_tiers', label: 'Manage Rank Tiers', category: 'Rewards & Coins', description: 'Define the named coin-based rank tiers (e.g. Bronze/Silver/Gold) shown on the Achievements leaderboard' },
     { key: 'schemas.manage', label: 'Manage Schema Builder', category: 'Schema Builder', description: 'Create, edit, and publish dynamic form schemas' },
     { key: 'schemas.manage_own', label: 'Manage Own Schemas', category: 'Schema Builder', description: 'Create, edit, and publish forms visible only to your own assigned students (e.g. a Lecturer role) - cannot see or edit forms created by anyone else' },
     { key: 'keywords.manage', label: 'Manage Keywords', category: 'Keywords', description: 'Add and remove the admin-curated keywords shown on My Learning List and used as seminar categories' },

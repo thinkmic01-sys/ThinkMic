@@ -28,7 +28,7 @@ export default function Achievements() {
 
     const [transactions, setTransactions] = useState([]);
     const [leaderboard, setLeaderboard] = useState([]);
-    const [stats, setStats] = useState({ weekEarned: 0, lifetime: 0, rank: '-', streak: 0, levelInfo: DEFAULT_LEVEL_INFO });
+    const [stats, setStats] = useState({ weekEarned: 0, lifetime: 0, rank: '-', rankTierName: null, streak: 0, levelInfo: DEFAULT_LEVEL_INFO });
 
     React.useEffect(() => {
         const fetchTransactions = async () => {
@@ -131,8 +131,8 @@ export default function Achievements() {
                             <p className="text-lg sm:text-xl md:text-2xl text-[#222777] font-bold">{stats.lifetime?.toLocaleString()}</p>
                         </div>
                         <div>
-                            <p className="text-[10px] sm:text-xs text-[#777682] mb-0.5 sm:mb-1 flex items-center gap-1 font-bold uppercase tracking-wider"><span className="material-symbols-outlined text-[14px]">leaderboard</span> Rank</p>
-                            <p className="text-lg sm:text-xl md:text-2xl text-[#222777] font-bold">#{stats.rank}</p>
+                            <p className="text-[10px] sm:text-xs text-[#777682] mb-0.5 sm:mb-1 flex items-center gap-1 font-bold uppercase tracking-wider"><span className="material-symbols-outlined text-[14px]">leaderboard</span> Tier</p>
+                            <p className="text-lg sm:text-xl md:text-2xl text-[#222777] font-bold">{stats.rankTierName || 'Unranked'}</p>
                         </div>
                         <div>
                             <p className="text-[10px] sm:text-xs text-[#777682] mb-0.5 sm:mb-1 flex items-center gap-1 font-bold uppercase tracking-wider"><span className="material-symbols-outlined text-[14px]">local_fire_department</span> Streak</p>
@@ -217,16 +217,16 @@ export default function Achievements() {
                                     <table className="w-full text-left border-collapse min-w-[450px]">
                                         <thead className="bg-[#f9f9ff] border-b border-[#e0e2eb]">
                                         <tr>
-                                            <th className="py-3 px-3 sm:px-4 text-[10px] sm:text-[11px] text-[#777682] font-bold uppercase tracking-wider whitespace-nowrap">Rank</th>
+                                            <th className="py-3 px-3 sm:px-4 text-[10px] sm:text-[11px] text-[#777682] font-bold uppercase tracking-wider whitespace-nowrap">Tier</th>
                                             <th className="py-3 px-3 sm:px-4 text-[10px] sm:text-[11px] text-[#777682] font-bold uppercase tracking-wider">Scholar</th>
                                             <th className="py-3 px-3 sm:px-4 text-[10px] sm:text-[11px] text-[#777682] font-bold uppercase tracking-wider text-right whitespace-nowrap">Lifetime Coins</th>
                                         </tr>
                                         </thead>
                                         <tbody className="divide-y divide-[#e0e2eb] text-[13px] sm:text-sm">
-                                        {leaderboard.map((u, idx) => (
+                                        {leaderboard.map((u) => (
                                             <tr key={u._id} className={`hover:bg-[#f1f3fc] transition-colors ${u._id === user?.id ? 'bg-[#e6fbfc] hover:bg-[#cbf4f6]' : ''}`}>
                                                 <td className="py-3 sm:py-4 px-3 sm:px-4 font-mono text-[12px] sm:text-[14px] text-[#222777] font-bold whitespace-nowrap">
-                                                    {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
+                                                    {u.rankTierName || '—'}
                                                 </td>
                                                 <td className="py-3 sm:py-4 px-3 sm:px-4 text-[#181c22] flex items-center gap-2 sm:gap-3 font-semibold min-w-[200px]">
                                                     <img src={u.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName)}&background=222777&color=fff`} className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border border-[#c7c5d3] object-cover" alt="Avatar"/>

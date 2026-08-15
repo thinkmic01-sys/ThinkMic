@@ -3,6 +3,7 @@ const User = require('../models/User');
 const TimelineEvent = require('../models/TimelineEvent');
 const Recording = require('../models/Recording');
 const Report = require('../models/Report');
+const coinWalletService = require('../services/coinWalletService');
 
 // --- LEVEL PROGRESSION ENGINE ---
 // 10-tier progressive curve based on lifetimeCoins (a permanent, never-decreasing metric -
@@ -52,6 +53,18 @@ function getLevelInfo(lifetimeCoinsRaw) {
         isMaxLevel,
         lifetimeCoins
     };
+}
+
+// --- RANK TIERS (admin-configurable via RewardSettings.rankTiers) ---
+// Returns the highest tier whose minCoins the user's lifetimeCoins meets or exceeds, or
+// null if no tier's threshold is met (e.g. an admin removed the 0-coin tier).
+function resolveRankTier(lifetimeCoins, tiers) {
+    if (!Array.isArray(tiers) || tiers.length === 0) return null;
+    let match = null;
+    for (const t of tiers) {
+        if (lifetimeCoins >= t.minCoins && (!match || t.minCoins > match.minCoins)) match = t;
+    }
+    return match;
 }
 
 // --- STREAK CALCULATION ---
@@ -158,12 +171,21 @@ exports.addTransaction = async (req, res) => {
 
 exports.getLeaderboard = async (req, res) => {
     try {
-        const topUsers = await User.find({ role: { $ne: 'admin' } })
+        const [topUsers, settings] = await Promise.all([
             // Tie-break by account age so equal-coin users get a stable, consistent order.
-            .sort({ lifetimeCoins: -1, createdAt: 1 })
-            .limit(10)
-            .select('fullName avatarUrl lifetimeCoins coins');
-        res.status(200).json(topUsers);
+            User.find({ role: { $ne: 'admin' } })
+                .sort({ lifetimeCoins: -1, createdAt: 1 })
+                .limit(10)
+                .select('fullName avatarUrl lifetimeCoins coins'),
+            coinWalletService.getRewardSettings()
+        ]);
+
+        const withTiers = topUsers.map(u => {
+            const tier = resolveRankTier(u.lifetimeCoins, settings.rankTiers);
+            return { ...u.toObject(), rankTierName: tier ? tier.name : null };
+        });
+
+        res.status(200).json(withTiers);
     } catch (err) {
         console.error("Leaderboard Error:", err);
         res.status(500).json({ message: 'Server error fetching leaderboard' });
@@ -206,6 +228,12 @@ exports.getStats = async (req, res) => {
         const rank = higherRankedCount + 1;
         const levelInfo = getLevelInfo(lifetime);
 
+        // Admin-configurable named tier (Bronze/Silver/Gold/...) shown instead of the plain
+        // numeric position on the Achievements page - see RewardSettings.rankTiers.
+        const rewardSettings = await coinWalletService.getRewardSettings();
+        const rankTier = resolveRankTier(lifetime, rewardSettings.rankTiers);
+        const rankTierName = rankTier ? rankTier.name : null;
+
         // Reports Generated
         const reportsGenerated = await Report.countDocuments({
             userId,
@@ -229,6 +257,7 @@ exports.getStats = async (req, res) => {
             weekEarned,
             lifetime,
             rank,
+            rankTierName,
             streak,
             hoursRecorded: parseFloat(hoursRecorded),
             reportsGenerated,

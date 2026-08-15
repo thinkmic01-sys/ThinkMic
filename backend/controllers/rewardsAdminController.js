@@ -48,6 +48,60 @@ exports.updateSettings = async (req, res) => {
     }
 };
 
+exports.getRankTiers = async (req, res) => {
+    try {
+        const settings = await coinWalletService.getRewardSettings();
+        const rankTiers = [...(settings.rankTiers || [])].sort((a, b) => a.minCoins - b.minCoins);
+        res.status(200).json({ rankTiers });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+exports.updateRankTiers = async (req, res) => {
+    try {
+        const { rankTiers } = req.body;
+        if (!Array.isArray(rankTiers) || rankTiers.length === 0) {
+            return res.status(400).json({ message: 'rankTiers must be a non-empty array' });
+        }
+
+        const seenMin = new Set();
+        for (const t of rankTiers) {
+            if (!t || typeof t.name !== 'string' || !t.name.trim()) {
+                return res.status(400).json({ message: 'Each tier needs a non-empty name' });
+            }
+            if (typeof t.minCoins !== 'number' || t.minCoins < 0) {
+                return res.status(400).json({ message: `Tier "${t.name}" needs a non-negative minimum coin value` });
+            }
+            if (seenMin.has(t.minCoins)) {
+                return res.status(400).json({ message: `Duplicate minimum coin value ${t.minCoins} - each tier needs a distinct threshold` });
+            }
+            seenMin.add(t.minCoins);
+        }
+
+        const settings = await coinWalletService.getRewardSettings();
+        const before = settings.rankTiers;
+        settings.rankTiers = rankTiers
+            .map(t => ({ name: t.name.trim(), minCoins: t.minCoins }))
+            .sort((a, b) => a.minCoins - b.minCoins);
+        settings.updatedBy = req.user._id;
+        await settings.save();
+
+        await AuditLog.create({
+            actorId: req.user._id,
+            actorRole: req.user.role,
+            action: 'rank_tiers_updated',
+            targetId: settings._id,
+            targetType: 'RewardSettings',
+            metadata: { before, after: settings.rankTiers }
+        });
+
+        res.status(200).json({ rankTiers: settings.rankTiers });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
 exports.listPendingRewards = async (req, res) => {
     try {
         const { level, page = 1, search } = req.query;

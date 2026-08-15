@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { MANAGEMENT_PAGES } from '../config/managementAccess';
+import ConfigureMicModal from './ConfigureMicModal';
 
 const NavLink = ({ to, icon, label }) => {
     const location = useLocation();
@@ -54,6 +55,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     // as a regular user, just with an extra Schemas link (added below).
     const isAdmin = managementPages.length > 0;
     const canManageOwnSchemas = !isAdmin && permissions.includes('schemas.manage_own');
+    const [isMicModalOpen, setIsMicModalOpen] = useState(false);
 
     return (
         <aside className={`w-[280px] h-screen bg-[#222777] flex flex-col fixed left-0 top-0 text-white z-50 border-r border-[#181c22]/20 transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
@@ -105,7 +107,10 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             {/* Footer Area (Configure Mic + Settings/Support) */}
             <div className="mt-auto flex flex-col pb-4 pt-4 shrink-0">
                 <div className="px-6 mb-4">
-                    <button className="w-full bg-[#6bf6ff] text-[#002022] font-bold text-[14px] py-3 rounded-md hover:bg-[#61f4fd] transition-colors shadow-sm">
+                    <button
+                        onClick={() => setIsMicModalOpen(true)}
+                        className="w-full bg-[#6bf6ff] text-[#002022] font-bold text-[14px] py-3 rounded-md hover:bg-[#61f4fd] transition-colors shadow-sm"
+                    >
                         Configure Mic
                     </button>
                 </div>
@@ -119,6 +124,8 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                     )}
                 </nav>
             </div>
+
+            {isMicModalOpen && <ConfigureMicModal onClose={() => setIsMicModalOpen(false)} />}
 
         </aside>
     );

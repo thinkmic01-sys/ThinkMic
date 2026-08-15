@@ -5,6 +5,7 @@ import { login, logout } from '../../store/slices/authSlice';
 import api from '../../services/api';
 import axios from 'axios';
 import deepgramService from '../../services/deepgramService';
+import { getMicStream } from '../../services/micDevice';
 import { io } from 'socket.io-client';
 import { API_BASE_URL } from '../../config';
 
@@ -491,7 +492,7 @@ export default function SpeechWorkspace() {
     const startRecording = async () => {
         try {
             // MUST GET MEDIA STREAM FIRST to avoid browser blocking due to async delay from click
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const stream = await getMicStream();
             streamRef.current = stream;
 
             if (sttEngine === 'Deepgram') {

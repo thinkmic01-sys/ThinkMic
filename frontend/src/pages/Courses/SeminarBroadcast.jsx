@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import api from '../../services/api';
 import axios from 'axios';
 import deepgramService from '../../services/deepgramService';
+import { getMicStream } from '../../services/micDevice';
 
 // Mirrors SpeechWorkspace.jsx's codec probing - Safari/iOS don't support audio/webm at all
 const getSupportedAudioMimeType = () => {
@@ -68,7 +69,7 @@ export default function SeminarBroadcast() {
         }
 
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const stream = await getMicStream();
             streamRef.current = stream;
 
             setBroadcastState('connecting');

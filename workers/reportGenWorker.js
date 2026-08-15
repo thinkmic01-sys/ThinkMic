@@ -70,15 +70,25 @@ const worker = new Worker('report-generation', async (job) => {
                 ]
             });
 
+            // Only the results the user explicitly selected in Research Results
+            // (SearchResult.selectedIndexes, saved by ResearchResults.jsx right before
+            // creating the report) - previously every result from every query in the
+            // session was included regardless of selection, which diluted report relevance
+            // with sources the user had actively chosen not to include. A query with no
+            // selection (or predating this field) contributes nothing rather than everything.
             researchText = searchResults
-                .filter(sr => Array.isArray(sr.results) && sr.results.length > 0)
                 .map(sr => {
+                    const selectedIndexes = Array.isArray(sr.selectedIndexes) ? sr.selectedIndexes : [];
+                    const selectedResults = (sr.results || []).filter((_, idx) => selectedIndexes.includes(idx));
+                    if (selectedResults.length === 0) return '';
                     let context = `Query: ${sr.query}\n`;
-                    sr.results.forEach(res => {
+                    selectedResults.forEach(res => {
                         context += `- ${res.title}: ${res.snippet} (${res.url})\n`;
                     });
                     return context;
-                }).join('\n\n---\n\n');
+                })
+                .filter(Boolean)
+                .join('\n\n---\n\n');
         }
 
         // 3c. Audio transcript material - only gathered when the transcript section is requested.

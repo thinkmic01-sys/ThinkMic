@@ -243,6 +243,22 @@ export default function ResearchResults() {
     const handleProceedToReport = async () => {
         if (selectedResultIds.length === 0) return;
         try {
+            // Persist exactly which results the user picked (SearchResult.selectedIndexes) -
+            // reportGenWorker.js only synthesizes from these instead of every result across
+            // the whole session, which used to dilute report relevance with unselected
+            // sources. Every query in this session gets an explicit entry (even an empty
+            // array) so a query the user deselected everything from doesn't retain a stale
+            // selection from an earlier save.
+            const selections = {};
+            queries.forEach((q) => { selections[q.id] = []; });
+            selectedResultIds.forEach((id) => {
+                const [queryId, idxStr] = id.split('-');
+                const idx = parseInt(idxStr, 10);
+                if (!selections[queryId]) selections[queryId] = [];
+                selections[queryId].push(idx);
+            });
+            await api.patch(`/search/sessions/${activeSessionId}/selections`, { selections });
+
             const payload = {
                 title: "Research Report",
                 sessionIds: [activeSessionId],

@@ -65,7 +65,7 @@ export default function UserTimeline() {
                     {/* Header & Filters */}
                     <div className="mb-8 border-b border-[#e0e2eb] pb-6 bg-white p-6 rounded-xl shadow-sm">
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-[32px] font-bold text-[#222777] tracking-tight">My Timeline</h2>
+                            <h2 className="text-[32px] font-bold text-[#075e51] tracking-tight">My Timeline</h2>
                         </div>
                         <div className="flex flex-wrap gap-2">
                             {filters.map(filter => (
@@ -74,8 +74,8 @@ export default function UserTimeline() {
                                     onClick={() => setActiveFilter(filter)}
                                     className={`px-4 py-1.5 rounded-full text-[13px] font-bold transition-colors shadow-sm
                                         ${activeFilter === filter
-                                        ? 'bg-[#3a3f8f] text-white hover:bg-[#222777]'
-                                        : 'bg-[#f9f9ff] text-[#464651] border border-[#c7c5d3] hover:bg-[#e0e2eb]'
+                                        ? 'bg-[#097969] text-white hover:bg-[#075e51]'
+                                        : 'bg-[#F4F9F8] text-[#464651] border border-[#c7c5d3] hover:bg-[#e0e2eb]'
                                     }`}
                                 >
                                     {filter}
@@ -98,25 +98,25 @@ export default function UserTimeline() {
                                     {/* Timeline Node */}
                                     <div className={`absolute left-0 top-1 w-6 h-6 rounded-full bg-white border-2 ${event.borderColor} flex items-center justify-center shadow-sm z-10 ${event.isLive ? 'pulse-ring' : ''}`}>
                                         {event.isLive
-                                            ? <div className="w-2 h-2 rounded-full bg-[#00c2cb]"></div>
+                                            ? <div className="w-2 h-2 rounded-full bg-[#EAB308]"></div>
                                             : <div className={`w-2 h-2 rounded-full ${event.color.replace('text-', 'bg-')}`}></div>
                                         }
                                     </div>
 
                                     {/* Event Card */}
-                                    <div className="bg-white rounded-xl p-5 shadow-card border border-[#e0e2eb] hover:border-[#00c2cb]/50 transition-all group-hover:shadow-md">
+                                    <div className="bg-white rounded-xl p-5 shadow-card border border-[#e0e2eb] hover:border-[#EAB308]/50 transition-all group-hover:shadow-md">
                                         <div className="flex items-start justify-between mb-3">
                                             <div className="flex items-center gap-2">
                                                 <span className={`material-symbols-outlined text-[20px] ${event.color}`}>{event.icon}</span>
                                                 <span className="font-mono text-[14px] font-bold text-[#181c22]">{event.title}</span>
                                             </div>
-                                            <span className={`font-mono text-[11px] font-bold ${event.isLive ? 'text-[#00c2cb]' : 'text-[#777682]'}`}>
+                                            <span className={`font-mono text-[11px] font-bold ${event.isLive ? 'text-[#EAB308]' : 'text-[#777682]'}`}>
                                                 {event.isLive ? 'Live' : new Date(event.createdAt).toLocaleString()}
                                             </span>
                                         </div>
 
                                         {event.coinReward && (
-                                            <div className="bg-[#e6fbfc] text-[#006e73] px-3 py-1 rounded-full flex items-center gap-1 w-fit mb-3 border border-[#6bf6ff]/50 shadow-sm">
+                                            <div className="bg-[#FEF9C3] text-[#006e73] px-3 py-1 rounded-full flex items-center gap-1 w-fit mb-3 border border-[#6bf6ff]/50 shadow-sm">
                                                 <span className="material-symbols-outlined text-[14px]">toll</span>
                                                 <span className="text-[12px] font-bold">{event.coinReward}</span>
                                             </div>
@@ -125,7 +125,7 @@ export default function UserTimeline() {
                                         <p className="text-[15px] text-[#464651] leading-relaxed mb-1">{event.description}</p>
 
                                         {event.hasLink && event.link && (
-                                            <button onClick={() => navigate(event.link)} className="text-[#222777] font-bold text-[13px] hover:underline flex items-center gap-1 mt-3">
+                                            <button onClick={() => navigate(event.link)} className="text-[#075e51] font-bold text-[13px] hover:underline flex items-center gap-1 mt-3">
                                                 <span>{event.type === 'Seminars' ? 'View Session' : 'View Report'}</span>
                                                 <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                                             </button>
@@ -151,10 +151,10 @@ export default function UserTimeline() {
                     <div className="bg-white rounded-xl p-4 sm:p-5 shadow-card border border-[#e0e2eb]">
                         <div className="flex items-center justify-between mb-3 sm:mb-4">
                             <h3 className="text-[16px] sm:text-[18px] font-bold text-[#181c22]">Activity Streak</h3>
-                            <span className="material-symbols-outlined text-[#00c2cb] text-[20px] sm:text-[24px]">local_fire_department</span>
+                            <span className="material-symbols-outlined text-[#EAB308] text-[20px] sm:text-[24px]">local_fire_department</span>
                         </div>
                         <div className="flex items-baseline gap-2 mb-1 sm:mb-2">
-                            <span className="text-[32px] sm:text-[40px] font-bold text-[#222777] tracking-tighter leading-none">{stats.streak}</span>
+                            <span className="text-[32px] sm:text-[40px] font-bold text-[#075e51] tracking-tighter leading-none">{stats.streak}</span>
                             <span className="font-mono text-[11px] sm:text-[12px] font-bold text-[#777682] uppercase tracking-wider">Days</span>
                         </div>
                         <p className="font-mono text-[10px] sm:text-[11px] text-[#464651] mb-4 sm:mb-5 leading-relaxed font-bold">Keep recording or synthesizing to maintain your streak!</p>
@@ -163,13 +163,13 @@ export default function UserTimeline() {
                         <div className="flex justify-between items-center px-1">
                             {stats.weekActivity.map((day, i) => (
                                 <div key={day.date || i} className={`flex flex-col items-center gap-1 ${!day.active && !day.isToday ? 'opacity-30' : ''}`}>
-                                    <span className={`font-mono text-[9px] sm:text-[10px] font-bold ${day.isToday ? 'text-[#222777]' : 'text-[#777682]'}`}>{day.label}</span>
+                                    <span className={`font-mono text-[9px] sm:text-[10px] font-bold ${day.isToday ? 'text-[#075e51]' : 'text-[#777682]'}`}>{day.label}</span>
                                     {day.isToday ? (
-                                        <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-[#00c2cb] flex items-center justify-center pulse-ring ${day.active ? 'bg-[#00c2cb]/10' : ''}`}>
-                                            <span className="material-symbols-outlined text-[10px] sm:text-[12px] text-[#00c2cb]">{day.active ? 'check' : 'mic'}</span>
+                                        <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-[#EAB308] flex items-center justify-center pulse-ring ${day.active ? 'bg-[#EAB308]/10' : ''}`}>
+                                            <span className="material-symbols-outlined text-[10px] sm:text-[12px] text-[#EAB308]">{day.active ? 'check' : 'mic'}</span>
                                         </div>
                                     ) : (
-                                        <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center ${day.active ? 'bg-[#3a3f8f]' : 'bg-[#ebeef6]'}`}>
+                                        <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center ${day.active ? 'bg-[#097969]' : 'bg-[#ebeef6]'}`}>
                                             {day.active && <span className="material-symbols-outlined text-[10px] sm:text-[12px] text-white">check</span>}
                                         </div>
                                     )}
@@ -184,15 +184,15 @@ export default function UserTimeline() {
                         <div className="space-y-3 sm:space-y-4">
                             <div className="flex justify-between items-center border-b border-[#e0e2eb] pb-2.5 sm:pb-3">
                                 <span className="font-mono text-[11px] sm:text-[12px] font-bold text-[#777682]">Hours Recorded</span>
-                                <span className="font-mono text-[13px] sm:text-[14px] font-bold text-[#222777]">{stats.hoursRecorded}h</span>
+                                <span className="font-mono text-[13px] sm:text-[14px] font-bold text-[#075e51]">{stats.hoursRecorded}h</span>
                             </div>
                             <div className="flex justify-between items-center border-b border-[#e0e2eb] pb-2.5 sm:pb-3">
                                 <span className="font-mono text-[11px] sm:text-[12px] font-bold text-[#777682]">Reports Gen.</span>
-                                <span className="font-mono text-[13px] sm:text-[14px] font-bold text-[#222777]">{stats.reportsGenerated}</span>
+                                <span className="font-mono text-[13px] sm:text-[14px] font-bold text-[#075e51]">{stats.reportsGenerated}</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="font-mono text-[11px] sm:text-[12px] font-bold text-[#777682]">Coins Earned</span>
-                                <span className="font-mono text-[13px] sm:text-[14px] font-bold text-[#006e73] bg-[#e6fbfc] px-2 py-0.5 rounded border border-[#6bf6ff]/50">+{stats.weekEarned}</span>
+                                <span className="font-mono text-[13px] sm:text-[14px] font-bold text-[#006e73] bg-[#FEF9C3] px-2 py-0.5 rounded border border-[#6bf6ff]/50">+{stats.weekEarned}</span>
                             </div>
                         </div>
                     </div>

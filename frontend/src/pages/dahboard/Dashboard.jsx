@@ -54,7 +54,7 @@ export default function Dashboard() {
                         transcriptId: rec.transcriptId,
                         text: `Recording "${rec.title}" saved.`,
                         time: new Date(rec.createdAt).toLocaleString(),
-                        color: index === 0 ? 'bg-[#6bf6ff]' : 'bg-[#222777]',
+                        color: index === 0 ? 'bg-[#6bf6ff]' : 'bg-[#075e51]',
                         pulse: index === 0
                     }));
                     setTimelineActivity(activity);
@@ -84,7 +84,7 @@ export default function Dashboard() {
     const chartAreaPath = chartPoints.length > 0 ? `${chartLinePath} L100,100 L0,100 Z` : '';
 
     return (
-        <div className="h-[calc(100vh-64px)] overflow-y-auto bg-[#f9f9ff] w-full relative">
+        <div className="h-[calc(100vh-64px)] overflow-y-auto bg-[#F4F9F8] w-full relative">
             <style>{`
                 .shadow-card { box-shadow: 0 1px 4px rgba(58,63,143,0.08), 0 4px 16px rgba(58,63,143,0.06); }
                 .pulse-ring { animation: pulse 1.8s infinite; box-shadow: 0 0 0 0 rgba(0, 194, 203, 0.7); }
@@ -99,17 +99,17 @@ export default function Dashboard() {
                 {/* Welcome Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end">
                     <div>
-                        <h2 className="text-[32px] text-[#222777] font-bold mb-1 tracking-tight">{greeting}, {firstName}</h2>
+                        <h2 className="text-[32px] text-[#075e51] font-bold mb-1 tracking-tight">{greeting}, {firstName}</h2>
                         <p className="font-mono text-[12px] text-[#777682] uppercase tracking-wider">{currentDate}</p>
                     </div>
                     <div className="mt-4 md:mt-0 flex gap-3">
-                        <button onClick={() => navigate('/app/research')} className="bg-[#222777] text-white font-bold text-[12px] px-4 py-2 rounded-md hover:bg-[#222777]/90 transition-colors flex items-center gap-2 shadow-sm">
+                        <button onClick={() => navigate('/app/research')} className="bg-[#075e51] text-white font-bold text-[12px] px-4 py-2 rounded-md hover:bg-[#075e51]/90 transition-colors flex items-center gap-2 shadow-sm">
                             <span className="material-symbols-outlined text-[18px]">mic</span> New Session
                         </button>
-                        <button onClick={() => navigate('/app/research')} className="border border-[#6bf6ff] text-[#006e73] bg-[#e6fbfc] font-bold text-[12px] px-4 py-2 rounded-md hover:bg-[#6bf6ff]/20 transition-colors flex items-center gap-2">
+                        <button onClick={() => navigate('/app/research')} className="border border-[#6bf6ff] text-[#006e73] bg-[#FEF9C3] font-bold text-[12px] px-4 py-2 rounded-md hover:bg-[#6bf6ff]/20 transition-colors flex items-center gap-2">
                             <span className="material-symbols-outlined text-[18px]">search</span> New Research
                         </button>
-                        <button onClick={() => navigate('/app/reports')} className="text-[#222777] font-bold text-[12px] px-4 py-2 rounded-md hover:bg-[#e0e2eb] transition-colors flex items-center gap-2 border border-transparent">
+                        <button onClick={() => navigate('/app/reports')} className="text-[#075e51] font-bold text-[12px] px-4 py-2 rounded-md hover:bg-[#e0e2eb] transition-colors flex items-center gap-2 border border-transparent">
                             <span className="material-symbols-outlined text-[18px]">description</span> View Reports
                         </button>
                     </div>
@@ -117,31 +117,31 @@ export default function Dashboard() {
 
                 {/* 4 KPI Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="bg-white shadow-card rounded-lg p-5 border-l-[8px] border-[#222777] flex flex-col justify-between h-[120px]">
+                    <div className="bg-white shadow-card rounded-lg p-5 border-l-[8px] border-[#075e51] flex flex-col justify-between h-[120px]">
                         <p className="font-mono text-[14px] font-bold text-[#464651] uppercase tracking-wider">Total Recordings</p>
                         <div className="flex items-end justify-between">
-                            <p className="text-[32px] font-bold text-[#222777] leading-none">{stats.recordings}</p>
+                            <p className="text-[32px] font-bold text-[#075e51] leading-none">{stats.recordings}</p>
                             <span className="material-symbols-outlined text-[#c7c5d3] text-[24px]">mic</span>
                         </div>
                     </div>
-                    <div className="bg-white shadow-card rounded-lg p-5 border-l-[8px] border-[#222777] flex flex-col justify-between h-[120px]">
+                    <div className="bg-white shadow-card rounded-lg p-5 border-l-[8px] border-[#075e51] flex flex-col justify-between h-[120px]">
                         <p className="font-mono text-[14px] font-bold text-[#464651] uppercase tracking-wider">Reports Generated</p>
                         <div className="flex items-end justify-between">
-                            <p className="text-[32px] font-bold text-[#222777] leading-none">{stats.reports}</p>
+                            <p className="text-[32px] font-bold text-[#075e51] leading-none">{stats.reports}</p>
                             <span className="material-symbols-outlined text-[#c7c5d3] text-[24px]">description</span>
                         </div>
                     </div>
-                    <div className="bg-white shadow-card rounded-lg p-5 border-l-[8px] border-[#222777] flex flex-col justify-between h-[120px]">
+                    <div className="bg-white shadow-card rounded-lg p-5 border-l-[8px] border-[#075e51] flex flex-col justify-between h-[120px]">
                         <p className="font-mono text-[14px] font-bold text-[#464651] uppercase tracking-wider">Searches Run</p>
                         <div className="flex items-end justify-between">
-                            <p className="text-[32px] font-bold text-[#222777] leading-none">{stats.searchesRun}</p>
+                            <p className="text-[32px] font-bold text-[#075e51] leading-none">{stats.searchesRun}</p>
                             <span className="material-symbols-outlined text-[#c7c5d3] text-[24px]">search</span>
                         </div>
                     </div>
-                    <div className="bg-white shadow-card rounded-lg p-5 border-l-[8px] border-[#222777] flex flex-col justify-between h-[120px]">
+                    <div className="bg-white shadow-card rounded-lg p-5 border-l-[8px] border-[#075e51] flex flex-col justify-between h-[120px]">
                         <p className="font-mono text-[14px] font-bold text-[#464651] uppercase tracking-wider">Storage Used</p>
                         <div className="flex items-end justify-between">
-                            <p className="text-[32px] font-bold text-[#222777] leading-none">45%</p>
+                            <p className="text-[32px] font-bold text-[#075e51] leading-none">45%</p>
                             <span className="material-symbols-outlined text-[#c7c5d3] text-[24px]">cloud</span>
                         </div>
                     </div>
@@ -157,7 +157,7 @@ export default function Dashboard() {
                                 <div
                                     key={item.id}
                                     onClick={() => navigate(`/app/research?recordingId=${item.recordingId}${item.transcriptId ? `&transcriptId=${item.transcriptId}` : ''}`)}
-                                    className="flex items-start gap-3 cursor-pointer hover:bg-[#f9f9ff] rounded-md -mx-2 px-2 py-1 transition-colors"
+                                    className="flex items-start gap-3 cursor-pointer hover:bg-[#F4F9F8] rounded-md -mx-2 px-2 py-1 transition-colors"
                                 >
                                     <div className={`w-2.5 h-2.5 mt-1.5 rounded-full shrink-0 ${item.color} ${item.pulse ? 'pulse-ring' : ''}`}></div>
                                     <div>
@@ -174,7 +174,7 @@ export default function Dashboard() {
                         <div className="bg-white shadow-card rounded-lg p-8 border border-[#e0e2eb] h-[390px] flex flex-col">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-[20px] font-bold text-[#181c22]">Recording Activity (7 Days)</h3>
-                                <button onClick={() => navigate('/app/research')} className="text-[#777682] hover:text-[#222777] transition-colors" title="Start a new recording">
+                                <button onClick={() => navigate('/app/research')} className="text-[#777682] hover:text-[#075e51] transition-colors" title="Start a new recording">
                                     <span className="material-symbols-outlined">add_circle</span>
                                 </button>
                             </div>
@@ -190,14 +190,14 @@ export default function Dashboard() {
                                         <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
                                             <defs>
                                                 <linearGradient id="chartGradient" x1="0%" x2="0%" y1="0%" y2="100%">
-                                                    <stop offset="0%" stopColor="#3a3f8f" stopOpacity="0.2"></stop>
-                                                    <stop offset="100%" stopColor="#3a3f8f" stopOpacity="0"></stop>
+                                                    <stop offset="0%" stopColor="#097969" stopOpacity="0.2"></stop>
+                                                    <stop offset="100%" stopColor="#097969" stopOpacity="0"></stop>
                                                 </linearGradient>
                                             </defs>
                                             <path d={chartAreaPath} fill="url(#chartGradient)"></path>
-                                            <path d={chartLinePath} fill="none" stroke="#3a3f8f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"></path>
+                                            <path d={chartLinePath} fill="none" stroke="#097969" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"></path>
                                             {chartPoints.map((p) => (
-                                                <circle key={p.date} cx={p.x} cy={p.y} r="1.5" fill="#00c2cb" stroke="#ffffff" strokeWidth="0.5">
+                                                <circle key={p.date} cx={p.x} cy={p.y} r="1.5" fill="#EAB308" stroke="#ffffff" strokeWidth="0.5">
                                                     <title>{p.label} ({p.date}): {p.count} recording{p.count === 1 ? '' : 's'}</title>
                                                 </circle>
                                             ))}
@@ -208,7 +208,7 @@ export default function Dashboard() {
                                 <div className="flex-1 flex flex-col items-center justify-center text-center gap-2">
                                     <span className="material-symbols-outlined text-[#c7c5d3] text-[40px]">mic_off</span>
                                     <p className="text-[13px] font-bold text-[#777682]">No recordings in the last 7 days.</p>
-                                    <button onClick={() => navigate('/app/research')} className="text-[#222777] text-[13px] font-bold hover:text-[#00c2cb] transition-colors">
+                                    <button onClick={() => navigate('/app/research')} className="text-[#075e51] text-[13px] font-bold hover:text-[#EAB308] transition-colors">
                                         Start your first recording
                                     </button>
                                 </div>
@@ -224,7 +224,7 @@ export default function Dashboard() {
                                 <p className="font-mono text-[14px] font-bold text-[#777682]">45GB / 100GB</p>
                             </div>
                             <div className="w-full bg-[#e6e8f1] rounded-full h-3 mb-2 overflow-hidden">
-                                <div className="bg-gradient-to-r from-[#222777] to-[#6bf6ff] h-3 rounded-full" style={{ width: '45%' }}></div>
+                                <div className="bg-gradient-to-r from-[#075e51] to-[#6bf6ff] h-3 rounded-full" style={{ width: '45%' }}></div>
                             </div>
                             <p className="font-mono text-[12px] font-bold text-[#464651] text-right">45% Used. Upgrade for more capacity.</p>
                         </div>

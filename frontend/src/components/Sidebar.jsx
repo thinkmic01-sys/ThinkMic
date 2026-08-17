@@ -34,7 +34,7 @@ const NavLink = ({ to, icon, label }) => {
             to={to}
             className={`w-full flex items-center gap-4 px-6 py-3.5 text-left transition-all duration-200
                 ${isActive
-                ? 'bg-[#3a3f8f] border-l-[4px] border-[#6bf6ff] text-[#6bf6ff] shadow-sm'
+                ? 'bg-[#097969] border-l-[4px] border-[#6bf6ff] text-[#6bf6ff] shadow-sm'
                 : 'text-[#c7c5d3] border-l-[4px] border-transparent hover:bg-white/5 hover:text-white'
             }`}
         >
@@ -58,12 +58,12 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     const [isMicModalOpen, setIsMicModalOpen] = useState(false);
 
     return (
-        <aside className={`w-[280px] h-screen bg-[#222777] flex flex-col fixed left-0 top-0 text-white z-50 border-r border-[#181c22]/20 transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
+        <aside className={`w-[280px] h-screen bg-[#075e51] flex flex-col fixed left-0 top-0 text-white z-50 border-r border-[#181c22]/20 transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
 
             {/* Brand Area */}
             <div className="h-[88px] flex items-center justify-between px-6 mb-2 shrink-0">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#6bf6ff] rounded-full flex items-center justify-center text-[#222777] font-bold shadow-[0_0_15px_rgba(107,246,255,0.3)]">
+                    <div className="w-10 h-10 bg-[#6bf6ff] rounded-full flex items-center justify-center text-[#075e51] font-bold shadow-[0_0_15px_rgba(107,246,255,0.3)]">
                         <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>mic</span>
                     </div>
                     <div>

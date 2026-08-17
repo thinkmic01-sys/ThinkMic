@@ -85,7 +85,7 @@ export default function PromptSettings() {
     return (
         <div className="w-full p-4 sm:p-6 md:p-8 flex flex-col pb-20 min-h-full">
             <div className="mb-5 sm:mb-6">
-                <h2 className="text-2xl sm:text-3xl font-bold text-[#222777] mb-1 tracking-tight">AI Prompts</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-[#075e51] mb-1 tracking-tight">AI Prompts</h2>
                 <p className="text-[#777682] text-sm sm:text-base max-w-2xl">
                     Control what the AI is instructed to focus on when generating a summary, extracting research queries, and writing a report. Changes apply to every future generation immediately.
                 </p>
@@ -104,7 +104,7 @@ export default function PromptSettings() {
                                 </div>
                                 <button
                                     onClick={() => handleResetToDefault(field.key)}
-                                    className="shrink-0 text-[12px] font-bold text-[#777682] hover:text-[#222777] transition-colors flex items-center gap-1"
+                                    className="shrink-0 text-[12px] font-bold text-[#777682] hover:text-[#075e51] transition-colors flex items-center gap-1"
                                     title="Reset to default"
                                 >
                                     <span className="material-symbols-outlined text-[15px]">restart_alt</span>
@@ -115,7 +115,7 @@ export default function PromptSettings() {
                                 value={values[field.key] || ''}
                                 onChange={(e) => handleChange(field.key, e.target.value)}
                                 rows={4}
-                                className="w-full border border-[#c7c5d3] rounded-md py-2.5 px-3 text-[13px] leading-relaxed outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777] resize-y"
+                                className="w-full border border-[#c7c5d3] rounded-md py-2.5 px-3 text-[13px] leading-relaxed outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] resize-y"
                             />
                         </div>
                     ))}
@@ -124,7 +124,7 @@ export default function PromptSettings() {
                         <button
                             onClick={handleSave}
                             disabled={isSaving}
-                            className="bg-[#222777] text-white text-[13px] font-bold px-6 py-2.5 rounded-md hover:bg-[#3a3f8f] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                            className="bg-[#075e51] text-white text-[13px] font-bold px-6 py-2.5 rounded-md hover:bg-[#097969] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
                         >
                             <span className="material-symbols-outlined text-[18px]">save</span>
                             {isSaving ? 'Saving...' : 'Save Changes'}
@@ -134,7 +134,7 @@ export default function PromptSettings() {
             )}
 
             {toast.show && (
-                <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-[13px] font-bold ${toast.type === 'error' ? 'bg-[#ba1a1a]' : 'bg-[#222777]'}`}>
+                <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-[13px] font-bold ${toast.type === 'error' ? 'bg-[#ba1a1a]' : 'bg-[#075e51]'}`}>
                     {toast.message}
                 </div>
             )}

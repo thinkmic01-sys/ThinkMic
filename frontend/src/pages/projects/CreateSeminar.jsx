@@ -11,11 +11,11 @@ const customMarkerIcon = L.divIcon({
     className: 'bg-transparent border-none',
     html: `
         <div class="flex flex-col items-center" style="transform: translate(-50%, -100%); margin-top: 8px;">
-            <div class="w-5 h-5 bg-[#00c2cb] rounded-full border-2 border-white shadow-md flex items-center justify-center relative">
+            <div class="w-5 h-5 bg-[#EAB308] rounded-full border-2 border-white shadow-md flex items-center justify-center relative">
                 <div class="w-1.5 h-1.5 bg-white rounded-full"></div>
-                <div class="absolute inset-0 rounded-full border-2 border-[#00c2cb] animate-ping opacity-50"></div>
+                <div class="absolute inset-0 rounded-full border-2 border-[#EAB308] animate-ping opacity-50"></div>
             </div>
-            <div class="w-1 h-3 bg-gradient-to-b from-[#00c2cb] to-transparent mt-0.5"></div>
+            <div class="w-1 h-3 bg-gradient-to-b from-[#EAB308] to-transparent mt-0.5"></div>
         </div>
     `,
     iconSize: [0, 0]
@@ -78,11 +78,11 @@ function LocationMapPicker({ locationString, setLocationString }) {
     }, [isExpanded]);
 
     return (
-        <div className={`w-full rounded-xl border border-[#c7c5d3] overflow-hidden mt-3 relative z-0 transition-all duration-300 ease-in-out bg-[#e0e2eb] ${isExpanded ? 'h-[65vh] shadow-[0_8px_30px_rgba(34,39,119,0.15)] ring-2 ring-[#00c2cb]/50' : 'h-64 hover:shadow-md'}`}>
+        <div className={`w-full rounded-xl border border-[#c7c5d3] overflow-hidden mt-3 relative z-0 transition-all duration-300 ease-in-out bg-[#e0e2eb] ${isExpanded ? 'h-[65vh] shadow-[0_8px_30px_rgba(34,39,119,0.15)] ring-2 ring-[#EAB308]/50' : 'h-64 hover:shadow-md'}`}>
             
             {/* Top Toolbar overlay - moved below map zoom controls by shifting right and styled better */}
             <div className="absolute top-3 left-3 right-3 z-[1000] flex gap-2 sm:gap-3 items-center pointer-events-none">
-                <form onSubmit={handleSearch} className="flex-1 flex shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg overflow-hidden bg-white/95 backdrop-blur pointer-events-auto border border-[#c7c5d3]/50 transition-all focus-within:ring-2 focus-within:ring-[#00c2cb]/50">
+                <form onSubmit={handleSearch} className="flex-1 flex shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg overflow-hidden bg-white/95 backdrop-blur pointer-events-auto border border-[#c7c5d3]/50 transition-all focus-within:ring-2 focus-within:ring-[#EAB308]/50">
                     <span className="material-symbols-outlined text-[#777682] text-[18px] pl-3 py-2">search</span>
                     <input 
                         type="text" 
@@ -91,7 +91,7 @@ function LocationMapPicker({ locationString, setLocationString }) {
                         placeholder="Search for a city, landmark, or address..."
                         className="flex-1 px-2 py-2 text-[13px] outline-none bg-transparent font-medium text-[#181c22] placeholder:text-[#777682]"
                     />
-                    <button type="submit" disabled={isSearching} className="bg-transparent px-3 text-[#222777] border-l border-[#e0e2eb]/50 hover:bg-[#f1f3fc] transition-colors flex items-center justify-center">
+                    <button type="submit" disabled={isSearching} className="bg-transparent px-3 text-[#075e51] border-l border-[#e0e2eb]/50 hover:bg-[#f1f3fc] transition-colors flex items-center justify-center">
                         <span className="material-symbols-outlined text-[18px]">{isSearching ? 'hourglass_empty' : 'arrow_forward'}</span>
                     </button>
                 </form>
@@ -99,7 +99,7 @@ function LocationMapPicker({ locationString, setLocationString }) {
                 <button 
                     type="button"
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="bg-white/95 backdrop-blur shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg w-9 h-9 sm:w-10 sm:h-10 text-[#222777] border border-[#c7c5d3]/50 hover:bg-[#f1f3fc] transition-colors flex items-center justify-center pointer-events-auto shrink-0"
+                    className="bg-white/95 backdrop-blur shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg w-9 h-9 sm:w-10 sm:h-10 text-[#075e51] border border-[#c7c5d3]/50 hover:bg-[#f1f3fc] transition-colors flex items-center justify-center pointer-events-auto shrink-0"
                     title={isExpanded ? "Collapse Map" : "Expand Map"}
                 >
                     <span className="material-symbols-outlined text-[20px]">{isExpanded ? 'fullscreen_exit' : 'fullscreen'}</span>
@@ -243,16 +243,16 @@ export default function CreateSeminar() {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-64px)] bg-[#f9f9ff] overflow-y-auto font-sans">
+        <div className="w-full h-[calc(100vh-64px)] bg-[#F4F9F8] overflow-y-auto font-sans">
             <div className="w-full p-4 sm:p-6 lg:p-8 flex flex-col gap-6 pb-20">
 
                 {/* Page Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[#e0e2eb] pb-6 gap-4">
                     <div className="w-full md:w-auto">
-                        <button onClick={() => navigate('/app/courses')} className="text-[#777682] hover:text-[#222777] flex items-center gap-1 text-[12px] sm:text-[13px] font-bold mb-3 transition-colors w-fit">
+                        <button onClick={() => navigate('/app/courses')} className="text-[#777682] hover:text-[#075e51] flex items-center gap-1 text-[12px] sm:text-[13px] font-bold mb-3 transition-colors w-fit">
                             <span className="material-symbols-outlined text-[16px] sm:text-[18px]">arrow_back</span> <span className="hidden sm:inline">Back to</span> Seminar Library
                         </button>
-                        <h1 className="text-[28px] sm:text-[32px] font-bold text-[#222777] tracking-tight mb-1 sm:mb-2">Create a Seminar</h1>
+                        <h1 className="text-[28px] sm:text-[32px] font-bold text-[#075e51] tracking-tight mb-1 sm:mb-2">Create a Seminar</h1>
                         <p className="text-[14px] sm:text-[15px] text-[#464651]">Schedule a new academic session or lecture for the community.</p>
                     </div>
 
@@ -274,7 +274,7 @@ export default function CreateSeminar() {
                         </div>
                         <button
                             onClick={() => handleSchedule('scheduled')}
-                            className="w-full md:w-auto px-5 sm:px-6 py-2 sm:py-2.5 bg-[#222777] rounded-md font-bold text-[13px] text-white hover:bg-[#3a3f8f] transition-colors flex items-center justify-center gap-2 shadow-sm"
+                            className="w-full md:w-auto px-5 sm:px-6 py-2 sm:py-2.5 bg-[#075e51] rounded-md font-bold text-[13px] text-white hover:bg-[#097969] transition-colors flex items-center justify-center gap-2 shadow-sm"
                         >
                             <span className="material-symbols-outlined text-[18px]">event</span> Schedule Seminar
                         </button>
@@ -290,8 +290,8 @@ export default function CreateSeminar() {
                         {/* Step 1: Basic Information */}
                         <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-5 sm:p-6 md:p-8">
                             <div className="flex items-center gap-3 mb-5 sm:mb-6">
-                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#eef0f9] text-[#222777] font-bold flex items-center justify-center text-[13px] sm:text-[14px] shrink-0">1</div>
-                                <h2 className="text-[18px] sm:text-[20px] font-bold text-[#222777]">Basic Information</h2>
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#eef0f9] text-[#075e51] font-bold flex items-center justify-center text-[13px] sm:text-[14px] shrink-0">1</div>
+                                <h2 className="text-[18px] sm:text-[20px] font-bold text-[#075e51]">Basic Information</h2>
                             </div>
 
                             <div className="space-y-4 sm:space-y-5 border-t border-[#e0e2eb] pt-5 sm:pt-6">
@@ -304,7 +304,7 @@ export default function CreateSeminar() {
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
                                         placeholder="e.g., Advanced Neural Architecture Search"
-                                        className="w-full border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none transition-shadow"
+                                        className="w-full border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none transition-shadow"
                                     />
                                 </div>
                                 <div>
@@ -315,7 +315,7 @@ export default function CreateSeminar() {
                                         value={abstract}
                                         onChange={(e) => setAbstract(e.target.value)}
                                         placeholder="Briefly describe the key topics..."
-                                        className="w-full h-24 sm:h-32 border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none resize-none transition-shadow"
+                                        className="w-full h-24 sm:h-32 border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none resize-none transition-shadow"
                                     />
                                 </div>
                                 <div className="flex flex-col sm:flex-row gap-4 sm:gap-5">
@@ -326,7 +326,7 @@ export default function CreateSeminar() {
                                                 value={category}
                                                 onChange={(e) => setCategory(e.target.value)}
                                                 disabled={categoryOptions.length === 0}
-                                                className="w-full appearance-none border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 pr-10 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                                className="w-full appearance-none border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 pr-10 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
                                                 {categoryOptions.length === 0 ? (
                                                     <option value="">No keywords available yet</option>
@@ -344,7 +344,7 @@ export default function CreateSeminar() {
                                             value={tags}
                                             onChange={(e) => setTags(e.target.value)}
                                             placeholder="Add tags separated by commas"
-                                            className="w-full border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none"
+                                            className="w-full border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none"
                                         />
                                     </div>
                                 </div>
@@ -371,7 +371,7 @@ export default function CreateSeminar() {
                                                 value={imageUrl}
                                                 onChange={(e) => setImageUrl(e.target.value)}
                                                 placeholder="Paste image URL here..."
-                                                className="flex-1 border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none transition-shadow"
+                                                className="flex-1 border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none transition-shadow"
                                             />
                                             <input 
                                                 type="file" 
@@ -384,7 +384,7 @@ export default function CreateSeminar() {
                                                 type="button"
                                                 onClick={() => imageInputRef.current.click()}
                                                 disabled={isUploading}
-                                                className="bg-[#f1f3fc] text-[#222777] border border-[#c7c5d3] px-4 rounded-md font-bold text-[13px] hover:bg-[#e0e2eb] transition-colors flex items-center justify-center gap-1 shadow-sm shrink-0 whitespace-nowrap"
+                                                className="bg-[#f1f3fc] text-[#075e51] border border-[#c7c5d3] px-4 rounded-md font-bold text-[13px] hover:bg-[#e0e2eb] transition-colors flex items-center justify-center gap-1 shadow-sm shrink-0 whitespace-nowrap"
                                             >
                                                 <span className="material-symbols-outlined text-[18px]">
                                                     {isUploading ? 'hourglass_empty' : 'upload'}
@@ -417,7 +417,7 @@ export default function CreateSeminar() {
                                                 value={hostName}
                                                 onChange={(e) => setHostName(e.target.value)}
                                                 placeholder="e.g. Dr. Jane Doe"
-                                                className="w-full border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none transition-shadow"
+                                                className="w-full border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none transition-shadow"
                                             />
                                             <input 
                                                 type="file" 
@@ -430,7 +430,7 @@ export default function CreateSeminar() {
                                                 type="button"
                                                 onClick={() => hostImageInputRef.current.click()}
                                                 disabled={isUploadingHost}
-                                                className="bg-[#f1f3fc] text-[#222777] border border-[#c7c5d3] px-3 rounded-md font-bold text-[13px] hover:bg-[#e0e2eb] transition-colors flex items-center justify-center shadow-sm shrink-0 whitespace-nowrap"
+                                                className="bg-[#f1f3fc] text-[#075e51] border border-[#c7c5d3] px-3 rounded-md font-bold text-[13px] hover:bg-[#e0e2eb] transition-colors flex items-center justify-center shadow-sm shrink-0 whitespace-nowrap"
                                                 title="Upload Host Picture"
                                             >
                                                 <span className="material-symbols-outlined text-[18px]">
@@ -449,7 +449,7 @@ export default function CreateSeminar() {
                                         value={locationInput}
                                         onChange={(e) => setLocationInput(e.target.value)}
                                         placeholder={format === 'In-Person' ? 'Click map to drop pin or type address' : 'https://zoom.us/j/123456789 or click map for general location'}
-                                        className="w-full border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none transition-shadow"
+                                        className="w-full border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none transition-shadow"
                                     />
                                     <LocationMapPicker locationString={locationInput} setLocationString={setLocationInput} />
                                 </div>
@@ -459,8 +459,8 @@ export default function CreateSeminar() {
                         {/* Step 2: Scheduling */}
                         <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-5 sm:p-6 md:p-8">
                             <div className="flex items-center gap-3 mb-5 sm:mb-6">
-                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#eef0f9] text-[#222777] font-bold flex items-center justify-center text-[13px] sm:text-[14px] shrink-0">2</div>
-                                <h2 className="text-[18px] sm:text-[20px] font-bold text-[#222777]">Scheduling</h2>
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#eef0f9] text-[#075e51] font-bold flex items-center justify-center text-[13px] sm:text-[14px] shrink-0">2</div>
+                                <h2 className="text-[18px] sm:text-[20px] font-bold text-[#075e51]">Scheduling</h2>
                             </div>
 
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 border-t border-[#e0e2eb] pt-5 sm:pt-6">
@@ -472,7 +472,7 @@ export default function CreateSeminar() {
                                             type="date"
                                             value={date}
                                             onChange={(e) => setDate(e.target.value)}
-                                            className="w-full border border-[#c7c5d3] rounded-md py-2.5 sm:py-3 pl-10 pr-3 text-[14px] sm:text-[15px] font-mono text-[#181c22] bg-white focus:border-[#222777] outline-none"
+                                            className="w-full border border-[#c7c5d3] rounded-md py-2.5 sm:py-3 pl-10 pr-3 text-[14px] sm:text-[15px] font-mono text-[#181c22] bg-white focus:border-[#075e51] outline-none"
                                         />
                                     </div>
                                 </div>
@@ -484,7 +484,7 @@ export default function CreateSeminar() {
                                             type="time"
                                             value={startTime}
                                             onChange={(e) => setStartTime(e.target.value)}
-                                            className="w-full border border-[#c7c5d3] rounded-md py-2.5 sm:py-3 pl-10 pr-2 sm:pr-3 text-[14px] sm:text-[15px] font-mono text-[#181c22] bg-white focus:border-[#222777] outline-none"
+                                            className="w-full border border-[#c7c5d3] rounded-md py-2.5 sm:py-3 pl-10 pr-2 sm:pr-3 text-[14px] sm:text-[15px] font-mono text-[#181c22] bg-white focus:border-[#075e51] outline-none"
                                         />
                                     </div>
                                 </div>
@@ -496,7 +496,7 @@ export default function CreateSeminar() {
                                             type="time"
                                             value={endTime}
                                             onChange={(e) => setEndTime(e.target.value)}
-                                            className="w-full border border-[#c7c5d3] rounded-md py-2.5 sm:py-3 pl-10 md:pl-3 md:p-3 text-[14px] sm:text-[15px] font-mono text-[#181c22] bg-white focus:border-[#222777] outline-none"
+                                            className="w-full border border-[#c7c5d3] rounded-md py-2.5 sm:py-3 pl-10 md:pl-3 md:p-3 text-[14px] sm:text-[15px] font-mono text-[#181c22] bg-white focus:border-[#075e51] outline-none"
                                         />
                                     </div>
                                 </div>
@@ -506,8 +506,8 @@ export default function CreateSeminar() {
                         {/* Step 3: Format & Location */}
                         <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-5 sm:p-6 md:p-8">
                             <div className="flex items-center gap-3 mb-5 sm:mb-6">
-                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#eef0f9] text-[#222777] font-bold flex items-center justify-center text-[13px] sm:text-[14px] shrink-0">3</div>
-                                <h2 className="text-[18px] sm:text-[20px] font-bold text-[#222777]">Format & Location</h2>
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#eef0f9] text-[#075e51] font-bold flex items-center justify-center text-[13px] sm:text-[14px] shrink-0">3</div>
+                                <h2 className="text-[18px] sm:text-[20px] font-bold text-[#075e51]">Format & Location</h2>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 border-t border-[#e0e2eb] pt-5 sm:pt-6">
@@ -517,11 +517,11 @@ export default function CreateSeminar() {
                                         onClick={() => setFormat(opt.id)}
                                         className={`border rounded-lg p-4 sm:p-5 flex sm:flex-col items-center sm:justify-center gap-3 cursor-pointer transition-all
                                             ${format === opt.id
-                                            ? 'border-2 border-[#00c2cb] bg-[#e6fbfc] text-[#006e73]'
-                                            : 'border-[#c7c5d3] bg-white text-[#777682] hover:border-[#222777] hover:text-[#222777]'
+                                            ? 'border-2 border-[#EAB308] bg-[#FEF9C3] text-[#006e73]'
+                                            : 'border-[#c7c5d3] bg-white text-[#777682] hover:border-[#075e51] hover:text-[#075e51]'
                                         }`}
                                     >
-                                        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0 ${format === opt.id ? 'bg-[#00c2cb]/20' : 'bg-[#f1f3fc]'}`}>
+                                        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0 ${format === opt.id ? 'bg-[#EAB308]/20' : 'bg-[#f1f3fc]'}`}>
                                             <span className="material-symbols-outlined text-[20px] sm:text-[24px]">{opt.icon}</span>
                                         </div>
                                         <span className={`text-[13px] font-bold ${format === opt.id ? 'text-[#006e73]' : 'text-[#181c22]'}`}>{opt.id}</span>
@@ -534,13 +534,13 @@ export default function CreateSeminar() {
                         <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-5 sm:p-6 md:p-8">
                             <div className="flex items-center justify-between mb-5 sm:mb-6">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#eef0f9] text-[#222777] font-bold flex items-center justify-center text-[13px] sm:text-[14px] shrink-0">4</div>
-                                    <h2 className="text-[18px] sm:text-[20px] font-bold text-[#222777]">Reward Campaign</h2>
+                                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#eef0f9] text-[#075e51] font-bold flex items-center justify-center text-[13px] sm:text-[14px] shrink-0">4</div>
+                                    <h2 className="text-[18px] sm:text-[20px] font-bold text-[#075e51]">Reward Campaign</h2>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={() => setRewardEnabled(v => !v)}
-                                    className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${rewardEnabled ? 'bg-[#00c2cb]' : 'bg-[#c7c5d3]'}`}
+                                    className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${rewardEnabled ? 'bg-[#EAB308]' : 'bg-[#c7c5d3]'}`}
                                 >
                                     <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${rewardEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
                                 </button>
@@ -556,7 +556,7 @@ export default function CreateSeminar() {
                                                 min="0"
                                                 value={rewardPerUser}
                                                 onChange={(e) => setRewardPerUser(e.target.value)}
-                                                className="w-full border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none transition-shadow"
+                                                className="w-full border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none transition-shadow"
                                             />
                                         </div>
                                         <div className="flex-1">
@@ -566,14 +566,14 @@ export default function CreateSeminar() {
                                                 min="0"
                                                 value={rewardMaxRecipients}
                                                 onChange={(e) => setRewardMaxRecipients(e.target.value)}
-                                                className="w-full border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none transition-shadow"
+                                                className="w-full border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none transition-shadow"
                                             />
                                         </div>
                                     </div>
                                     <div className={`flex items-center justify-between rounded-lg p-4 border ${totalRewardRequired > availableCoins ? 'bg-[#ffdad6] border-[#ffb4ab]' : 'bg-[#f1f3fc] border-[#e0e2eb]'}`}>
                                         <div>
                                             <p className="text-[11px] font-bold uppercase tracking-wider text-[#464651]">Total Coins Required</p>
-                                            <p className={`text-[20px] font-bold ${totalRewardRequired > availableCoins ? 'text-[#ba1a1a]' : 'text-[#222777]'}`}>{totalRewardRequired.toLocaleString()}</p>
+                                            <p className={`text-[20px] font-bold ${totalRewardRequired > availableCoins ? 'text-[#ba1a1a]' : 'text-[#075e51]'}`}>{totalRewardRequired.toLocaleString()}</p>
                                         </div>
                                         <div className="text-right">
                                             <p className="text-[11px] font-bold uppercase tracking-wider text-[#464651]">Your Available Coins</p>
@@ -601,7 +601,7 @@ export default function CreateSeminar() {
                                 {!imageUrl && <span className="material-symbols-outlined text-[48px] sm:text-[64px] text-white/10">biotech</span>}
 
                                 {format === 'Live Broadcast' && (
-                                    <div className="absolute top-3 right-3 bg-[#00696e] text-[#6bf6ff] text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded flex items-center gap-1 border border-[#00c2cb]">
+                                    <div className="absolute top-3 right-3 bg-[#00696e] text-[#6bf6ff] text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded flex items-center gap-1 border border-[#EAB308]">
                                         <span className="w-1.5 h-1.5 rounded-full bg-[#6bf6ff] animate-pulse"></span> LIVE
                                     </div>
                                 )}
@@ -610,7 +610,7 @@ export default function CreateSeminar() {
                             {/* Card Content Area */}
                             <div className="p-5 sm:p-6">
                                 <div className="flex justify-between items-start mb-3 sm:mb-4">
-                                    <span className="bg-[#f1f3fc] text-[#3a3f8f] font-mono text-[10px] sm:text-[11px] font-bold px-2 py-1 rounded line-clamp-1 max-w-[60%]">
+                                    <span className="bg-[#f1f3fc] text-[#097969] font-mono text-[10px] sm:text-[11px] font-bold px-2 py-1 rounded line-clamp-1 max-w-[60%]">
                                         {category || 'Uncategorized'}
                                     </span>
                                     <span className="flex items-center gap-1 text-[11px] sm:text-[12px] font-mono font-bold text-[#777682] shrink-0">
@@ -628,10 +628,10 @@ export default function CreateSeminar() {
 
                                 <div className="flex items-center justify-between border-t border-[#e0e2eb] pt-4">
                                     <div className="flex items-center gap-2">
-                                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#222777] text-white flex items-center justify-center text-[10px] font-bold shrink-0">{userInitials}</div>
+                                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#075e51] text-white flex items-center justify-center text-[10px] font-bold shrink-0">{userInitials}</div>
                                         <span className="text-[12px] sm:text-[13px] font-semibold text-[#464651] truncate">{userName}</span>
                                     </div>
-                                    <div className="bg-[#e6fbfc] text-[#006e73] px-2 py-1 rounded-full flex items-center gap-1 border border-[#6bf6ff]/50 shrink-0">
+                                    <div className="bg-[#FEF9C3] text-[#006e73] px-2 py-1 rounded-full flex items-center gap-1 border border-[#6bf6ff]/50 shrink-0">
                                         <span className="material-symbols-outlined text-[14px]">toll</span>
                                         <span className="text-[11px] sm:text-[12px] font-bold">+50</span>
                                     </div>
@@ -640,9 +640,9 @@ export default function CreateSeminar() {
                         </div>
 
                         {/* Pro Tip Box */}
-                        <div className="bg-[#f9f9ff] border-l-4 border-[#00c2cb] p-4 rounded-r-lg shadow-sm border-y border-r border-[#e0e2eb]">
+                        <div className="bg-[#F4F9F8] border-l-4 border-[#EAB308] p-4 rounded-r-lg shadow-sm border-y border-r border-[#e0e2eb]">
                             <div className="flex items-start gap-3">
-                                <span className="material-symbols-outlined text-[#00c2cb] shrink-0">lightbulb</span>
+                                <span className="material-symbols-outlined text-[#EAB308] shrink-0">lightbulb</span>
                                 <div>
                                     <h4 className="text-[13px] font-bold text-[#181c22] mb-1">Pro Tip</h4>
                                     <p className="text-[12px] text-[#777682] leading-relaxed">
@@ -658,7 +658,7 @@ export default function CreateSeminar() {
 
             {/* --- CUSTOM TOAST NOTIFICATION --- */}
             <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#e6fbfc] border-[#00c2cb] text-[#006e73]'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#006e73]'}`}>
                     <span className="material-symbols-outlined text-[20px]">
                         {toast.type === 'error' ? 'error' : 'check_circle'}
                     </span>

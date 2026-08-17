@@ -19,8 +19,8 @@ const formatDate = (d) => d ? new Date(d).toLocaleString(undefined, { dateStyle:
 
 const SectionCard = ({ title, count, children }) => (
     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] overflow-hidden mb-5">
-        <div className="px-4 sm:px-5 py-3 border-b border-[#e0e2eb] bg-[#f9f9ff] flex items-center justify-between">
-            <h3 className="font-bold text-[13px] sm:text-sm text-[#222777] tracking-wide">{title}</h3>
+        <div className="px-4 sm:px-5 py-3 border-b border-[#e0e2eb] bg-[#F4F9F8] flex items-center justify-between">
+            <h3 className="font-bold text-[13px] sm:text-sm text-[#075e51] tracking-wide">{title}</h3>
             {count !== undefined && <span className="text-[11px] font-mono text-[#777682]">{count}</span>}
         </div>
         <div className="divide-y divide-[#e0e2eb] max-h-[520px] overflow-y-auto custom-scrollbar">{children}</div>
@@ -34,7 +34,7 @@ const EmptyRow = ({ label }) => (
 const Pill = ({ children, tone = 'default' }) => {
     const tones = {
         default: 'bg-[#f1f3fc] text-[#464651] border-[#e0e2eb]',
-        good: 'bg-[#e6fbfc] text-[#006e73] border-[#6bf6ff]/50',
+        good: 'bg-[#FEF9C3] text-[#006e73] border-[#6bf6ff]/50',
         warn: 'bg-[#fff8e1] text-[#b45309] border-[#ffe082]',
         bad: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ffb4ab]'
     };
@@ -138,7 +138,7 @@ export default function AdminUserDetail() {
             <div className="w-full p-4 sm:p-6 md:p-8">
                 <Link
                     to="/app/admin/users"
-                    className="inline-flex items-center gap-1.5 text-[13px] font-bold text-[#777682] hover:text-[#222777] transition-colors mb-4"
+                    className="inline-flex items-center gap-1.5 text-[13px] font-bold text-[#777682] hover:text-[#075e51] transition-colors mb-4"
                 >
                     <span className="material-symbols-outlined text-[18px]">arrow_back</span>
                     Back to User Management
@@ -164,7 +164,7 @@ export default function AdminUserDetail() {
 
             <Link
                 to="/app/admin/users"
-                className="inline-flex items-center gap-1.5 text-[13px] font-bold text-[#777682] hover:text-[#222777] transition-colors mb-4"
+                className="inline-flex items-center gap-1.5 text-[13px] font-bold text-[#777682] hover:text-[#075e51] transition-colors mb-4"
             >
                 <span className="material-symbols-outlined text-[18px]">arrow_back</span>
                 Back to User Management
@@ -173,7 +173,7 @@ export default function AdminUserDetail() {
             {/* Profile Header */}
             <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-5 sm:p-6 mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
-                    <div className="w-14 h-14 rounded-full bg-[#222777] text-white flex items-center justify-center text-lg font-bold shrink-0">
+                    <div className="w-14 h-14 rounded-full bg-[#075e51] text-white flex items-center justify-center text-lg font-bold shrink-0">
                         {initials}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -189,14 +189,14 @@ export default function AdminUserDetail() {
                             <>
                                 <button
                                     onClick={() => setEditingRole(true)}
-                                    className="text-[12px] sm:text-[13px] font-bold text-[#222777] border border-[#e0e2eb] hover:bg-[#f1f3fc] transition-colors px-3 py-2 rounded-md flex items-center gap-1.5"
+                                    className="text-[12px] sm:text-[13px] font-bold text-[#075e51] border border-[#e0e2eb] hover:bg-[#f1f3fc] transition-colors px-3 py-2 rounded-md flex items-center gap-1.5"
                                 >
                                     <span className="material-symbols-outlined text-[16px]">edit</span> Change Role
                                 </button>
                                 {profile.status === 'inactive' ? (
                                     <button
                                         onClick={() => handleUpdateStatus('active')}
-                                        className="text-[12px] sm:text-[13px] font-bold text-[#006e73] border border-[#6bf6ff]/50 bg-[#e6fbfc] hover:bg-[#d0f6f8] transition-colors px-3 py-2 rounded-md flex items-center gap-1.5"
+                                        className="text-[12px] sm:text-[13px] font-bold text-[#006e73] border border-[#6bf6ff]/50 bg-[#FEF9C3] hover:bg-[#d0f6f8] transition-colors px-3 py-2 rounded-md flex items-center gap-1.5"
                                     >
                                         <span className="material-symbols-outlined text-[16px]">settings_backup_restore</span> Restore
                                     </button>
@@ -218,14 +218,14 @@ export default function AdminUserDetail() {
                         <select
                             value={roleValue}
                             onChange={(e) => setRoleValue(e.target.value)}
-                            className="border border-[#c7c5d3] rounded-md py-2 px-3 text-[13px] font-semibold text-[#464651] outline-none focus:border-[#222777]"
+                            className="border border-[#c7c5d3] rounded-md py-2 px-3 text-[13px] font-semibold text-[#464651] outline-none focus:border-[#075e51]"
                         >
                             {roles.map((r) => <option key={r._id} value={r.slug}>{r.name}</option>)}
                         </select>
                         <button
                             onClick={handleSaveRole}
                             disabled={isSavingRole}
-                            className="bg-[#222777] text-white text-[13px] font-bold px-4 py-2 rounded-md hover:bg-[#3a3f8f] transition-colors disabled:opacity-60"
+                            className="bg-[#075e51] text-white text-[13px] font-bold px-4 py-2 rounded-md hover:bg-[#097969] transition-colors disabled:opacity-60"
                         >
                             {isSavingRole ? 'Saving...' : 'Save'}
                         </button>
@@ -255,7 +255,7 @@ export default function AdminUserDetail() {
                         onClick={() => setActiveTab(tab.key)}
                         className={`whitespace-nowrap px-3 sm:px-4 py-2.5 text-[12px] sm:text-[13px] font-bold border-b-2 transition-colors ${
                             activeTab === tab.key
-                                ? 'border-[#222777] text-[#222777]'
+                                ? 'border-[#075e51] text-[#075e51]'
                                 : 'border-transparent text-[#777682] hover:text-[#464651]'
                         }`}
                     >
@@ -286,7 +286,7 @@ export default function AdminUserDetail() {
             )}
 
             {toast.show && (
-                <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-[13px] font-bold ${toast.type === 'error' ? 'bg-[#ba1a1a]' : 'bg-[#222777]'}`}>
+                <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-[13px] font-bold ${toast.type === 'error' ? 'bg-[#ba1a1a]' : 'bg-[#075e51]'}`}>
                     {toast.message}
                 </div>
             )}
@@ -352,7 +352,7 @@ function OverviewTab({ profile }) {
                 <div className="px-4 sm:px-5 py-3 flex items-center justify-between text-[13px] sm:text-sm">
                     <span className="text-[#777682] font-semibold">ID Document</span>
                     {kyc.idDocumentUrl ? (
-                        <a href={kyc.idDocumentUrl} target="_blank" rel="noreferrer" className="text-[#00c2cb] hover:text-[#006e73] font-semibold">
+                        <a href={kyc.idDocumentUrl} target="_blank" rel="noreferrer" className="text-[#EAB308] hover:text-[#006e73] font-semibold">
                             View document
                         </a>
                     ) : (
@@ -370,7 +370,7 @@ function OverviewTab({ profile }) {
                             <div className="flex items-center justify-between gap-2">
                                 <span className="font-bold text-[13px] sm:text-sm text-[#181c22]">{cert.title}</span>
                                 {cert.certificateUrl && (
-                                    <a href={cert.certificateUrl} target="_blank" rel="noreferrer" className="text-[#00c2cb] hover:text-[#006e73] font-semibold text-[12px] shrink-0">
+                                    <a href={cert.certificateUrl} target="_blank" rel="noreferrer" className="text-[#EAB308] hover:text-[#006e73] font-semibold text-[12px] shrink-0">
                                         View file
                                     </a>
                                 )}
@@ -413,7 +413,7 @@ function ResearchTab({ data }) {
                         {(transcriptText || summaryText) && (
                             <button
                                 onClick={() => setExpandedId(isExpanded ? null : rec._id)}
-                                className="text-[11px] font-bold text-[#3a3f8f] hover:text-[#222777] mt-1.5"
+                                className="text-[11px] font-bold text-[#097969] hover:text-[#075e51] mt-1.5"
                             >
                                 {isExpanded ? 'Show less' : 'Show full transcript'}
                             </button>

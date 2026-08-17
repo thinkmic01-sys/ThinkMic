@@ -7,10 +7,10 @@ const TEMPLATE_LABELS = { academic: 'Standard Academic', executive: 'Executive B
 
 // completed/ready both mean "done" (workers write 'completed'; kept 'ready' too for forward-compat)
 const STATUS_META = {
-    completed: { label: 'Completed', className: 'bg-[#e6fbfc] text-[#006e73] border-[#6bf6ff]/50', icon: 'check_circle', pulse: false },
-    ready: { label: 'Completed', className: 'bg-[#e6fbfc] text-[#006e73] border-[#6bf6ff]/50', icon: 'check_circle', pulse: false },
-    generating: { label: 'Generating', className: 'bg-[#e6fbfc] text-[#00a8b0] border-[#6bf6ff]/50', icon: 'sync', pulse: true },
-    pending: { label: 'Pending', className: 'bg-[#e6fbfc] text-[#00a8b0] border-[#6bf6ff]/50', icon: 'schedule', pulse: true },
+    completed: { label: 'Completed', className: 'bg-[#FEF9C3] text-[#006e73] border-[#6bf6ff]/50', icon: 'check_circle', pulse: false },
+    ready: { label: 'Completed', className: 'bg-[#FEF9C3] text-[#006e73] border-[#6bf6ff]/50', icon: 'check_circle', pulse: false },
+    generating: { label: 'Generating', className: 'bg-[#FEF9C3] text-[#00a8b0] border-[#6bf6ff]/50', icon: 'sync', pulse: true },
+    pending: { label: 'Pending', className: 'bg-[#FEF9C3] text-[#00a8b0] border-[#6bf6ff]/50', icon: 'schedule', pulse: true },
     failed: { label: 'Failed', className: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ffb4ab]', icon: 'error', pulse: false }
 };
 
@@ -83,18 +83,18 @@ export default function ReportsLibrary() {
     }, []);
 
     return (
-        <div className="flex-1 w-full bg-[#f9f9ff] p-4 sm:p-6 md:p-8 flex justify-center h-[calc(100vh-64px)] overflow-y-auto font-sans">
+        <div className="flex-1 w-full bg-[#F4F9F8] p-4 sm:p-6 md:p-8 flex justify-center h-[calc(100vh-64px)] overflow-y-auto font-sans">
             <div className="w-full flex flex-col pb-12">
 
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6 sm:mb-8 border-b border-[#e0e2eb] pb-4 sm:pb-6">
                     <div className="w-full sm:w-auto">
-                        <h2 className="text-[24px] sm:text-[28px] md:text-[32px] font-bold text-[#222777] tracking-tight leading-tight">Reports Library</h2>
+                        <h2 className="text-[24px] sm:text-[28px] md:text-[32px] font-bold text-[#075e51] tracking-tight leading-tight">Reports Library</h2>
                         <p className="text-[13px] sm:text-[14px] md:text-[15px] text-[#464651] mt-1">Manage, preview, and export your generated research reports.</p>
                     </div>
                     <button
                         onClick={() => navigate('/app/projects')}
-                        className="w-full sm:w-auto bg-[#222777] text-white px-5 py-2.5 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm hover:bg-[#3a3f8f] transition-colors flex items-center justify-center gap-2 shrink-0"
+                        className="w-full sm:w-auto bg-[#075e51] text-white px-5 py-2.5 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm hover:bg-[#097969] transition-colors flex items-center justify-center gap-2 shrink-0"
                     >
                         <span className="material-symbols-outlined text-[18px]">add</span> New Report
                     </button>
@@ -119,14 +119,14 @@ export default function ReportsLibrary() {
                                     <tr
                                         key={report.id}
                                         onClick={() => handleRowClick(report.id, report.status)}
-                                        className="hover:bg-[#f9f9ff] transition-colors cursor-pointer group"
+                                        className="hover:bg-[#F4F9F8] transition-colors cursor-pointer group"
                                     >
                                         <td className="py-3 px-4 sm:py-4 sm:px-6">
                                             <div className="flex items-center gap-3">
-                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${(report.status === 'ready' || report.status === 'completed') ? 'bg-[#e6fbfc] text-[#006e73]' : 'bg-[#f1f3fc] text-[#777682]'}`}>
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${(report.status === 'ready' || report.status === 'completed') ? 'bg-[#FEF9C3] text-[#006e73]' : 'bg-[#f1f3fc] text-[#777682]'}`}>
                                                     <span className="material-symbols-outlined text-[18px]">description</span>
                                                 </div>
-                                                <span className="font-bold text-[#181c22] text-[13px] sm:text-[14px] group-hover:text-[#222777] transition-colors line-clamp-1">{report.title}</span>
+                                                <span className="font-bold text-[#181c22] text-[13px] sm:text-[14px] group-hover:text-[#075e51] transition-colors line-clamp-1">{report.title}</span>
                                             </div>
                                         </td>
                                         <td className="py-3 px-4 sm:py-4 sm:px-6 font-mono text-[12px] sm:text-[13px] text-[#464651] whitespace-nowrap">
@@ -151,14 +151,14 @@ export default function ReportsLibrary() {
                                         <td className="py-3 px-4 sm:py-4 sm:px-6 text-right relative">
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === report.id ? null : report.id); }}
-                                                className="text-[#c7c5d3] hover:text-[#222777] transition-colors p-1 rounded hover:bg-[#f1f3fc]">
+                                                className="text-[#c7c5d3] hover:text-[#075e51] transition-colors p-1 rounded hover:bg-[#f1f3fc]">
                                                 <span className="material-symbols-outlined text-[18px] sm:text-[20px]">more_vert</span>
                                             </button>
                                             {activeMenu === report.id && (
                                                 <div className="absolute right-8 top-10 bg-white border border-[#e0e2eb] rounded-lg shadow-lg py-1 w-32 z-10 animate-in fade-in zoom-in duration-200">
                                                     <button 
                                                         onClick={(e) => { e.stopPropagation(); handleEdit(report.id); setActiveMenu(null); }}
-                                                        className="w-full text-left px-4 py-2 text-[13px] text-[#464651] hover:bg-[#f9f9ff] hover:text-[#222777] transition-colors flex items-center gap-2">
+                                                        className="w-full text-left px-4 py-2 text-[13px] text-[#464651] hover:bg-[#F4F9F8] hover:text-[#075e51] transition-colors flex items-center gap-2">
                                                         <span className="material-symbols-outlined text-[16px]">edit</span>
                                                         Edit
                                                     </button>
@@ -189,7 +189,7 @@ export default function ReportsLibrary() {
                         </p>
                         <button
                             onClick={() => navigate('/app/projects')}
-                            className="bg-[#222777] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm hover:bg-[#3a3f8f] transition-colors"
+                            className="bg-[#075e51] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm hover:bg-[#097969] transition-colors"
                         >
                             Go to Projects
                         </button>
@@ -202,7 +202,7 @@ export default function ReportsLibrary() {
                 <div className="fixed inset-0 bg-[#181c22]/50 flex items-center justify-center z-[100] backdrop-blur-sm px-4">
                     <div className="bg-white rounded-xl shadow-lg w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         <div className="px-6 py-5 border-b border-[#e0e2eb] flex items-center gap-3">
-                            <span className={`material-symbols-outlined text-[24px] ${customAlert.title === 'Generation Failed' ? 'text-[#ba1a1a]' : 'text-[#222777]'}`}>
+                            <span className={`material-symbols-outlined text-[24px] ${customAlert.title === 'Generation Failed' ? 'text-[#ba1a1a]' : 'text-[#075e51]'}`}>
                                 {customAlert.title === 'Generation Failed' ? 'error' : 'info'}
                             </span>
                             <h3 className="text-[16px] font-bold text-[#181c22]">{customAlert.title}</h3>
@@ -212,10 +212,10 @@ export default function ReportsLibrary() {
                                 {customAlert.message}
                             </p>
                         </div>
-                        <div className="px-6 py-4 bg-[#f9f9ff] flex justify-end">
+                        <div className="px-6 py-4 bg-[#F4F9F8] flex justify-end">
                             <button
                                 onClick={() => setCustomAlert(null)}
-                                className="bg-[#222777] text-white px-5 py-2 rounded-lg text-[13px] font-bold shadow-sm hover:bg-[#3a3f8f] transition-colors"
+                                className="bg-[#075e51] text-white px-5 py-2 rounded-lg text-[13px] font-bold shadow-sm hover:bg-[#097969] transition-colors"
                             >
                                 OK
                             </button>

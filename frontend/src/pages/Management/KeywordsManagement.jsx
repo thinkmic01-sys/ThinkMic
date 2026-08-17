@@ -56,7 +56,7 @@ export default function KeywordsManagement() {
     return (
         <div className="w-full p-4 sm:p-6 md:p-8 flex flex-col pb-20 min-h-full">
             <div className="mb-5 sm:mb-6">
-                <h2 className="text-2xl sm:text-3xl font-bold text-[#222777] mb-1 tracking-tight">Keywords</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-[#075e51] mb-1 tracking-tight">Keywords</h2>
                 <p className="text-[#777682] text-sm sm:text-base">
                     Curate the topics users can follow on My Learning List. These also become the category options when hosting a seminar - a matching category notifies everyone following that keyword.
                 </p>
@@ -71,12 +71,12 @@ export default function KeywordsManagement() {
                         onChange={(e) => setNewKeyword(e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
                         placeholder="e.g. Machine Learning"
-                        className="flex-1 border border-[#c7c5d3] rounded-md py-2.5 px-3 text-[14px] outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777]"
+                        className="flex-1 border border-[#c7c5d3] rounded-md py-2.5 px-3 text-[14px] outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51]"
                     />
                     <button
                         onClick={handleAdd}
                         disabled={isSaving || !newKeyword.trim()}
-                        className="bg-[#222777] text-white text-[13px] font-bold px-5 py-2.5 rounded-md hover:bg-[#3a3f8f] transition-colors disabled:opacity-60 flex items-center justify-center gap-2 shrink-0"
+                        className="bg-[#075e51] text-white text-[13px] font-bold px-5 py-2.5 rounded-md hover:bg-[#097969] transition-colors disabled:opacity-60 flex items-center justify-center gap-2 shrink-0"
                     >
                         <span className="material-symbols-outlined text-[18px]">add</span>
                         {isSaving ? 'Adding...' : 'Add'}
@@ -97,7 +97,7 @@ export default function KeywordsManagement() {
                         {keywords.map((keyword) => (
                             <span
                                 key={keyword._id}
-                                className="inline-flex items-center gap-2 bg-[#f1f3fc] text-[#222777] border border-[#c7c5d3] rounded-full pl-3.5 pr-2 py-1.5 text-[13px] font-bold"
+                                className="inline-flex items-center gap-2 bg-[#f1f3fc] text-[#075e51] border border-[#c7c5d3] rounded-full pl-3.5 pr-2 py-1.5 text-[13px] font-bold"
                             >
                                 {keyword.text}
                                 <button
@@ -114,7 +114,7 @@ export default function KeywordsManagement() {
             </div>
 
             {toast.show && (
-                <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-[13px] font-bold ${toast.type === 'error' ? 'bg-[#ba1a1a]' : 'bg-[#222777]'}`}>
+                <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-[13px] font-bold ${toast.type === 'error' ? 'bg-[#ba1a1a]' : 'bg-[#075e51]'}`}>
                     {toast.message}
                 </div>
             )}

@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import api from '../../services/api';
 
 const STATUS_CLASSES = {
-    approved: 'bg-[#e6fbfc] text-[#006e73] border-[#6bf6ff]/50',
+    approved: 'bg-[#FEF9C3] text-[#006e73] border-[#6bf6ff]/50',
     rejected: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ffb4ab]',
     pending: 'bg-[#fff8e1] text-[#b45309] border-[#ffe082]'
 };
@@ -277,7 +277,7 @@ export default function ReferralCoinManagement() {
     }, [activeTab, canManageSettings, canManagePending, canApproveReject, canViewHistoryStats, canManageRankTiers, fetchSettings, fetchPending, fetchHistory, fetchStats, fetchRankTiers]);
 
     return (
-        <div className="w-full h-[calc(100vh-64px)] overflow-y-auto bg-[#f9f9ff] font-sans custom-scrollbar">
+        <div className="w-full h-[calc(100vh-64px)] overflow-y-auto bg-[#F4F9F8] font-sans custom-scrollbar">
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -289,7 +289,7 @@ export default function ReferralCoinManagement() {
                 {/* Page Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5 sm:mb-6">
                     <div className="w-full md:w-auto">
-                        <h2 className="text-2xl sm:text-3xl font-bold text-[#222777] mb-1 tracking-tight">Referral & Coin Management</h2>
+                        <h2 className="text-2xl sm:text-3xl font-bold text-[#075e51] mb-1 tracking-tight">Referral & Coin Management</h2>
                         <p className="text-[#777682] text-sm sm:text-base">Configure reward amounts, approve pending coins, and monitor referral activity.</p>
                     </div>
                 </div>
@@ -300,7 +300,7 @@ export default function ReferralCoinManagement() {
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`pb-3 px-1 text-[13px] sm:text-[14px] font-bold whitespace-nowrap border-b-[3px] transition-colors ${activeTab === tab.id ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}
+                            className={`pb-3 px-1 text-[13px] sm:text-[14px] font-bold whitespace-nowrap border-b-[3px] transition-colors ${activeTab === tab.id ? 'border-[#075e51] text-[#075e51]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}
                         >
                             {tab.label}
                         </button>
@@ -312,7 +312,7 @@ export default function ReferralCoinManagement() {
                     <div className="flex flex-col gap-6">
                         {canManageSettings && (
                         <div className="bg-white p-5 sm:p-6 rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb]">
-                            <h3 className="text-[16px] sm:text-[18px] font-bold text-[#222777] mb-4">Referral Reward Amounts</h3>
+                            <h3 className="text-[16px] sm:text-[18px] font-bold text-[#075e51] mb-4">Referral Reward Amounts</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 {['l1Amount', 'l2Amount', 'l3Amount'].map((key, i) => (
                                     <div key={key}>
@@ -322,7 +322,7 @@ export default function ReferralCoinManagement() {
                                             min="0"
                                             value={settings[key]}
                                             onChange={(e) => setSettings(prev => ({ ...prev, [key]: e.target.value }))}
-                                            className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[14px] outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777]"
+                                            className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[14px] outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51]"
                                         />
                                     </div>
                                 ))}
@@ -330,7 +330,7 @@ export default function ReferralCoinManagement() {
                             <button
                                 onClick={handleSaveSettings}
                                 disabled={settingsLoading}
-                                className="mt-5 bg-[#222777] text-white text-[13px] font-bold py-2.5 px-6 rounded-lg hover:bg-[#3a3f8f] transition-colors disabled:opacity-50"
+                                className="mt-5 bg-[#075e51] text-white text-[13px] font-bold py-2.5 px-6 rounded-lg hover:bg-[#097969] transition-colors disabled:opacity-50"
                             >
                                 {settingsLoading ? 'Saving...' : 'Save Settings'}
                             </button>
@@ -340,7 +340,7 @@ export default function ReferralCoinManagement() {
 
                         {canAdjustCoins && (
                         <div className="bg-white p-5 sm:p-6 rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb]">
-                            <h3 className="text-[16px] sm:text-[18px] font-bold text-[#222777] mb-4">Manual Coin Adjustment</h3>
+                            <h3 className="text-[16px] sm:text-[18px] font-bold text-[#075e51] mb-4">Manual Coin Adjustment</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div className="relative">
                                     <label className="block text-[11px] font-bold text-[#464651] mb-2 uppercase tracking-wider">User</label>
@@ -352,7 +352,7 @@ export default function ReferralCoinManagement() {
                                         onBlur={() => setTimeout(() => setIsUserDropdownOpen(false), 150)}
                                         placeholder="Search by name or email..."
                                         autoComplete="off"
-                                        className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[13px] outline-none focus:border-[#222777]"
+                                        className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[13px] outline-none focus:border-[#075e51]"
                                     />
                                     {isUserDropdownOpen && userResults.length > 0 && (
                                         <div className="absolute z-10 mt-1 w-full bg-white border border-[#c7c5d3] rounded-md shadow-lg max-h-48 overflow-y-auto">
@@ -369,15 +369,15 @@ export default function ReferralCoinManagement() {
                                             ))}
                                         </div>
                                     )}
-                                    {adjustUserId && <p className="text-[10px] text-[#00c2cb] font-bold mt-1.5">✓ User selected</p>}
+                                    {adjustUserId && <p className="text-[10px] text-[#EAB308] font-bold mt-1.5">✓ User selected</p>}
                                 </div>
                                 <div>
                                     <label className="block text-[11px] font-bold text-[#464651] mb-2 uppercase tracking-wider">Amount (+/-)</label>
-                                    <input type="number" value={adjustAmount} onChange={(e) => setAdjustAmount(e.target.value)} placeholder="e.g. 50 or -20" className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[14px] outline-none focus:border-[#222777]" />
+                                    <input type="number" value={adjustAmount} onChange={(e) => setAdjustAmount(e.target.value)} placeholder="e.g. 50 or -20" className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[14px] outline-none focus:border-[#075e51]" />
                                 </div>
                                 <div>
                                     <label className="block text-[11px] font-bold text-[#464651] mb-2 uppercase tracking-wider">Reason</label>
-                                    <input type="text" value={adjustReason} onChange={(e) => setAdjustReason(e.target.value)} placeholder="Reason for adjustment" className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[14px] outline-none focus:border-[#222777]" />
+                                    <input type="text" value={adjustReason} onChange={(e) => setAdjustReason(e.target.value)} placeholder="Reason for adjustment" className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[14px] outline-none focus:border-[#075e51]" />
                                 </div>
                             </div>
                             <button
@@ -397,7 +397,7 @@ export default function ReferralCoinManagement() {
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] overflow-hidden">
                         <div className="overflow-x-auto w-full custom-scrollbar">
                             <table className="w-full text-left border-collapse min-w-[750px]">
-                                <thead className="bg-[#f9f9ff] border-b border-[#e0e2eb]">
+                                <thead className="bg-[#F4F9F8] border-b border-[#e0e2eb]">
                                 <tr>
                                     <th className="py-3 px-4 text-[11px] font-bold text-[#777682] uppercase tracking-wider">Referral User</th>
                                     <th className="py-3 px-4 text-[11px] font-bold text-[#777682] uppercase tracking-wider">Level</th>
@@ -423,7 +423,7 @@ export default function ReferralCoinManagement() {
                                                     min="1"
                                                     value={editingAmounts[r._id] ?? r.coinAmount}
                                                     onChange={(e) => handleEditAmount(r._id, e.target.value)}
-                                                    className="w-24 border border-[#c7c5d3] rounded p-1.5 text-[13px] font-mono outline-none focus:border-[#222777]"
+                                                    className="w-24 border border-[#c7c5d3] rounded p-1.5 text-[13px] font-mono outline-none focus:border-[#075e51]"
                                                 />
                                             ) : (
                                                 <span className="font-mono text-[13px] text-[#464651]">{r.coinAmount}</span>
@@ -433,11 +433,11 @@ export default function ReferralCoinManagement() {
                                         <td className="py-3 px-4">
                                             <div className="flex items-center justify-end gap-2">
                                                 {canManagePending && editingAmounts[r._id] !== undefined && Number(editingAmounts[r._id]) !== r.coinAmount && (
-                                                    <button onClick={() => handleSaveAmount(r._id)} className="text-[11px] font-bold text-[#222777] hover:underline">Save</button>
+                                                    <button onClick={() => handleSaveAmount(r._id)} className="text-[11px] font-bold text-[#075e51] hover:underline">Save</button>
                                                 )}
                                                 {canApproveReject && (
                                                     <>
-                                                        <button onClick={() => handleApprove(r._id)} className="bg-[#e6fbfc] text-[#006e73] border border-[#00c2cb]/30 text-[11px] font-bold py-1.5 px-3 rounded hover:bg-[#d4f7f9] transition-colors">Approve</button>
+                                                        <button onClick={() => handleApprove(r._id)} className="bg-[#FEF9C3] text-[#006e73] border border-[#EAB308]/30 text-[11px] font-bold py-1.5 px-3 rounded hover:bg-[#d4f7f9] transition-colors">Approve</button>
                                                         <button onClick={() => handleReject(r._id)} className="bg-[#ffdad6] text-[#ba1a1a] border border-[#ffb4ab] text-[11px] font-bold py-1.5 px-3 rounded hover:bg-[#ffc9c4] transition-colors">Reject</button>
                                                     </>
                                                 )}
@@ -449,7 +449,7 @@ export default function ReferralCoinManagement() {
                             </table>
                         </div>
                         {pendingTotal > 25 && (
-                            <div className="border-t border-[#e0e2eb] p-3 sm:px-6 flex items-center justify-between bg-[#f9f9ff]">
+                            <div className="border-t border-[#e0e2eb] p-3 sm:px-6 flex items-center justify-between bg-[#F4F9F8]">
                                 <span className="text-[11px] font-semibold text-[#777682]">Showing {pendingRewards.length} of {pendingTotal}</span>
                                 <div className="flex gap-1">
                                     <button onClick={() => setPendingPage(p => Math.max(1, p - 1))} disabled={pendingPage === 1} className="w-8 h-8 rounded flex items-center justify-center text-[#777682] hover:bg-white disabled:opacity-50">
@@ -469,7 +469,7 @@ export default function ReferralCoinManagement() {
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] overflow-hidden">
                         <div className="overflow-x-auto w-full custom-scrollbar">
                             <table className="w-full text-left border-collapse min-w-[750px]">
-                                <thead className="bg-[#f9f9ff] border-b border-[#e0e2eb]">
+                                <thead className="bg-[#F4F9F8] border-b border-[#e0e2eb]">
                                 <tr>
                                     <th className="py-3 px-4 text-[11px] font-bold text-[#777682] uppercase tracking-wider">Beneficiary</th>
                                     <th className="py-3 px-4 text-[11px] font-bold text-[#777682] uppercase tracking-wider">Level</th>
@@ -500,7 +500,7 @@ export default function ReferralCoinManagement() {
                             </table>
                         </div>
                         {historyTotal > 25 && (
-                            <div className="border-t border-[#e0e2eb] p-3 sm:px-6 flex items-center justify-between bg-[#f9f9ff]">
+                            <div className="border-t border-[#e0e2eb] p-3 sm:px-6 flex items-center justify-between bg-[#F4F9F8]">
                                 <span className="text-[11px] font-semibold text-[#777682]">Showing {history.length} of {historyTotal}</span>
                                 <div className="flex gap-1">
                                     <button onClick={() => setHistoryPage(p => Math.max(1, p - 1))} disabled={historyPage === 1} className="w-8 h-8 rounded flex items-center justify-center text-[#777682] hover:bg-white disabled:opacity-50">
@@ -521,29 +521,29 @@ export default function ReferralCoinManagement() {
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                             <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-6 flex flex-col justify-between h-[100px]">
                                 <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider text-[#777682]">Total Coins Distributed</span>
-                                <span className="text-[26px] sm:text-[30px] font-bold text-[#222777]">{stats.totalCoinsDistributed.toLocaleString()}</span>
+                                <span className="text-[26px] sm:text-[30px] font-bold text-[#075e51]">{stats.totalCoinsDistributed.toLocaleString()}</span>
                             </div>
                             <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-6 flex flex-col justify-between h-[100px]">
                                 <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider text-[#777682]">Total Pending Coins</span>
-                                <span className="text-[26px] sm:text-[30px] font-bold text-[#00c2cb]">{stats.totalPendingCoins.toLocaleString()}</span>
+                                <span className="text-[26px] sm:text-[30px] font-bold text-[#EAB308]">{stats.totalPendingCoins.toLocaleString()}</span>
                             </div>
                             <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-6 flex flex-col justify-between h-[100px]">
                                 <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider text-[#777682]">Conversion Rate</span>
-                                <span className="text-[26px] sm:text-[30px] font-bold text-[#222777]">{stats.conversionRate}%</span>
+                                <span className="text-[26px] sm:text-[30px] font-bold text-[#075e51]">{stats.conversionRate}%</span>
                             </div>
                             <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-6 flex flex-col justify-between h-[100px]">
                                 <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider text-[#777682]">Approved / Rejected / Pending</span>
-                                <span className="text-[16px] sm:text-[18px] font-bold text-[#222777]">{stats.approvedCount} / {stats.rejectedCount} / {stats.pendingCount}</span>
+                                <span className="text-[16px] sm:text-[18px] font-bold text-[#075e51]">{stats.approvedCount} / {stats.rejectedCount} / {stats.pendingCount}</span>
                             </div>
                         </div>
 
                         <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] overflow-hidden">
                             <div className="p-4 sm:p-6 border-b border-[#e0e2eb]">
-                                <h3 className="text-[16px] sm:text-[18px] font-bold text-[#222777]">Top Referrers</h3>
+                                <h3 className="text-[16px] sm:text-[18px] font-bold text-[#075e51]">Top Referrers</h3>
                             </div>
                             <div className="overflow-x-auto w-full custom-scrollbar">
                                 <table className="w-full text-left border-collapse min-w-[500px]">
-                                    <thead className="bg-[#f9f9ff] border-b border-[#e0e2eb]">
+                                    <thead className="bg-[#F4F9F8] border-b border-[#e0e2eb]">
                                     <tr>
                                         <th className="py-3 px-4 text-[11px] font-bold text-[#777682] uppercase tracking-wider">User</th>
                                         <th className="py-3 px-4 text-[11px] font-bold text-[#777682] uppercase tracking-wider">Approved Referrals</th>
@@ -557,7 +557,7 @@ export default function ReferralCoinManagement() {
                                         <tr key={r._id} className="hover:bg-[#f1f3fc] transition-colors">
                                             <td className="py-3 px-4 font-bold text-[#181c22]">{r.user.fullName}</td>
                                             <td className="py-3 px-4 font-mono text-[12px] text-[#464651]">{r.count}</td>
-                                            <td className="py-3 px-4 text-right font-mono font-bold text-[#00c2cb]">{r.totalCoins}</td>
+                                            <td className="py-3 px-4 text-right font-mono font-bold text-[#EAB308]">{r.totalCoins}</td>
                                         </tr>
                                     ))}
                                     </tbody>
@@ -570,7 +570,7 @@ export default function ReferralCoinManagement() {
                 {/* --- RANK TIERS TAB --- */}
                 {activeTab === 'rankTiers' && (
                     <div className="bg-white p-5 sm:p-6 rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb]">
-                        <h3 className="text-[16px] sm:text-[18px] font-bold text-[#222777] mb-1">Rank Tiers</h3>
+                        <h3 className="text-[16px] sm:text-[18px] font-bold text-[#075e51] mb-1">Rank Tiers</h3>
                         <p className="text-[12px] text-[#777682] mb-4">Define named tiers (e.g. Bronze, Silver, Gold) by minimum lifetime coins. A user's tier is the highest one whose threshold their lifetime coins meet or exceed. Shown on the Achievements page's Tier stat and Leaderboard.</p>
 
                         <div className="flex flex-col gap-3">
@@ -582,7 +582,7 @@ export default function ReferralCoinManagement() {
                                             value={tier.name}
                                             onChange={(e) => handleRankTierField(i, 'name', e.target.value)}
                                             placeholder="Tier name (e.g. Bronze)"
-                                            className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[14px] outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777]"
+                                            className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[14px] outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51]"
                                         />
                                     </div>
                                     <div className="w-40">
@@ -592,7 +592,7 @@ export default function ReferralCoinManagement() {
                                             value={tier.minCoins}
                                             onChange={(e) => handleRankTierField(i, 'minCoins', e.target.value)}
                                             placeholder="Min coins"
-                                            className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[14px] outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777]"
+                                            className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[14px] outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51]"
                                         />
                                     </div>
                                     <button
@@ -611,7 +611,7 @@ export default function ReferralCoinManagement() {
 
                         <button
                             onClick={handleAddRankTier}
-                            className="mt-4 text-[13px] font-bold text-[#222777] hover:underline flex items-center gap-1"
+                            className="mt-4 text-[13px] font-bold text-[#075e51] hover:underline flex items-center gap-1"
                         >
                             <span className="material-symbols-outlined text-[16px]">add</span> Add Tier
                         </button>
@@ -620,7 +620,7 @@ export default function ReferralCoinManagement() {
                             <button
                                 onClick={handleSaveRankTiers}
                                 disabled={rankTiersLoading}
-                                className="mt-5 bg-[#222777] text-white text-[13px] font-bold py-2.5 px-6 rounded-lg hover:bg-[#3a3f8f] transition-colors disabled:opacity-50"
+                                className="mt-5 bg-[#075e51] text-white text-[13px] font-bold py-2.5 px-6 rounded-lg hover:bg-[#097969] transition-colors disabled:opacity-50"
                             >
                                 {rankTiersLoading ? 'Saving...' : 'Save Rank Tiers'}
                             </button>
@@ -631,7 +631,7 @@ export default function ReferralCoinManagement() {
 
             {/* --- CUSTOM TOAST NOTIFICATION --- */}
             <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#e6fbfc] border-[#00c2cb] text-[#006e73]'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#006e73]'}`}>
                     <span className="material-symbols-outlined text-[20px]">
                         {toast.type === 'error' ? 'error' : 'check_circle'}
                     </span>

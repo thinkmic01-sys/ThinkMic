@@ -113,12 +113,12 @@ export default function RolesManagement() {
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5 sm:mb-6">
                 <div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-[#222777] mb-1 tracking-tight">Roles & Permissions</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-[#075e51] mb-1 tracking-tight">Roles & Permissions</h2>
                     <p className="text-[#777682] text-sm sm:text-base">Create unlimited custom roles and decide exactly which admin powers each one carries.</p>
                 </div>
                 <button
                     onClick={openCreateModal}
-                    className="w-full md:w-auto bg-[#222777] text-white text-[13px] sm:text-sm font-bold py-2.5 px-6 rounded-lg hover:bg-[#3a3f8f] transition-colors flex items-center justify-center gap-2 shadow-sm shrink-0"
+                    className="w-full md:w-auto bg-[#075e51] text-white text-[13px] sm:text-sm font-bold py-2.5 px-6 rounded-lg hover:bg-[#097969] transition-colors flex items-center justify-center gap-2 shadow-sm shrink-0"
                 >
                     <span className="material-symbols-outlined text-[18px] sm:text-[20px]">add</span>
                     New Role
@@ -128,7 +128,7 @@ export default function RolesManagement() {
             <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] overflow-hidden">
                 <div className="overflow-x-auto w-full custom-scrollbar">
                     <table className="w-full text-left border-collapse min-w-[650px]">
-                        <thead className="bg-[#f9f9ff] border-b border-[#e0e2eb]">
+                        <thead className="bg-[#F4F9F8] border-b border-[#e0e2eb]">
                             <tr>
                                 <th className="py-3 px-4 text-[11px] sm:text-xs font-bold text-[#777682] uppercase tracking-wider">Role</th>
                                 <th className="py-3 px-4 text-[11px] sm:text-xs font-bold text-[#777682] uppercase tracking-wider">Description</th>
@@ -160,7 +160,7 @@ export default function RolesManagement() {
                                             <span className="text-[10px] text-[#c7c5d3] font-bold uppercase tracking-wider">Protected</span>
                                         ) : (
                                             <div className="flex items-center justify-end gap-1">
-                                                <button onClick={() => openEditModal(role)} className="text-[#c7c5d3] hover:text-[#222777] transition-colors p-1" title="Edit">
+                                                <button onClick={() => openEditModal(role)} className="text-[#c7c5d3] hover:text-[#075e51] transition-colors p-1" title="Edit">
                                                     <span className="material-symbols-outlined text-[18px]">edit</span>
                                                 </button>
                                                 <button onClick={() => handleDelete(role)} className="text-[#c7c5d3] hover:text-[#ba1a1a] transition-colors p-1" title="Delete">
@@ -180,7 +180,7 @@ export default function RolesManagement() {
                 <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col">
                         <div className="px-5 sm:px-6 py-4 border-b border-[#e0e2eb] flex items-center justify-between shrink-0">
-                            <h3 className="font-bold text-lg text-[#222777]">{editingRole ? 'Edit Role' : 'New Role'}</h3>
+                            <h3 className="font-bold text-lg text-[#075e51]">{editingRole ? 'Edit Role' : 'New Role'}</h3>
                             <button onClick={() => setIsModalOpen(false)} className="text-[#777682] hover:text-[#181c22]">
                                 <span className="material-symbols-outlined">close</span>
                             </button>
@@ -194,7 +194,7 @@ export default function RolesManagement() {
                                     value={formName}
                                     onChange={(e) => setFormName(e.target.value)}
                                     placeholder="e.g. Support Lead"
-                                    className="w-full border border-[#c7c5d3] rounded-md py-2 px-3 text-[14px] outline-none focus:border-[#222777]"
+                                    className="w-full border border-[#c7c5d3] rounded-md py-2 px-3 text-[14px] outline-none focus:border-[#075e51]"
                                 />
                             </div>
                             <div>
@@ -204,7 +204,7 @@ export default function RolesManagement() {
                                     value={formDescription}
                                     onChange={(e) => setFormDescription(e.target.value)}
                                     placeholder="What is this role for?"
-                                    className="w-full border border-[#c7c5d3] rounded-md py-2 px-3 text-[14px] outline-none focus:border-[#222777]"
+                                    className="w-full border border-[#c7c5d3] rounded-md py-2 px-3 text-[14px] outline-none focus:border-[#075e51]"
                                 />
                             </div>
 
@@ -217,8 +217,8 @@ export default function RolesManagement() {
                                         const allSelected = keysInCategory.every((k) => formPermissions.includes(k));
                                         return (
                                             <div key={category} className="border border-[#e0e2eb] rounded-lg overflow-hidden">
-                                                <div className="bg-[#f9f9ff] px-3 py-2 flex items-center justify-between">
-                                                    <span className="font-bold text-[13px] text-[#222777]">{category}</span>
+                                                <div className="bg-[#F4F9F8] px-3 py-2 flex items-center justify-between">
+                                                    <span className="font-bold text-[13px] text-[#075e51]">{category}</span>
                                                     <button
                                                         type="button"
                                                         onClick={() => toggleCategory(category, keysInCategory)}
@@ -234,7 +234,7 @@ export default function RolesManagement() {
                                                                 type="checkbox"
                                                                 checked={formPermissions.includes(perm.key)}
                                                                 onChange={() => togglePermission(perm.key)}
-                                                                className="mt-0.5 rounded border-[#c7c5d3] text-[#222777] focus:ring-[#222777] w-4 h-4 cursor-pointer"
+                                                                className="mt-0.5 rounded border-[#c7c5d3] text-[#075e51] focus:ring-[#075e51] w-4 h-4 cursor-pointer"
                                                             />
                                                             <span>
                                                                 <span className="block text-[13px] font-semibold text-[#181c22]">{perm.label}</span>
@@ -257,7 +257,7 @@ export default function RolesManagement() {
                             <button
                                 onClick={handleSave}
                                 disabled={isSaving}
-                                className="bg-[#222777] text-white text-[13px] font-bold px-5 py-2 rounded-md hover:bg-[#3a3f8f] transition-colors disabled:opacity-60"
+                                className="bg-[#075e51] text-white text-[13px] font-bold px-5 py-2 rounded-md hover:bg-[#097969] transition-colors disabled:opacity-60"
                             >
                                 {isSaving ? 'Saving...' : editingRole ? 'Save Changes' : 'Create Role'}
                             </button>
@@ -267,7 +267,7 @@ export default function RolesManagement() {
             )}
 
             {toast.show && (
-                <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-[13px] font-bold ${toast.type === 'error' ? 'bg-[#ba1a1a]' : 'bg-[#222777]'}`}>
+                <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-[13px] font-bold ${toast.type === 'error' ? 'bg-[#ba1a1a]' : 'bg-[#075e51]'}`}>
                     {toast.message}
                 </div>
             )}

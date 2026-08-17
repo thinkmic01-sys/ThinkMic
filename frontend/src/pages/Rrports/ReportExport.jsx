@@ -163,20 +163,20 @@ export default function ReportExport() {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-64px)] overflow-y-auto bg-[#f9f9ff] font-sans">
+        <div className="w-full h-[calc(100vh-64px)] overflow-y-auto bg-[#F4F9F8] font-sans">
             <div className="max-w-[1400px] mx-auto p-4 sm:p-6 md:p-8 flex flex-col min-h-full pb-20">
 
                 {/* Header */}
                 <div className="mb-6 md:mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-[#e0e2eb] pb-4 md:pb-6">
                     <div className="w-full md:w-auto">
                         <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-[#777682] text-[12px] sm:text-[13px] font-bold mb-2">
-                            <Link to="/app/research" className="hover:text-[#222777] transition-colors cursor-pointer">Research</Link>
+                            <Link to="/app/research" className="hover:text-[#075e51] transition-colors cursor-pointer">Research</Link>
                             <span className="material-symbols-outlined text-[14px] sm:text-[16px]">chevron_right</span>
-                            <Link to="/app/projects" className="hover:text-[#222777] transition-colors cursor-pointer">Projects</Link>
+                            <Link to="/app/projects" className="hover:text-[#075e51] transition-colors cursor-pointer">Projects</Link>
                             <span className="material-symbols-outlined text-[14px] sm:text-[16px]">chevron_right</span>
                             <span className="text-[#181c22]">Export Preview</span>
                         </div>
-                        <h2 className="text-[24px] sm:text-[28px] md:text-[32px] font-bold text-[#222777] tracking-tight">Report Export</h2>
+                        <h2 className="text-[24px] sm:text-[28px] md:text-[32px] font-bold text-[#075e51] tracking-tight">Report Export</h2>
                     </div>
                     <div className="flex items-center gap-2 text-[#777682] font-mono text-[11px] sm:text-[12px] font-bold bg-white border border-[#e0e2eb] px-3 py-1.5 rounded-md shadow-sm w-full md:w-auto justify-center md:justify-start mt-2 md:mt-0">
                         <span className="material-symbols-outlined text-[14px] sm:text-[16px]">history</span>
@@ -198,7 +198,7 @@ export default function ReportExport() {
                                     <select 
                                         value={template}
                                         onChange={(e) => setTemplate(e.target.value)}
-                                        className="w-full sm:w-auto appearance-none bg-white border border-[#c7c5d3] rounded-md pl-3 pr-8 py-1.5 text-[12px] sm:text-[13px] font-bold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none cursor-pointer shadow-sm"
+                                        className="w-full sm:w-auto appearance-none bg-white border border-[#c7c5d3] rounded-md pl-3 pr-8 py-1.5 text-[12px] sm:text-[13px] font-bold text-[#181c22] focus:ring-1 focus:ring-[#075e51] focus:border-[#075e51] outline-none cursor-pointer shadow-sm"
                                     >
                                         {TEMPLATE_OPTIONS.map(opt => (
                                             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -212,7 +212,7 @@ export default function ReportExport() {
                                         value={language}
                                         onChange={(e) => setLanguage(e.target.value)}
                                         title="Regenerates the report in the selected language"
-                                        className="w-full sm:w-auto appearance-none bg-white border border-[#c7c5d3] rounded-md pl-3 pr-8 py-1.5 text-[12px] sm:text-[13px] font-bold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none cursor-pointer shadow-sm"
+                                        className="w-full sm:w-auto appearance-none bg-white border border-[#c7c5d3] rounded-md pl-3 pr-8 py-1.5 text-[12px] sm:text-[13px] font-bold text-[#181c22] focus:ring-1 focus:ring-[#075e51] focus:border-[#075e51] outline-none cursor-pointer shadow-sm"
                                     >
                                         {LANGUAGE_OPTIONS.map(opt => (
                                             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -231,14 +231,14 @@ export default function ReportExport() {
                                 <h1 className="text-[24px] sm:text-[28px] md:text-[36px] font-bold text-[#181c22] mb-3 sm:mb-4 leading-tight tracking-tight">{title || "Untitled Document"}</h1>
                                 <div className="font-mono text-[12px] sm:text-[14px] font-bold text-[#777682] mb-4 sm:mb-5">{subtitle || "Prepared by ThinkMic AI"}</div>
                                 <div className="flex flex-wrap items-center justify-center gap-2">
-                                    <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#e6fbfc] text-[#006e73] border border-[#6bf6ff]/50">
+                                    <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#FEF9C3] text-[#006e73] border border-[#6bf6ff]/50">
                                         {TEMPLATE_LABEL[template] || template}
                                     </span>
-                                    {sections.execSummary && <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#eef0f9] text-[#222777] border border-[#c7c5d3]">Executive Summary</span>}
-                                    {sections.findings && <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#eef0f9] text-[#222777] border border-[#c7c5d3]">Research Findings</span>}
-                                    {sections.transcripts && <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#eef0f9] text-[#222777] border border-[#c7c5d3]">Transcripts</span>}
-                                    {sections.sources && <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#eef0f9] text-[#222777] border border-[#c7c5d3]">Sources</span>}
-                                    <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#f9f9ff] text-[#777682] border border-[#e0e2eb]">
+                                    {sections.execSummary && <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#eef0f9] text-[#075e51] border border-[#c7c5d3]">Executive Summary</span>}
+                                    {sections.findings && <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#eef0f9] text-[#075e51] border border-[#c7c5d3]">Research Findings</span>}
+                                    {sections.transcripts && <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#eef0f9] text-[#075e51] border border-[#c7c5d3]">Transcripts</span>}
+                                    {sections.sources && <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#eef0f9] text-[#075e51] border border-[#c7c5d3]">Sources</span>}
+                                    <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#F4F9F8] text-[#777682] border border-[#e0e2eb]">
                                         {formatRelativeTime(report?.updatedAt || report?.createdAt)}
                                     </span>
                                 </div>
@@ -274,7 +274,7 @@ export default function ReportExport() {
                                     type="text"
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
-                                    className="w-full bg-[#f9f9ff] border border-[#c7c5d3] rounded-md px-3 sm:px-4 py-2 sm:py-2.5 text-[13px] sm:text-[14px] font-semibold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none transition-all"
+                                    className="w-full bg-[#F4F9F8] border border-[#c7c5d3] rounded-md px-3 sm:px-4 py-2 sm:py-2.5 text-[13px] sm:text-[14px] font-semibold text-[#181c22] focus:ring-1 focus:ring-[#075e51] focus:border-[#075e51] outline-none transition-all"
                                 />
                             </div>
                             <div>
@@ -283,7 +283,7 @@ export default function ReportExport() {
                                     type="text"
                                     value={subtitle}
                                     onChange={(e) => setSubtitle(e.target.value)}
-                                    className="w-full bg-[#f9f9ff] border border-[#c7c5d3] rounded-md px-3 sm:px-4 py-2 sm:py-2.5 text-[13px] sm:text-[14px] font-semibold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none transition-all"
+                                    className="w-full bg-[#F4F9F8] border border-[#c7c5d3] rounded-md px-3 sm:px-4 py-2 sm:py-2.5 text-[13px] sm:text-[14px] font-semibold text-[#181c22] focus:ring-1 focus:ring-[#075e51] focus:border-[#075e51] outline-none transition-all"
                                 />
                             </div>
                         </div>
@@ -300,7 +300,7 @@ export default function ReportExport() {
                                 ].map((item) => (
                                     <div key={item.id} className={`flex justify-between items-center transition-opacity duration-200 ${!sections[item.id] ? 'opacity-60' : 'opacity-100'}`}>
                                         <div className="flex items-center gap-2 sm:gap-3">
-                                            <span className={`material-symbols-outlined text-[18px] sm:text-[20px] ${sections[item.id] ? 'text-[#222777]' : 'text-[#c7c5d3]'}`}>
+                                            <span className={`material-symbols-outlined text-[18px] sm:text-[20px] ${sections[item.id] ? 'text-[#075e51]' : 'text-[#c7c5d3]'}`}>
                                                 {item.icon}
                                             </span>
                                             <span className="text-[13px] sm:text-[14px] text-[#181c22] font-semibold">{item.label}</span>
@@ -313,7 +313,7 @@ export default function ReportExport() {
                                                 checked={sections[item.id]}
                                                 onChange={() => toggleSection(item.id)}
                                             />
-                                            <div className="w-9 h-5 sm:w-10 sm:h-5 bg-[#e0e2eb] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#222777]"></div>
+                                            <div className="w-9 h-5 sm:w-10 sm:h-5 bg-[#e0e2eb] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#075e51]"></div>
                                         </label>
                                     </div>
                                 ))}
@@ -321,7 +321,7 @@ export default function ReportExport() {
                             <button
                                 onClick={handleRegenerate}
                                 disabled={report?.status !== 'completed'}
-                                className={`mt-6 w-full text-white text-[13px] sm:text-[14px] font-bold py-2 sm:py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99] ${report?.status === 'completed' ? 'bg-[#00c2cb] hover:bg-[#00a8b0] cursor-pointer' : 'bg-[#e0e2eb] text-[#c7c5d3] cursor-not-allowed'}`}
+                                className={`mt-6 w-full text-white text-[13px] sm:text-[14px] font-bold py-2 sm:py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99] ${report?.status === 'completed' ? 'bg-[#EAB308] hover:bg-[#00a8b0] cursor-pointer' : 'bg-[#e0e2eb] text-[#c7c5d3] cursor-not-allowed'}`}
                             >
                                 <span className={`material-symbols-outlined text-[18px] sm:text-[20px] ${report?.status !== 'completed' ? 'animate-spin' : ''}`}>
                                     {report?.status === 'completed' ? 'refresh' : 'sync'}
@@ -336,7 +336,7 @@ export default function ReportExport() {
                                 onClick={() => handleDownload('pdf')}
                                 disabled={!report?.pdfLocalPath}
                                 className={`w-full text-white text-[13px] sm:text-[14px] font-bold py-2.5 sm:py-3 px-6 rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-[0.99]
-                                    ${report?.pdfLocalPath ? 'bg-[#222777] hover:bg-[#3a3f8f] cursor-pointer' : 'bg-gray-400 cursor-not-allowed'}`}>
+                                    ${report?.pdfLocalPath ? 'bg-[#075e51] hover:bg-[#097969] cursor-pointer' : 'bg-gray-400 cursor-not-allowed'}`}>
                                 <span className="material-symbols-outlined text-[18px] sm:text-[20px]">picture_as_pdf</span>
                                 Download PDF
                             </button>
@@ -344,7 +344,7 @@ export default function ReportExport() {
                                 onClick={() => handleDownload('docx')}
                                 disabled={!report?.docxLocalPath}
                                 className={`w-full border text-[13px] sm:text-[14px] font-bold py-2.5 sm:py-3 px-6 rounded-lg flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99]
-                                    ${report?.docxLocalPath ? 'bg-white border-[#222777] text-[#222777] hover:bg-[#f1f3fc] cursor-pointer' : 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'}`}>
+                                    ${report?.docxLocalPath ? 'bg-white border-[#075e51] text-[#075e51] hover:bg-[#f1f3fc] cursor-pointer' : 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'}`}>
                                 <span className="material-symbols-outlined text-[18px] sm:text-[20px]">description</span>
                                 Download Word
                             </button>
@@ -363,7 +363,7 @@ export default function ReportExport() {
                 {isEmailModalOpen && (
                     <div className="fixed inset-0 bg-[#181c22]/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                         <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-                            <div className="px-5 sm:px-6 py-4 sm:py-5 border-b border-[#e0e2eb] flex justify-between items-center bg-[#f9f9ff]">
+                            <div className="px-5 sm:px-6 py-4 sm:py-5 border-b border-[#e0e2eb] flex justify-between items-center bg-[#F4F9F8]">
                                 <h3 className="text-[16px] sm:text-[18px] font-bold text-[#181c22]">Email Report</h3>
                                 <button
                                     className="text-[#777682] hover:text-[#ba1a1a] transition-colors flex items-center justify-center w-8 h-8 rounded-full hover:bg-white border border-transparent hover:border-[#e0e2eb] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
@@ -381,7 +381,7 @@ export default function ReportExport() {
                                     </div>
                                 )}
                                 {emailSuccessMsg && (
-                                    <div className="bg-[#e6fbfc] text-[#006e73] p-3 rounded-lg text-[12px] sm:text-[13px] font-semibold flex items-center gap-2 border border-[#b2f0f4]">
+                                    <div className="bg-[#FEF9C3] text-[#006e73] p-3 rounded-lg text-[12px] sm:text-[13px] font-semibold flex items-center gap-2 border border-[#b2f0f4]">
                                         <span className="material-symbols-outlined text-[16px]">check_circle</span>
                                         {emailSuccessMsg}
                                     </div>
@@ -394,7 +394,7 @@ export default function ReportExport() {
                                         onChange={(e) => setRecipientEmail(e.target.value)}
                                         disabled={isSendingEmail}
                                         placeholder="colleague@company.com"
-                                        className="w-full bg-[#f9f9ff] border border-[#c7c5d3] rounded-md px-3 sm:px-4 py-2 sm:py-2.5 text-[13px] sm:text-[14px] font-semibold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none disabled:opacity-60"
+                                        className="w-full bg-[#F4F9F8] border border-[#c7c5d3] rounded-md px-3 sm:px-4 py-2 sm:py-2.5 text-[13px] sm:text-[14px] font-semibold text-[#181c22] focus:ring-1 focus:ring-[#075e51] focus:border-[#075e51] outline-none disabled:opacity-60"
                                     />
                                 </div>
                                 <div>
@@ -405,18 +405,18 @@ export default function ReportExport() {
                                         onChange={(e) => setEmailMessage(e.target.value)}
                                         disabled={isSendingEmail}
                                         placeholder="Here is the latest AI adoption report..."
-                                        className="w-full bg-[#f9f9ff] border border-[#c7c5d3] rounded-md px-3 sm:px-4 py-2 sm:py-2.5 text-[13px] sm:text-[14px] font-semibold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none resize-none disabled:opacity-60"
+                                        className="w-full bg-[#F4F9F8] border border-[#c7c5d3] rounded-md px-3 sm:px-4 py-2 sm:py-2.5 text-[13px] sm:text-[14px] font-semibold text-[#181c22] focus:ring-1 focus:ring-[#075e51] focus:border-[#075e51] outline-none resize-none disabled:opacity-60"
                                     ></textarea>
                                 </div>
                                 <div className="flex items-center gap-3 sm:gap-4 bg-[#f1f3fc] p-3 sm:p-4 rounded-lg border border-[#e0e2eb]">
-                                    <span className="material-symbols-outlined text-[#222777] text-[24px] sm:text-[28px]">picture_as_pdf</span>
+                                    <span className="material-symbols-outlined text-[#075e51] text-[24px] sm:text-[28px]">picture_as_pdf</span>
                                     <div className="flex-1 min-w-0">
                                         <div className="text-[12px] sm:text-[13px] font-bold text-[#181c22] truncate">{(title || 'Report').replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf</div>
                                         <div className="font-mono text-[10px] sm:text-[11px] font-bold text-[#777682] mt-0.5">PDF attachment</div>
                                     </div>
                                 </div>
                             </div>
-                            <div className="px-5 sm:px-6 py-3 sm:py-4 border-t border-[#e0e2eb] bg-[#f9f9ff] flex justify-end gap-2 sm:gap-3">
+                            <div className="px-5 sm:px-6 py-3 sm:py-4 border-t border-[#e0e2eb] bg-[#F4F9F8] flex justify-end gap-2 sm:gap-3">
                                 <button
                                     className="px-4 sm:px-5 py-2 text-[#464651] text-[12px] sm:text-[13px] font-bold hover:bg-[#e0e2eb] rounded-lg transition-colors border border-transparent cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                                     onClick={() => setIsEmailModalOpen(false)}
@@ -427,7 +427,7 @@ export default function ReportExport() {
                                 <button
                                     onClick={handleSendEmail}
                                     disabled={isSendingEmail}
-                                    className="px-4 sm:px-6 py-2 bg-[#222777] text-white text-[12px] sm:text-[13px] font-bold rounded-lg shadow-sm hover:bg-[#3a3f8f] transition-colors flex items-center gap-1 sm:gap-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
+                                    className="px-4 sm:px-6 py-2 bg-[#075e51] text-white text-[12px] sm:text-[13px] font-bold rounded-lg shadow-sm hover:bg-[#097969] transition-colors flex items-center gap-1 sm:gap-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
                                 >
                                     {isSendingEmail ? (
                                         <>
@@ -453,18 +453,18 @@ export default function ReportExport() {
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c7c5d3; border-radius: 10px; }
 
-                .report-content h1, .report-content h2, .report-content h3 { color: #222777; font-weight: 700; }
+                .report-content h1, .report-content h2, .report-content h3 { color: #075e51; font-weight: 700; }
                 .report-content h1 { font-size: 1.6rem; margin-top: 1.5rem; margin-bottom: 0.75rem; }
                 .report-content h2 { font-size: 1.3rem; margin-top: 1.75rem; margin-bottom: 0.6rem; border-bottom: 2px solid #e0e2eb; padding-bottom: 0.4rem; }
                 .report-content h3 { font-size: 1.1rem; margin-top: 1.25rem; margin-bottom: 0.4rem; }
                 .report-content p { line-height: 1.75; margin-bottom: 0.9rem; font-size: 14px; }
                 .report-content ul { list-style: disc; margin-left: 1.5rem; margin-bottom: 0.9rem; }
                 .report-content li { margin-bottom: 0.4rem; line-height: 1.65; font-size: 14px; }
-                .report-content blockquote { border-left: 4px solid #00c2cb; background: #f9f9ff; padding: 0.75rem 1rem; margin: 1rem 0; font-style: italic; color: #464651; border-radius: 0 6px 6px 0; }
+                .report-content blockquote { border-left: 4px solid #EAB308; background: #F4F9F8; padding: 0.75rem 1rem; margin: 1rem 0; font-style: italic; color: #464651; border-radius: 0 6px 6px 0; }
                 .report-content table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 13px; }
                 .report-content th, .report-content td { border: 1px solid #e0e2eb; padding: 0.5rem 0.75rem; text-align: left; }
-                .report-content th { background: #f1f3fc; color: #222777; font-weight: 700; }
-                .report-content a { color: #00c2cb; text-decoration: underline; word-break: break-word; }
+                .report-content th { background: #f1f3fc; color: #075e51; font-weight: 700; }
+                .report-content a { color: #EAB308; text-decoration: underline; word-break: break-word; }
             `}</style>
         </div>
     );

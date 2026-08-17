@@ -121,13 +121,13 @@ export default function SupportInbox() {
     return (
         <div className="p-4 sm:p-6 md:p-8 w-full font-sans h-[calc(100vh-64px)] flex flex-col">
             <div className="mb-6 shrink-0">
-                <h1 className="text-2xl sm:text-3xl font-bold text-[#222777] tracking-tight">Support Inbox</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-[#075e51] tracking-tight">Support Inbox</h1>
                 <p className="text-[13px] sm:text-sm font-semibold text-[#777682] mt-1">Manage user support requests.</p>
             </div>
 
             <div className="flex-1 bg-white border border-[#e0e2eb] rounded-lg shadow-sm flex overflow-hidden min-h-0">
                 {/* Ticket List */}
-                <div className="w-1/3 border-r border-[#e0e2eb] flex flex-col bg-[#f9f9ff]">
+                <div className="w-1/3 border-r border-[#e0e2eb] flex flex-col bg-[#F4F9F8]">
                     <div className="p-4 border-b border-[#e0e2eb] font-bold text-[#464651] uppercase tracking-wider text-[12px]">
                         Active Tickets
                     </div>
@@ -141,11 +141,11 @@ export default function SupportInbox() {
                                 <button 
                                     key={t._id}
                                     onClick={() => setActiveTicket(t)}
-                                    className={`w-full text-left p-4 border-b border-[#e0e2eb] hover:bg-white transition-colors ${activeTicket?._id === t._id ? 'bg-white border-l-4 border-l-[#222777]' : ''}`}
+                                    className={`w-full text-left p-4 border-b border-[#e0e2eb] hover:bg-white transition-colors ${activeTicket?._id === t._id ? 'bg-white border-l-4 border-l-[#075e51]' : ''}`}
                                 >
                                     <div className="flex justify-between items-start mb-1">
                                         <span className="font-bold text-[#181c22] text-[14px] truncate pr-2">{t.user?.fullName || 'Unknown User'}</span>
-                                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${t.status === 'open' ? 'bg-[#e6fbfc] text-[#006e73]' : 'bg-[#e0e2eb] text-[#464651]'}`}>
+                                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${t.status === 'open' ? 'bg-[#FEF9C3] text-[#006e73]' : 'bg-[#e0e2eb] text-[#464651]'}`}>
                                             {t.status}
                                         </span>
                                     </div>
@@ -165,8 +165,8 @@ export default function SupportInbox() {
                 <div className="flex-1 flex flex-col bg-white">
                     {activeTicket ? (
                         <>
-                            <div className="h-14 border-b border-[#e0e2eb] flex items-center justify-between px-6 shrink-0 bg-[#f9f9ff]">
-                                <h3 className="font-bold text-[#222777]">Chatting with {activeTicket.user?.fullName}</h3>
+                            <div className="h-14 border-b border-[#e0e2eb] flex items-center justify-between px-6 shrink-0 bg-[#F4F9F8]">
+                                <h3 className="font-bold text-[#075e51]">Chatting with {activeTicket.user?.fullName}</h3>
                                 {activeTicket.status === 'open' && (
                                     <button onClick={handleCloseTicket} className="text-[12px] font-bold text-[#ba1a1a] hover:bg-[#ba1a1a]/10 px-3 py-1.5 rounded transition-colors">
                                         Close Ticket
@@ -181,10 +181,10 @@ export default function SupportInbox() {
                                         <div key={msg._id || idx} className={`flex flex-col max-w-[70%] ${isMine ? 'self-end items-end' : 'self-start items-start'}`}>
                                             <div className={`px-4 py-2.5 rounded-2xl text-[13px] sm:text-[14px] leading-relaxed shadow-sm ${
                                                 isMine
-                                                ? 'bg-[#222777] text-white rounded-br-sm'
+                                                ? 'bg-[#075e51] text-white rounded-br-sm'
                                                 : msg.isBot
-                                                ? 'bg-[#e6fbfc] border border-[#00c2cb]/30 text-[#181c22] rounded-bl-sm'
-                                                : 'bg-[#f9f9ff] border border-[#e0e2eb] text-[#181c22] rounded-bl-sm'
+                                                ? 'bg-[#FEF9C3] border border-[#EAB308]/30 text-[#181c22] rounded-bl-sm'
+                                                : 'bg-[#F4F9F8] border border-[#e0e2eb] text-[#181c22] rounded-bl-sm'
                                             }`}>
                                                 {msg.text}
                                             </div>
@@ -198,26 +198,26 @@ export default function SupportInbox() {
                             </div>
 
                             {activeTicket.status === 'open' ? (
-                                <form onSubmit={handleSendMessage} className="p-4 border-t border-[#e0e2eb] bg-[#f9f9ff] shrink-0">
+                                <form onSubmit={handleSendMessage} className="p-4 border-t border-[#e0e2eb] bg-[#F4F9F8] shrink-0">
                                     <div className="flex gap-2">
                                         <input
                                             type="text"
                                             placeholder="Type reply..."
                                             value={newMessage}
                                             onChange={(e) => setNewMessage(e.target.value)}
-                                            className="flex-1 border border-[#c7c5d3] rounded-md px-4 py-2 text-[14px] focus:outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777]"
+                                            className="flex-1 border border-[#c7c5d3] rounded-md px-4 py-2 text-[14px] focus:outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51]"
                                         />
                                         <button 
                                             type="submit" 
                                             disabled={!newMessage.trim()}
-                                            className="bg-[#222777] text-white px-6 rounded-md font-bold text-[14px] disabled:opacity-50 hover:bg-[#3a3f8f] transition-colors"
+                                            className="bg-[#075e51] text-white px-6 rounded-md font-bold text-[14px] disabled:opacity-50 hover:bg-[#097969] transition-colors"
                                         >
                                             Send
                                         </button>
                                     </div>
                                 </form>
                             ) : (
-                                <div className="p-4 border-t border-[#e0e2eb] bg-[#f9f9ff] shrink-0 text-center text-[#777682] text-[13px] font-bold">
+                                <div className="p-4 border-t border-[#e0e2eb] bg-[#F4F9F8] shrink-0 text-center text-[#777682] text-[13px] font-bold">
                                     This ticket is closed.
                                 </div>
                             )}

@@ -62,7 +62,7 @@ export default function Achievements() {
 
     return (
         /* FIXED: Added strict height and overflow-y-auto to the outermost container */
-        <div className="w-full h-[calc(100vh-64px)] overflow-y-auto bg-[#f9f9ff] font-sans custom-scrollbar">
+        <div className="w-full h-[calc(100vh-64px)] overflow-y-auto bg-[#F4F9F8] font-sans custom-scrollbar">
 
             <style>{`
                 /* Ensures scrollbars are visible on mobile/webkit browsers */
@@ -75,32 +75,32 @@ export default function Achievements() {
 
                 {/* Header */}
                 <div className="mb-6 sm:mb-8">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-[#222777] mb-1.5 sm:mb-2 tracking-tight">Rewards & Achievements</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-[#075e51] mb-1.5 sm:mb-2 tracking-tight">Rewards & Achievements</h2>
                     <p className="text-gray-500 text-sm sm:text-lg">Track your research milestones and token accumulation.</p>
                 </div>
 
                 {/* Hero Balance Card */}
                 <div className="bg-white rounded-xl p-5 sm:p-6 md:p-8 shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] mb-6 sm:mb-8 relative overflow-hidden">
                     {/* Decorative background glow */}
-                    <div className="absolute -right-10 -top-10 sm:-right-20 sm:-top-20 w-48 h-48 sm:w-64 sm:h-64 bg-[#00c2cb]/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div className="absolute -right-10 -top-10 sm:-right-20 sm:-top-20 w-48 h-48 sm:w-64 sm:h-64 bg-[#EAB308]/10 rounded-full blur-3xl pointer-events-none"></div>
 
                     <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 sm:gap-8 relative z-10">
 
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full lg:w-auto">
                             {/* Coin Badge */}
-                            <div className={`w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center border-4 shadow-[0_0_15px_rgba(0,194,203,0.4)] animate-pulse relative shrink-0 ${stats.levelInfo.isMaxLevel ? 'bg-[#3a2f00] border-[#FFD700]' : 'bg-[#1E2255] border-[#00c2cb]'}`}>
-                                <span className={`material-symbols-outlined text-[32px] sm:text-[40px] md:text-[48px] ${stats.levelInfo.isMaxLevel ? 'text-[#FFD700]' : 'text-[#00c2cb]'}`} style={{ fontVariationSettings: "'FILL' 1" }}>{stats.levelInfo.isMaxLevel ? 'military_tech' : 'toll'}</span>
-                                <div className={`absolute -bottom-2 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] uppercase tracking-wider font-bold border whitespace-nowrap ${stats.levelInfo.isMaxLevel ? 'bg-[#fff8e1] text-[#8a6d00] border-[#FFD700]' : 'bg-[#e6fbfc] text-[#006e73] border-[#00c2cb]'}`}>
+                            <div className={`w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center border-4 shadow-[0_0_15px_rgba(0,194,203,0.4)] animate-pulse relative shrink-0 ${stats.levelInfo.isMaxLevel ? 'bg-[#3a2f00] border-[#FFD700]' : 'bg-[#064D43] border-[#EAB308]'}`}>
+                                <span className={`material-symbols-outlined text-[32px] sm:text-[40px] md:text-[48px] ${stats.levelInfo.isMaxLevel ? 'text-[#FFD700]' : 'text-[#EAB308]'}`} style={{ fontVariationSettings: "'FILL' 1" }}>{stats.levelInfo.isMaxLevel ? 'military_tech' : 'toll'}</span>
+                                <div className={`absolute -bottom-2 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] uppercase tracking-wider font-bold border whitespace-nowrap ${stats.levelInfo.isMaxLevel ? 'bg-[#fff8e1] text-[#8a6d00] border-[#FFD700]' : 'bg-[#FEF9C3] text-[#006e73] border-[#EAB308]'}`}>
                                     {stats.levelInfo.isMaxLevel ? 'MAX' : `Lvl ${stats.levelInfo.currentLevel}`}
                                 </div>
                             </div>
 
                             <div>
                                 <p className="text-[10px] sm:text-xs text-[#777682] uppercase tracking-wider mb-0.5 sm:mb-1 font-bold">Available Balance</p>
-                                <h3 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#222777] tracking-tight flex items-baseline gap-1 sm:gap-2">
+                                <h3 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#075e51] tracking-tight flex items-baseline gap-1 sm:gap-2">
                                     {currentCoins.toLocaleString()} <span className="text-lg sm:text-xl md:text-2xl text-[#777682] font-medium">Coins</span>
                                 </h3>
-                                <p className="text-[12px] sm:text-[13px] text-[#3a3f8f] font-bold mt-1">{stats.levelInfo.levelName}</p>
+                                <p className="text-[12px] sm:text-[13px] text-[#097969] font-bold mt-1">{stats.levelInfo.levelName}</p>
                             </div>
                         </div>
 
@@ -110,12 +110,12 @@ export default function Achievements() {
                                 <span className="text-[#777682]">
                                     {stats.levelInfo.isMaxLevel ? 'Max Level Reached 🏆' : `Progress to Level ${stats.levelInfo.currentLevel + 1}`}
                                 </span>
-                                <span className="text-[#222777]">
+                                <span className="text-[#075e51]">
                                     {stats.levelInfo.isMaxLevel ? 'MAX' : `${stats.lifetime.toLocaleString()} / ${stats.levelInfo.nextLevelThreshold.toLocaleString()}`}
                                 </span>
                             </div>
                             <div className="h-1.5 sm:h-2 w-full bg-[#e0e2eb] rounded-full overflow-hidden">
-                                <div className={`h-full rounded-full transition-all duration-1000 ease-out ${stats.levelInfo.isMaxLevel ? 'bg-[#FFD700]' : 'bg-[#00c2cb]'}`} style={{ width: `${stats.levelInfo.progressPercent}%` }}></div>
+                                <div className={`h-full rounded-full transition-all duration-1000 ease-out ${stats.levelInfo.isMaxLevel ? 'bg-[#FFD700]' : 'bg-[#EAB308]'}`} style={{ width: `${stats.levelInfo.progressPercent}%` }}></div>
                             </div>
                         </div>
                     </div>
@@ -124,19 +124,19 @@ export default function Achievements() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-[#e0e2eb]">
                         <div>
                             <p className="text-[10px] sm:text-xs text-[#777682] mb-0.5 sm:mb-1 flex items-center gap-1 font-bold uppercase tracking-wider"><span className="material-symbols-outlined text-[14px]">calendar_today</span> Week Earned</p>
-                            <p className="text-lg sm:text-xl md:text-2xl text-[#222777] font-bold">+{stats.weekEarned}</p>
+                            <p className="text-lg sm:text-xl md:text-2xl text-[#075e51] font-bold">+{stats.weekEarned}</p>
                         </div>
                         <div>
                             <p className="text-[10px] sm:text-xs text-[#777682] mb-0.5 sm:mb-1 flex items-center gap-1 font-bold uppercase tracking-wider"><span className="material-symbols-outlined text-[14px]">all_inclusive</span> Lifetime</p>
-                            <p className="text-lg sm:text-xl md:text-2xl text-[#222777] font-bold">{stats.lifetime?.toLocaleString()}</p>
+                            <p className="text-lg sm:text-xl md:text-2xl text-[#075e51] font-bold">{stats.lifetime?.toLocaleString()}</p>
                         </div>
                         <div>
                             <p className="text-[10px] sm:text-xs text-[#777682] mb-0.5 sm:mb-1 flex items-center gap-1 font-bold uppercase tracking-wider"><span className="material-symbols-outlined text-[14px]">leaderboard</span> Tier</p>
-                            <p className="text-lg sm:text-xl md:text-2xl text-[#222777] font-bold">{stats.rankTierName || 'Unranked'}</p>
+                            <p className="text-lg sm:text-xl md:text-2xl text-[#075e51] font-bold">{stats.rankTierName || 'Unranked'}</p>
                         </div>
                         <div>
                             <p className="text-[10px] sm:text-xs text-[#777682] mb-0.5 sm:mb-1 flex items-center gap-1 font-bold uppercase tracking-wider"><span className="material-symbols-outlined text-[14px]">local_fire_department</span> Streak</p>
-                            <p className="text-lg sm:text-xl md:text-2xl text-[#222777] font-bold">{stats.streak} Days</p>
+                            <p className="text-lg sm:text-xl md:text-2xl text-[#075e51] font-bold">{stats.streak} Days</p>
                         </div>
                     </div>
                 </div>
@@ -146,12 +146,12 @@ export default function Achievements() {
 
                     {/* Ways to Earn */}
                     <div className="order-2 lg:order-1">
-                        <h3 className="text-xl sm:text-2xl text-[#222777] mb-3 sm:mb-4 font-bold">Ways to Earn</h3>
+                        <h3 className="text-xl sm:text-2xl text-[#075e51] mb-3 sm:mb-4 font-bold">Ways to Earn</h3>
                         <div className="flex flex-col gap-2 sm:gap-3">
                             {waysToEarn.map((item) => (
-                                <div key={item.id} onClick={() => navigate(item.path)} className="bg-white rounded-lg p-3 sm:p-4 border border-[#e0e2eb] shadow-sm flex items-center justify-between hover:border-[#222777] transition-colors cursor-pointer group">
+                                <div key={item.id} onClick={() => navigate(item.path)} className="bg-white rounded-lg p-3 sm:p-4 border border-[#e0e2eb] shadow-sm flex items-center justify-between hover:border-[#075e51] transition-colors cursor-pointer group">
                                     <div className="flex items-center gap-3 sm:gap-4 min-w-0 pr-3">
-                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#f1f3fc] flex items-center justify-center text-[#3a3f8f] group-hover:bg-[#e0e0ff] transition-colors shrink-0">
+                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#f1f3fc] flex items-center justify-center text-[#097969] group-hover:bg-[#e0e0ff] transition-colors shrink-0">
                                             <span className="material-symbols-outlined text-[18px] sm:text-[24px]">{item.icon}</span>
                                         </div>
                                         <div className="min-w-0">
@@ -159,7 +159,7 @@ export default function Achievements() {
                                             <p className="text-[11px] sm:text-xs text-[#777682] line-clamp-1 sm:line-clamp-none">{item.desc}</p>
                                         </div>
                                     </div>
-                                    <span className="material-symbols-outlined text-[#c7c5d3] group-hover:text-[#222777] transition-colors shrink-0">arrow_forward</span>
+                                    <span className="material-symbols-outlined text-[#c7c5d3] group-hover:text-[#075e51] transition-colors shrink-0">arrow_forward</span>
                                 </div>
                             ))}
                         </div>
@@ -169,16 +169,16 @@ export default function Achievements() {
                     <div className="order-1 lg:order-2 bg-white rounded-xl border border-[#e0e2eb] shadow-[0_1px_4px_rgba(58,63,143,0.05)] overflow-hidden flex flex-col h-full">
 
                         {/* Tabs */}
-                        <div className="flex border-b border-[#e0e2eb] bg-[#f9f9ff]">
+                        <div className="flex border-b border-[#e0e2eb] bg-[#F4F9F8]">
                             <button
                                 onClick={() => setActiveTab('history')}
-                                className={`flex-1 py-2.5 sm:py-3 text-[13px] sm:text-sm font-bold transition-colors ${activeTab === 'history' ? 'text-[#222777] border-b-2 border-[#222777] bg-white' : 'text-[#777682] hover:text-[#222777]'}`}
+                                className={`flex-1 py-2.5 sm:py-3 text-[13px] sm:text-sm font-bold transition-colors ${activeTab === 'history' ? 'text-[#075e51] border-b-2 border-[#075e51] bg-white' : 'text-[#777682] hover:text-[#075e51]'}`}
                             >
                                 History
                             </button>
                             <button
                                 onClick={() => setActiveTab('leaderboard')}
-                                className={`flex-1 py-2.5 sm:py-3 text-[13px] sm:text-sm font-bold transition-colors ${activeTab === 'leaderboard' ? 'text-[#222777] border-b-2 border-[#222777] bg-white' : 'text-[#777682] hover:text-[#222777]'}`}
+                                className={`flex-1 py-2.5 sm:py-3 text-[13px] sm:text-sm font-bold transition-colors ${activeTab === 'leaderboard' ? 'text-[#075e51] border-b-2 border-[#075e51] bg-white' : 'text-[#777682] hover:text-[#075e51]'}`}
                             >
                                 Leaderboard
                             </button>
@@ -189,7 +189,7 @@ export default function Achievements() {
                             {activeTab === 'history' ? (
                                 <div className="overflow-x-auto w-full custom-scrollbar">
                                     <table className="w-full text-left border-collapse min-w-[450px]">
-                                        <thead className="bg-[#f9f9ff] border-b border-[#e0e2eb]">
+                                        <thead className="bg-[#F4F9F8] border-b border-[#e0e2eb]">
                                         <tr>
                                             <th className="py-3 px-3 sm:px-4 text-[10px] sm:text-[11px] text-[#777682] font-bold uppercase tracking-wider whitespace-nowrap">Date</th>
                                             <th className="py-3 px-3 sm:px-4 text-[10px] sm:text-[11px] text-[#777682] font-bold uppercase tracking-wider">Action</th>
@@ -215,7 +215,7 @@ export default function Achievements() {
                             ) : activeTab === 'leaderboard' ? (
                                 <div className="overflow-x-auto w-full custom-scrollbar">
                                     <table className="w-full text-left border-collapse min-w-[450px]">
-                                        <thead className="bg-[#f9f9ff] border-b border-[#e0e2eb]">
+                                        <thead className="bg-[#F4F9F8] border-b border-[#e0e2eb]">
                                         <tr>
                                             <th className="py-3 px-3 sm:px-4 text-[10px] sm:text-[11px] text-[#777682] font-bold uppercase tracking-wider whitespace-nowrap">Tier</th>
                                             <th className="py-3 px-3 sm:px-4 text-[10px] sm:text-[11px] text-[#777682] font-bold uppercase tracking-wider">Scholar</th>
@@ -224,13 +224,13 @@ export default function Achievements() {
                                         </thead>
                                         <tbody className="divide-y divide-[#e0e2eb] text-[13px] sm:text-sm">
                                         {leaderboard.map((u) => (
-                                            <tr key={u._id} className={`hover:bg-[#f1f3fc] transition-colors ${u._id === user?.id ? 'bg-[#e6fbfc] hover:bg-[#cbf4f6]' : ''}`}>
-                                                <td className="py-3 sm:py-4 px-3 sm:px-4 font-mono text-[12px] sm:text-[14px] text-[#222777] font-bold whitespace-nowrap">
+                                            <tr key={u._id} className={`hover:bg-[#f1f3fc] transition-colors ${u._id === user?.id ? 'bg-[#FEF9C3] hover:bg-[#cbf4f6]' : ''}`}>
+                                                <td className="py-3 sm:py-4 px-3 sm:px-4 font-mono text-[12px] sm:text-[14px] text-[#075e51] font-bold whitespace-nowrap">
                                                     {u.rankTierName || '—'}
                                                 </td>
                                                 <td className="py-3 sm:py-4 px-3 sm:px-4 text-[#181c22] flex items-center gap-2 sm:gap-3 font-semibold min-w-[200px]">
                                                     <img src={u.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName)}&background=222777&color=fff`} className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border border-[#c7c5d3] object-cover" alt="Avatar"/>
-                                                    <span className="truncate">{u.fullName} {u._id === user?.id && <span className="ml-2 text-[10px] bg-[#00c2cb] text-white px-2 py-0.5 rounded-full">You</span>}</span>
+                                                    <span className="truncate">{u.fullName} {u._id === user?.id && <span className="ml-2 text-[10px] bg-[#EAB308] text-white px-2 py-0.5 rounded-full">You</span>}</span>
                                                 </td>
                                                 <td className="py-3 sm:py-4 px-3 sm:px-4 text-right font-bold font-mono text-[12px] sm:text-[13px] whitespace-nowrap text-[#006e73]">
                                                     {u.lifetimeCoins?.toLocaleString() || 0}

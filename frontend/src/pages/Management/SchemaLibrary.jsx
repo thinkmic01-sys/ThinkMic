@@ -97,13 +97,13 @@ export default function SchemaLibrary() {
             {/* Page Header & Actions */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-[#222777] tracking-tight">Schema Library</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-[#075e51] tracking-tight">Schema Library</h1>
                     <p className="text-[13px] sm:text-sm font-semibold text-[#777682] mt-1">Manage and create custom data collection forms.</p>
                 </div>
                 {/* THIS is the button that takes you to the Builder! */}
                 <Link
                     to="/app/admin/schemas/new"
-                    className="w-full sm:w-auto bg-[#222777] text-white font-bold text-[13px] sm:text-sm px-5 py-2.5 rounded-md shadow-sm hover:bg-[#3a3f8f] transition-colors flex items-center justify-center gap-2 shrink-0"
+                    className="w-full sm:w-auto bg-[#075e51] text-white font-bold text-[13px] sm:text-sm px-5 py-2.5 rounded-md shadow-sm hover:bg-[#097969] transition-colors flex items-center justify-center gap-2 shrink-0"
                 >
                     <span className="material-symbols-outlined text-[18px]">add</span>
                     New Schema
@@ -126,7 +126,7 @@ export default function SchemaLibrary() {
                 <div className="overflow-x-auto w-full custom-scrollbar">
                     <table className="w-full text-left border-collapse min-w-[600px]">
                         <thead>
-                        <tr className="bg-[#f9f9ff] border-b border-[#e0e2eb] text-[#464651] font-bold text-[11px] sm:text-[12px] md:text-[13px] uppercase tracking-wider whitespace-nowrap">
+                        <tr className="bg-[#F4F9F8] border-b border-[#e0e2eb] text-[#464651] font-bold text-[11px] sm:text-[12px] md:text-[13px] uppercase tracking-wider whitespace-nowrap">
                             <th className="p-3 sm:p-4 pl-4 sm:pl-6">Form Name</th>
                             <th className="p-3 sm:p-4">Submissions</th>
                             <th className="p-3 sm:p-4">Status</th>
@@ -144,7 +144,7 @@ export default function SchemaLibrary() {
                                     {schema.submissions > 0 ? (
                                         <button
                                             onClick={() => openSubmissions(schema)}
-                                            className="font-mono font-bold text-[#3a3f8f] hover:text-[#222777] underline decoration-dotted underline-offset-2 transition-colors"
+                                            className="font-mono font-bold text-[#097969] hover:text-[#075e51] underline decoration-dotted underline-offset-2 transition-colors"
                                             title="View submitted results"
                                         >
                                             {schema.submissions}
@@ -155,7 +155,7 @@ export default function SchemaLibrary() {
                                 </td>
                                 <td className="p-3 sm:p-4 whitespace-nowrap">
                                         <span className={`inline-flex px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider
-                                            ${schema.status === 'Active' ? 'bg-[#e6fbfc] text-[#006e73]' : ''}
+                                            ${schema.status === 'Active' ? 'bg-[#FEF9C3] text-[#006e73]' : ''}
                                             ${schema.status === 'Draft' ? 'bg-[#ffdad6] text-[#93000a]' : ''}
                                             ${schema.status === 'Archived' ? 'bg-[#e0e2eb] text-[#464651]' : ''}
                                         `}>
@@ -168,13 +168,13 @@ export default function SchemaLibrary() {
                                         <button
                                             onClick={() => openSubmissions(schema)}
                                             title="View submitted results"
-                                            className="text-[#3a3f8f] hover:text-[#222777] transition-colors p-1.5 rounded-md hover:bg-[#e0e2eb] inline-flex items-center justify-center mr-1"
+                                            className="text-[#097969] hover:text-[#075e51] transition-colors p-1.5 rounded-md hover:bg-[#e0e2eb] inline-flex items-center justify-center mr-1"
                                         >
                                             <span className="material-symbols-outlined text-[18px] sm:text-[20px]">visibility</span>
                                         </button>
                                     )}
                                     {schema.status === 'Draft' ? (
-                                        <Link to={`/app/admin/schemas/edit/${schema.id}`} className="text-[#3a3f8f] hover:text-[#222777] transition-colors p-1.5 rounded-md hover:bg-[#e0e2eb] inline-flex items-center justify-center ml-auto">
+                                        <Link to={`/app/admin/schemas/edit/${schema.id}`} className="text-[#097969] hover:text-[#075e51] transition-colors p-1.5 rounded-md hover:bg-[#e0e2eb] inline-flex items-center justify-center ml-auto">
                                             <span className="material-symbols-outlined text-[18px] sm:text-[20px]">edit</span>
                                         </Link>
                                     ) : (
@@ -198,7 +198,7 @@ export default function SchemaLibrary() {
                     >
                         <div className="flex items-start justify-between p-4 sm:p-5 border-b border-[#e0e2eb]">
                             <div>
-                                <h2 className="text-lg font-bold text-[#222777]">{viewingSchema.name}</h2>
+                                <h2 className="text-lg font-bold text-[#075e51]">{viewingSchema.name}</h2>
                                 <p className="text-[12px] font-semibold text-[#777682] mt-0.5">
                                     {submissionsTotal} submitted result{submissionsTotal === 1 ? '' : 's'}
                                 </p>
@@ -221,7 +221,7 @@ export default function SchemaLibrary() {
                                     <div key={sub._id} className="border border-[#e0e2eb] rounded-md overflow-hidden">
                                         <button
                                             onClick={() => setExpandedId(isExpanded ? null : sub._id)}
-                                            className="w-full flex items-center justify-between gap-3 p-3 hover:bg-[#f9f9ff] transition-colors text-left"
+                                            className="w-full flex items-center justify-between gap-3 p-3 hover:bg-[#F4F9F8] transition-colors text-left"
                                         >
                                             <div className="min-w-0">
                                                 <p className="font-bold text-[#181c22] text-[13px] truncate">{submitter}</p>
@@ -231,7 +231,7 @@ export default function SchemaLibrary() {
                                             </div>
                                             <div className="flex items-center gap-2 shrink-0">
                                                 <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider
-                                                    ${sub.status === 'submitted' ? 'bg-[#e6fbfc] text-[#006e73]' : 'bg-[#ffdad6] text-[#93000a]'}`}>
+                                                    ${sub.status === 'submitted' ? 'bg-[#FEF9C3] text-[#006e73]' : 'bg-[#ffdad6] text-[#93000a]'}`}>
                                                     {sub.status}
                                                 </span>
                                                 <span className="material-symbols-outlined text-[18px] text-[#777682]">
@@ -240,7 +240,7 @@ export default function SchemaLibrary() {
                                             </div>
                                         </button>
                                         {isExpanded && (
-                                            <div className="border-t border-[#e0e2eb] bg-[#f9f9ff] p-3 space-y-2.5">
+                                            <div className="border-t border-[#e0e2eb] bg-[#F4F9F8] p-3 space-y-2.5">
                                                 {viewingSchema.fields.length === 0 ? (
                                                     <p className="text-[12px] text-[#777682] font-semibold">This form has no fields defined.</p>
                                                 ) : viewingSchema.fields.map((field) => {
@@ -273,7 +273,7 @@ export default function SchemaLibrary() {
                                 <button
                                     onClick={() => setSubmissionsPage((p) => Math.max(1, p - 1))}
                                     disabled={submissionsPage <= 1}
-                                    className="text-[12px] font-bold text-[#3a3f8f] disabled:text-[#c7c5d3] disabled:cursor-not-allowed px-3 py-1.5 rounded-md hover:bg-[#f1f3fc]"
+                                    className="text-[12px] font-bold text-[#097969] disabled:text-[#c7c5d3] disabled:cursor-not-allowed px-3 py-1.5 rounded-md hover:bg-[#f1f3fc]"
                                 >
                                     Previous
                                 </button>
@@ -283,7 +283,7 @@ export default function SchemaLibrary() {
                                 <button
                                     onClick={() => setSubmissionsPage((p) => Math.min(submissionsPages, p + 1))}
                                     disabled={submissionsPage >= submissionsPages}
-                                    className="text-[12px] font-bold text-[#3a3f8f] disabled:text-[#c7c5d3] disabled:cursor-not-allowed px-3 py-1.5 rounded-md hover:bg-[#f1f3fc]"
+                                    className="text-[12px] font-bold text-[#097969] disabled:text-[#c7c5d3] disabled:cursor-not-allowed px-3 py-1.5 rounded-md hover:bg-[#f1f3fc]"
                                 >
                                     Next
                                 </button>
@@ -294,7 +294,7 @@ export default function SchemaLibrary() {
             )}
 
             {toast.show && (
-                <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-[13px] font-bold ${toast.type === 'error' ? 'bg-[#ba1a1a]' : 'bg-[#222777]'}`}>
+                <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-[13px] font-bold ${toast.type === 'error' ? 'bg-[#ba1a1a]' : 'bg-[#075e51]'}`}>
                     {toast.message}
                 </div>
             )}

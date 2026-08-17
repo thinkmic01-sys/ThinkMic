@@ -159,7 +159,7 @@ export default function VoiceRecorder({ value, onChange, prompt }) {
         return (
             <div>
                 {prompt && <p className="text-[12px] italic text-[#777682] mb-3">"{prompt}"</p>}
-                <div className="border border-[#e0e2eb] rounded-xl bg-[#f9f9ff] p-4">
+                <div className="border border-[#e0e2eb] rounded-xl bg-[#F4F9F8] p-4">
                     <div className="flex items-center gap-2 mb-3 text-[#ba1a1a]">
                         <span className="material-symbols-outlined text-[18px]">error</span>
                         <span className="text-[12px] font-bold">Speech recognition not supported in this browser. Please use Chrome or Edge.</span>
@@ -168,7 +168,7 @@ export default function VoiceRecorder({ value, onChange, prompt }) {
                         placeholder="Type your response here instead..."
                         value={value || ''}
                         onChange={(e) => onChange(e.target.value)}
-                        className="w-full h-24 bg-white border border-[#c7c5d3] rounded-lg p-3 text-[13px] outline-none resize-none focus:border-[#222777]"
+                        className="w-full h-24 bg-white border border-[#c7c5d3] rounded-lg p-3 text-[13px] outline-none resize-none focus:border-[#075e51]"
                     />
                 </div>
             </div>
@@ -187,7 +187,7 @@ export default function VoiceRecorder({ value, onChange, prompt }) {
                     </button>
                 </div>
             )}
-            <div className="border border-[#e0e2eb] rounded-xl bg-[#f9f9ff] overflow-hidden shadow-sm">
+            <div className="border border-[#e0e2eb] rounded-xl bg-[#F4F9F8] overflow-hidden shadow-sm">
 
                 {/* Controls Bar */}
                 <div className="flex items-center justify-between border-b border-[#e0e2eb] p-3 sm:p-4 bg-white/50">

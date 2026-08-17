@@ -116,7 +116,7 @@ export default function ProjectDashboard() {
 
     if (!project) return (
         <div className="flex-1 w-full h-[calc(100vh-64px)] flex items-center justify-center">
-            <span className="material-symbols-outlined animate-spin text-[32px] text-[#222777]">sync</span>
+            <span className="material-symbols-outlined animate-spin text-[32px] text-[#075e51]">sync</span>
         </div>
     );
 
@@ -124,10 +124,10 @@ export default function ProjectDashboard() {
 
     if (isLocked) {
         return (
-            <div className="w-full h-[calc(100vh-64px)] bg-[#f9f9ff] flex items-center justify-center font-sans p-4">
+            <div className="w-full h-[calc(100vh-64px)] bg-[#F4F9F8] flex items-center justify-center font-sans p-4">
                 <div className="bg-white rounded-xl shadow-sm border border-[#e0e2eb] max-w-md w-full p-8 text-center">
                     <div className="w-16 h-16 rounded-full bg-[#eef0f9] flex items-center justify-center mx-auto mb-4">
-                        <span className="material-symbols-outlined text-[32px] text-[#222777]">lock</span>
+                        <span className="material-symbols-outlined text-[32px] text-[#075e51]">lock</span>
                     </div>
                     <h2 className="text-[22px] font-bold text-[#181c22] mb-1">{project.name}</h2>
                     <p className="text-[13px] text-[#777682] mb-4">Shared by {project.ownerName}</p>
@@ -145,7 +145,7 @@ export default function ProjectDashboard() {
                     <button
                         onClick={handleUnlock}
                         disabled={isUnlocking}
-                        className="w-full bg-[#222777] text-white px-6 py-3 rounded-lg text-[14px] font-bold shadow-sm hover:bg-[#3a3f8f] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                        className="w-full bg-[#075e51] text-white px-6 py-3 rounded-lg text-[14px] font-bold shadow-sm hover:bg-[#097969] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
                     >
                         <span className="material-symbols-outlined text-[18px]">toll</span>
                         {isUnlocking ? 'Unlocking...' : `Unlock for ${project.sharePriceCoins} coins`}
@@ -159,13 +159,13 @@ export default function ProjectDashboard() {
     }
 
     return (
-        <div className="flex-1 w-full bg-[#f9f9ff] h-[calc(100vh-64px)] overflow-y-auto font-sans flex flex-col">
+        <div className="flex-1 w-full bg-[#F4F9F8] h-[calc(100vh-64px)] overflow-y-auto font-sans flex flex-col">
             {/* Header Area */}
             <div className="bg-white border-b border-[#e0e2eb] px-4 sm:px-6 md:px-8 pt-6 pb-0 shadow-sm z-10 sticky top-0">
                 <div className="w-full">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6">
                         <div>
-                            <div className="flex items-center gap-2 text-[12px] font-bold text-[#777682] uppercase tracking-widest mb-2 cursor-pointer hover:text-[#222777]" onClick={() => navigate('/app/projects')}>
+                            <div className="flex items-center gap-2 text-[12px] font-bold text-[#777682] uppercase tracking-widest mb-2 cursor-pointer hover:text-[#075e51]" onClick={() => navigate('/app/projects')}>
                                 <span className="material-symbols-outlined text-[14px]">arrow_back</span>
                                 Back to Hub
                             </div>
@@ -180,8 +180,8 @@ export default function ProjectDashboard() {
                                     onClick={openShareModal}
                                     className={`w-full sm:w-auto px-6 py-2.5 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm transition-colors flex items-center justify-center gap-2 shrink-0 border ${
                                         project.isShared
-                                            ? 'bg-[#e6fbfc] text-[#006e73] border-[#6bf6ff]/50 hover:bg-[#d0f6f8]'
-                                            : 'bg-white text-[#222777] border-[#e0e2eb] hover:bg-[#f1f3fc]'
+                                            ? 'bg-[#FEF9C3] text-[#006e73] border-[#6bf6ff]/50 hover:bg-[#d0f6f8]'
+                                            : 'bg-white text-[#075e51] border-[#e0e2eb] hover:bg-[#f1f3fc]'
                                     }`}
                                 >
                                     <span className="material-symbols-outlined text-[18px]">{project.isShared ? 'toll' : 'share'}</span>
@@ -190,7 +190,7 @@ export default function ProjectDashboard() {
                             )}
                             <button
                                 onClick={() => navigate(`/app/research?projectId=${id}`)}
-                                className="w-full sm:w-auto bg-[#00c2cb] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm hover:bg-[#00a8b0] transition-colors flex items-center justify-center gap-2 shrink-0"
+                                className="w-full sm:w-auto bg-[#EAB308] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm hover:bg-[#00a8b0] transition-colors flex items-center justify-center gap-2 shrink-0"
                             >
                                 <span className="material-symbols-outlined text-[18px]">mic</span> Start New Session
                             </button>
@@ -203,7 +203,7 @@ export default function ProjectDashboard() {
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`pb-3 text-[13px] sm:text-[14px] font-bold uppercase tracking-wider transition-colors border-b-2 whitespace-nowrap ${activeTab === tab ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#181c22]'}`}
+                                className={`pb-3 text-[13px] sm:text-[14px] font-bold uppercase tracking-wider transition-colors border-b-2 whitespace-nowrap ${activeTab === tab ? 'border-[#075e51] text-[#075e51]' : 'border-transparent text-[#777682] hover:text-[#181c22]'}`}
                             >
                                 {tab === 'data' ? 'Raw Data & Recordings' : tab}
                             </button>
@@ -225,7 +225,7 @@ export default function ProjectDashboard() {
                         {recordings.length > 0 ? (
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-[#f9f9ff] border-b border-[#e0e2eb] text-[#777682] text-[11px] sm:text-[12px] uppercase tracking-wider font-bold">
+                                    <tr className="bg-[#F4F9F8] border-b border-[#e0e2eb] text-[#777682] text-[11px] sm:text-[12px] uppercase tracking-wider font-bold">
                                         <th className="py-3 px-4 sm:py-4 sm:px-6">Title</th>
                                         <th className="py-3 px-4 sm:py-4 sm:px-6 hidden sm:table-cell">Duration</th>
                                         <th className="py-3 px-4 sm:py-4 sm:px-6">Status</th>
@@ -234,7 +234,7 @@ export default function ProjectDashboard() {
                                 </thead>
                                 <tbody>
                                     {recordings.map(rec => (
-                                        <tr key={rec._id} onClick={() => navigate(`/app/research?recordingId=${rec._id}`)} className="border-b border-[#f1f3fc] hover:bg-[#f9f9ff] transition-colors cursor-pointer">
+                                        <tr key={rec._id} onClick={() => navigate(`/app/research?recordingId=${rec._id}`)} className="border-b border-[#f1f3fc] hover:bg-[#F4F9F8] transition-colors cursor-pointer">
                                             <td className="py-3 px-4 sm:py-4 sm:px-6 text-[13px] sm:text-[14px] font-semibold text-[#181c22]">{rec.title || 'Untitled Recording'}</td>
                                             <td className="py-3 px-4 sm:py-4 sm:px-6 text-[13px] text-[#464651] hidden sm:table-cell">{rec.durationSeconds ? `${Math.round(rec.durationSeconds / 60)}m ${rec.durationSeconds % 60}s` : '--'}</td>
                                             <td className="py-3 px-4 sm:py-4 sm:px-6">
@@ -265,7 +265,7 @@ export default function ProjectDashboard() {
                         {reports.length > 0 ? (
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-[#f9f9ff] border-b border-[#e0e2eb] text-[#777682] text-[11px] sm:text-[12px] uppercase tracking-wider font-bold">
+                                    <tr className="bg-[#F4F9F8] border-b border-[#e0e2eb] text-[#777682] text-[11px] sm:text-[12px] uppercase tracking-wider font-bold">
                                         <th className="py-3 px-4 sm:py-4 sm:px-6">Report Title</th>
                                         <th className="py-3 px-4 sm:py-4 sm:px-6">Status</th>
                                         <th className="py-3 px-4 sm:py-4 sm:px-6 hidden md:table-cell">Generated On</th>
@@ -273,9 +273,9 @@ export default function ProjectDashboard() {
                                 </thead>
                                 <tbody>
                                     {reports.map(rep => (
-                                        <tr key={rep._id} className="border-b border-[#f1f3fc] hover:bg-[#f9f9ff] transition-colors cursor-pointer" onClick={() => navigate(`/app/reports/${rep._id}`)}>
+                                        <tr key={rep._id} className="border-b border-[#f1f3fc] hover:bg-[#F4F9F8] transition-colors cursor-pointer" onClick={() => navigate(`/app/reports/${rep._id}`)}>
                                             <td className="py-3 px-4 sm:py-4 sm:px-6 text-[13px] sm:text-[14px] font-semibold text-[#181c22] flex items-center gap-3">
-                                                <span className="material-symbols-outlined text-[#222777]">description</span>
+                                                <span className="material-symbols-outlined text-[#075e51]">description</span>
                                                 {rep.title}
                                             </td>
                                             <td className="py-3 px-4 sm:py-4 sm:px-6">
@@ -325,13 +325,13 @@ export default function ProjectDashboard() {
                                     min="1"
                                     value={sharePriceInput}
                                     onChange={(e) => setSharePriceInput(e.target.value)}
-                                    className="w-full bg-[#f9f9ff] border border-[#c7c5d3] rounded-md px-3 py-2 text-[14px] font-semibold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none"
+                                    className="w-full bg-[#F4F9F8] border border-[#c7c5d3] rounded-md px-3 py-2 text-[14px] font-semibold text-[#181c22] focus:ring-1 focus:ring-[#075e51] focus:border-[#075e51] outline-none"
                                     placeholder="e.g. 50"
                                 />
                             </div>
                             {shareError && <p className="text-[12px] text-[#ba1a1a] font-semibold">{shareError}</p>}
                         </div>
-                        <div className="px-6 py-4 bg-[#f9f9ff] flex justify-end gap-3 border-t border-[#e0e2eb]">
+                        <div className="px-6 py-4 bg-[#F4F9F8] flex justify-end gap-3 border-t border-[#e0e2eb]">
                             {project.isShared && (
                                 <button
                                     type="button"
@@ -346,7 +346,7 @@ export default function ProjectDashboard() {
                                 type="button"
                                 onClick={handleShare}
                                 disabled={isSharing}
-                                className="bg-[#222777] text-white px-5 py-2 rounded-lg text-[13px] font-bold shadow-sm hover:bg-[#3a3f8f] transition-colors disabled:opacity-60"
+                                className="bg-[#075e51] text-white px-5 py-2 rounded-lg text-[13px] font-bold shadow-sm hover:bg-[#097969] transition-colors disabled:opacity-60"
                             >
                                 {isSharing ? 'Saving...' : project.isShared ? 'Update Price' : 'Share Project'}
                             </button>

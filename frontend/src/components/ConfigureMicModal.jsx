@@ -40,7 +40,7 @@ export default function ConfigureMicModal({ onClose }) {
         <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={onClose}>
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-[#222777]">Configure Microphone</h3>
+                    <h3 className="text-lg font-bold text-[#075e51]">Configure Microphone</h3>
                     <button onClick={onClose} className="text-[#777682] hover:text-[#181c22]">
                         <span className="material-symbols-outlined">close</span>
                     </button>
@@ -60,12 +60,12 @@ export default function ConfigureMicModal({ onClose }) {
                     <>
                         <p className="text-xs text-[#777682] mb-3">Choose which microphone ThinkMic should use for recordings and live seminars.</p>
                         <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
-                            <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${selected === '' ? 'border-[#222777] bg-[#f1f3fc]' : 'border-[#e0e2eb]'}`}>
+                            <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${selected === '' ? 'border-[#075e51] bg-[#f1f3fc]' : 'border-[#e0e2eb]'}`}>
                                 <input type="radio" name="mic" checked={selected === ''} onChange={() => setSelected('')} />
                                 <span className="text-sm font-semibold text-[#181c22]">System Default</span>
                             </label>
                             {devices.map((d, i) => (
-                                <label key={d.deviceId} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${selected === d.deviceId ? 'border-[#222777] bg-[#f1f3fc]' : 'border-[#e0e2eb]'}`}>
+                                <label key={d.deviceId} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer ${selected === d.deviceId ? 'border-[#075e51] bg-[#f1f3fc]' : 'border-[#e0e2eb]'}`}>
                                     <input type="radio" name="mic" checked={selected === d.deviceId} onChange={() => setSelected(d.deviceId)} />
                                     <span className="text-sm font-semibold text-[#181c22] truncate">{d.label || `Microphone ${i + 1}`}</span>
                                 </label>
@@ -74,7 +74,7 @@ export default function ConfigureMicModal({ onClose }) {
                                 <p className="text-xs text-[#777682] py-4 text-center">No additional microphones found - only the system default is available.</p>
                             )}
                         </div>
-                        <button onClick={handleSave} className="mt-5 w-full bg-[#222777] text-white font-bold text-sm py-2.5 rounded-lg hover:bg-[#3a3f8f] transition-colors">
+                        <button onClick={handleSave} className="mt-5 w-full bg-[#075e51] text-white font-bold text-sm py-2.5 rounded-lg hover:bg-[#097969] transition-colors">
                             Save
                         </button>
                     </>

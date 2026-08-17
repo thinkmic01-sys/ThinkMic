@@ -213,7 +213,7 @@ export default function SpeechWorkspace() {
                 setTopics(data.tags.map((tag, i) => ({
                     id: Date.now() + i,
                     title: tag,
-                    color: ['bg-blue-500', 'bg-green-500', 'bg-[#00c2cb]', 'bg-[#222777]'][i % 4],
+                    color: ['bg-blue-500', 'bg-green-500', 'bg-[#EAB308]', 'bg-[#075e51]'][i % 4],
                     tags: ['auto-generated']
                 })));
             }
@@ -276,7 +276,7 @@ export default function SpeechWorkspace() {
                         setTopics(summary.tags.map((tag, i) => ({
                             id: Date.now() + i,
                             title: tag,
-                            color: ['bg-blue-500', 'bg-green-500', 'bg-[#00c2cb]', 'bg-[#222777]'][i % 4],
+                            color: ['bg-blue-500', 'bg-green-500', 'bg-[#EAB308]', 'bg-[#075e51]'][i % 4],
                             tags: ['auto-generated']
                         })));
                     }
@@ -993,7 +993,7 @@ export default function SpeechWorkspace() {
     const transcriptFontStyle = { fontFamily: fontOptionsForLanguage.find(f => f.value === transcriptFont)?.stack };
 
     return (
-        <div className="flex flex-col relative w-full h-[calc(100vh-64px)] bg-[#f9f9ff] overflow-hidden font-sans">
+        <div className="flex flex-col relative w-full h-[calc(100vh-64px)] bg-[#F4F9F8] overflow-hidden font-sans">
             <style>{`
                 @keyframes cyanPulse {
                     0% { box-shadow: 0 0 0 0 rgba(0, 194, 203, 0.4); }
@@ -1017,7 +1017,7 @@ export default function SpeechWorkspace() {
                     top: calc(100% + 8px);
                     left: 50%;
                     transform: translateX(-50%);
-                    background-color: #222777;
+                    background-color: #075e51;
                     color: white;
                     padding: 4px 8px;
                     border-radius: 4px;
@@ -1041,7 +1041,7 @@ export default function SpeechWorkspace() {
 
                 {/* Left: Input Source & Engine Selector */}
                 <div className="flex items-center gap-3 shrink-0 flex-wrap">
-                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-md flex items-center justify-center text-white bg-[#3a3f8f] shadow-sm">
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-md flex items-center justify-center text-white bg-[#097969] shadow-sm">
                         <span className="material-symbols-outlined text-[18px] md:text-[22px]">mic</span>
                     </div>
                     <div className="flex flex-col">
@@ -1051,20 +1051,20 @@ export default function SpeechWorkspace() {
                                 value={sttEngine}
                                 onChange={(e) => setSttEngine(e.target.value)}
                                 disabled={recordingState !== 'idle'}
-                                className="appearance-none bg-transparent font-bold text-[13px] md:text-sm text-[#222777] hover:text-[#3a3f8f] outline-none cursor-pointer pr-5 transition-colors disabled:opacity-50"
+                                className="appearance-none bg-transparent font-bold text-[13px] md:text-sm text-[#075e51] hover:text-[#097969] outline-none cursor-pointer pr-5 transition-colors disabled:opacity-50"
                             >
                                 <option value="Deepgram">Deepgram (Live Premium)</option>
                                 <option value="Whisper">Whisper (High Accuracy)</option>
                                 <option value="Browser">Browser API (Fast, Free)</option>
                             </select>
-                            <span className="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 text-[16px] text-[#222777] pointer-events-none disabled:opacity-50">expand_more</span>
+                            <span className="material-symbols-outlined absolute right-0 top-1/2 -translate-y-1/2 text-[16px] text-[#075e51] pointer-events-none disabled:opacity-50">expand_more</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Center: Recording Status Indicator */}
                 <div className="flex flex-col items-center gap-1 w-full md:w-auto shrink-0 order-first md:order-none">
-                    <div className="bg-[#222777] text-white rounded-md px-4 sm:px-5 py-2 flex items-center justify-between gap-4 md:gap-6 shadow-sm w-full md:w-[340px] border border-[#3a3f8f]">
+                    <div className="bg-[#075e51] text-white rounded-md px-4 sm:px-5 py-2 flex items-center justify-between gap-4 md:gap-6 shadow-sm w-full md:w-[340px] border border-[#097969]">
                         <div className="flex items-center gap-2 md:gap-3">
                             <span className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${
                                 recordingState === 'recording' ? 'bg-[#ba1a1a] animate-pulse'
@@ -1096,7 +1096,7 @@ export default function SpeechWorkspace() {
                         }}
                         disabled={isUploading || recordingState === 'connecting'}
                         data-tooltip={recordingState === 'idle' ? 'Start' : (recordingState === 'connecting' ? 'Connecting...' : (recordingState === 'paused' ? 'Resume' : 'Pause'))}
-                        className={`custom-tooltip w-9 h-9 md:w-10 md:h-10 rounded-md border flex items-center justify-center transition-colors ${recordingState === 'idle' ? 'border-[#e0e2eb] text-[#00696e] bg-white hover:bg-[#eef0f9] shadow-sm' : (recordingState === 'connecting' ? 'border-[#e0e2eb] text-[#777682] bg-[#f9f9ff] cursor-wait' : (recordingState === 'paused' ? 'bg-[#e0e0ff] border-[#bfc2ff] text-[#222777]' : 'border-[#e0e2eb] text-[#222777] bg-white hover:bg-[#eef0f9] shadow-sm'))}`}
+                        className={`custom-tooltip w-9 h-9 md:w-10 md:h-10 rounded-md border flex items-center justify-center transition-colors ${recordingState === 'idle' ? 'border-[#e0e2eb] text-[#00696e] bg-white hover:bg-[#eef0f9] shadow-sm' : (recordingState === 'connecting' ? 'border-[#e0e2eb] text-[#777682] bg-[#F4F9F8] cursor-wait' : (recordingState === 'paused' ? 'bg-[#e0e0ff] border-[#bfc2ff] text-[#075e51]' : 'border-[#e0e2eb] text-[#075e51] bg-white hover:bg-[#eef0f9] shadow-sm'))}`}
                     >
                         <span className={`material-symbols-outlined text-[20px] md:text-[24px] ${recordingState === 'connecting' ? 'animate-spin' : ''}`}>
                             {recordingState === 'idle' ? 'play_arrow' : (recordingState === 'connecting' ? 'sync' : (recordingState === 'paused' ? 'play_arrow' : 'pause'))}
@@ -1111,14 +1111,14 @@ export default function SpeechWorkspace() {
 
                     <div className="hidden sm:block h-6 w-px bg-[#e0e2eb] mx-1"></div>
 
-                    <div className={`hidden lg:flex font-bold text-xs px-4 py-2 rounded-md items-center gap-2 border shadow-sm transition-opacity duration-200 ${isUploading ? 'opacity-100 bg-[#f9f9ff] text-[#222777] border-[#e0e2eb]' : 'opacity-0 pointer-events-none absolute'}`}>
+                    <div className={`hidden lg:flex font-bold text-xs px-4 py-2 rounded-md items-center gap-2 border shadow-sm transition-opacity duration-200 ${isUploading ? 'opacity-100 bg-[#F4F9F8] text-[#075e51] border-[#e0e2eb]' : 'opacity-0 pointer-events-none absolute'}`}>
                         <span className={`material-symbols-outlined text-[16px] ${isUploading ? 'animate-spin' : ''}`}>sync</span> Uploading... {uploadProgress}%
                     </div>
 
                     <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".mp3,.wav,.m4a,.webm" />
                     <button onClick={handleUploadClick} disabled={recordingState !== 'idle' || isUploading}
                             data-tooltip="Upload Audio"
-                            className="custom-tooltip w-9 h-9 md:w-10 md:h-10 rounded-md border border-[#e0e2eb] text-[#3a3f8f] bg-white flex items-center justify-center hover:bg-[#f1f3fc] shadow-sm transition-colors disabled:opacity-50">
+                            className="custom-tooltip w-9 h-9 md:w-10 md:h-10 rounded-md border border-[#e0e2eb] text-[#097969] bg-white flex items-center justify-center hover:bg-[#f1f3fc] shadow-sm transition-colors disabled:opacity-50">
                         <span className="material-symbols-outlined text-[18px] md:text-[20px]">upload_file</span>
                     </button>
                 </div>
@@ -1134,7 +1134,7 @@ export default function SpeechWorkspace() {
                             <button onClick={discardDraft} className="text-[13px] font-bold text-[#777682] hover:text-[#181c22] transition-colors px-3 py-1.5">
                                 Discard
                             </button>
-                            <button onClick={restoreDraft} className="bg-[#222777] text-white text-[13px] font-bold px-4 py-1.5 rounded-md hover:bg-[#3a3f8f] transition-colors">
+                            <button onClick={restoreDraft} className="bg-[#075e51] text-white text-[13px] font-bold px-4 py-1.5 rounded-md hover:bg-[#097969] transition-colors">
                                 Restore
                             </button>
                         </div>
@@ -1150,11 +1150,11 @@ export default function SpeechWorkspace() {
 
                     {/* Speech to Text Box */}
                     <div className="bg-white rounded-lg shadow-[0_1px_4px_rgba(58,63,143,0.08),_0_4px_16px_rgba(58,63,143,0.06)] border border-[#e0e2eb] flex flex-col flex-1 min-h-[300px] md:min-h-[380px]">
-                        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-[#e0e2eb] flex flex-col sm:flex-row sm:justify-between sm:items-center bg-[#f9f9ff] rounded-t-lg gap-3">
+                        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-[#e0e2eb] flex flex-col sm:flex-row sm:justify-between sm:items-center bg-[#F4F9F8] rounded-t-lg gap-3">
                             <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
-                                <h2 className="text-[20px] sm:text-2xl font-bold text-[#222777] tracking-tight">Speech to Text</h2>
+                                <h2 className="text-[20px] sm:text-2xl font-bold text-[#075e51] tracking-tight">Speech to Text</h2>
                                 <span className={`border text-[10px] sm:text-[12px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${recordingState === 'recording' ? 'border-[#61f4fd] text-[#006e73]' : 'border-[#c7c5d3] text-[#777682]'}`}>
-                                    <span className={`w-1.5 h-1.5 rounded-full ${recordingState === 'recording' ? 'bg-[#00c2cb] live-pulse' : 'bg-[#777682]'}`}></span> Live
+                                    <span className={`w-1.5 h-1.5 rounded-full ${recordingState === 'recording' ? 'bg-[#EAB308] live-pulse' : 'bg-[#777682]'}`}></span> Live
                                 </span>
                             </div>
                             <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
@@ -1189,7 +1189,7 @@ export default function SpeechWorkspace() {
                                         <button
                                             onClick={startEditingTranscript}
                                             title="Edit transcript"
-                                            className="text-[#777682] hover:text-[#222777] transition-colors"
+                                            className="text-[#777682] hover:text-[#075e51] transition-colors"
                                         >
                                             <span className="material-symbols-outlined text-[18px] sm:text-[20px]">edit</span>
                                         </button>
@@ -1203,7 +1203,7 @@ export default function SpeechWorkspace() {
                                             navigator.clipboard.writeText(text);
                                             showToast("Copied to clipboard!", "success");
                                         }}
-                                        className="text-[#777682] hover:text-[#222777] transition-colors"
+                                        className="text-[#777682] hover:text-[#075e51] transition-colors"
                                     >
                                         <span className="material-symbols-outlined text-[18px] sm:text-[20px]">content_copy</span>
                                     </button>
@@ -1212,7 +1212,7 @@ export default function SpeechWorkspace() {
                         </div>
 
                         {audioPlaybackUrl && (
-                            <div className="px-4 sm:px-6 py-2 sm:py-3 border-b border-[#e0e2eb] bg-[#f9f9ff]">
+                            <div className="px-4 sm:px-6 py-2 sm:py-3 border-b border-[#e0e2eb] bg-[#F4F9F8]">
                                 <audio controls src={audioPlaybackUrl} className="w-full h-9">
                                     Your browser does not support audio playback.
                                 </audio>
@@ -1251,7 +1251,7 @@ export default function SpeechWorkspace() {
                                     <button
                                         onClick={saveEditedTranscript}
                                         disabled={isSavingEdit}
-                                        className="bg-[#222777] text-white text-[13px] sm:text-[14px] font-bold px-4 py-2 rounded-md hover:bg-[#3a3f8f] transition-colors disabled:opacity-60"
+                                        className="bg-[#075e51] text-white text-[13px] sm:text-[14px] font-bold px-4 py-2 rounded-md hover:bg-[#097969] transition-colors disabled:opacity-60"
                                     >
                                         {isSavingEdit ? 'Saving...' : 'Save Transcript'}
                                     </button>
@@ -1286,7 +1286,7 @@ export default function SpeechWorkspace() {
                                         <span className="font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 text-[#006e73]">
                                             {formatTime(Math.floor((Date.now() - recordingStartTimeRef.current) / 1000))}
                                         </span>
-                                        <p className={`text-[#3a3f8f] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] italic ${language === 'ur-PK' ? 'font-urdu' : ''}`} style={transcriptFontStyle} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
+                                        <p className={`text-[#097969] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] italic ${language === 'ur-PK' ? 'font-urdu' : ''}`} style={transcriptFontStyle} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
                                             {interimText}
                                         </p>
                                     </div>
@@ -1296,7 +1296,7 @@ export default function SpeechWorkspace() {
                                         <span className="text-[#006e73] font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 opacity-50">
                                             {formatTime(timeElapsed)}
                                         </span>
-                                        <span className="w-[2px] h-4 sm:h-5 bg-[#00c2cb] animate-pulse mt-1 sm:mt-1.5"></span>
+                                        <span className="w-[2px] h-4 sm:h-5 bg-[#EAB308] animate-pulse mt-1 sm:mt-1.5"></span>
                                     </div>
                                 )}
                             </div>
@@ -1308,10 +1308,10 @@ export default function SpeechWorkspace() {
                         list and a filtered answer list scrolling independently and drifting out of sync). */}
                     <div className="bg-white rounded-lg shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-5 flex flex-col gap-4">
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                            <h3 className="font-mono text-[13px] sm:text-[14px] font-bold text-[#222777] tracking-widest uppercase">Processing Intent</h3>
+                            <h3 className="font-mono text-[13px] sm:text-[14px] font-bold text-[#075e51] tracking-widest uppercase">Processing Intent</h3>
                             <button
                                 onClick={() => setCustomPrompts([...customPrompts, { id: Date.now(), text: '', answer: '', isAnswering: false }])}
-                                className="text-[#222777] text-[12px] sm:text-[13px] font-bold flex items-center gap-1 hover:text-[#3a3f8f] transition-colors"
+                                className="text-[#075e51] text-[12px] sm:text-[13px] font-bold flex items-center gap-1 hover:text-[#097969] transition-colors"
                             >
                                 <span className="material-symbols-outlined text-[16px] sm:text-[18px]">add</span> Add Section
                             </button>
@@ -1356,7 +1356,7 @@ export default function SpeechWorkspace() {
                                     </div>
 
                                     {/* Answer cell - always rendered so every prompt has a visible, paired answer slot */}
-                                    <div className="flex-1 min-w-0 border border-[#e0e2eb] rounded-md p-3 bg-[#f9f9ff] flex flex-col justify-center">
+                                    <div className="flex-1 min-w-0 border border-[#e0e2eb] rounded-md p-3 bg-[#F4F9F8] flex flex-col justify-center">
                                         {promptObj.isAnswering ? (
                                             <div className="space-y-1.5 animate-pulse">
                                                 <div className="h-2.5 bg-[#e0e2eb] rounded w-full"></div>
@@ -1391,8 +1391,8 @@ export default function SpeechWorkspace() {
                 <div className="w-full lg:w-[400px] xl:w-[480px] flex flex-col gap-4 sm:gap-6 shrink-0">
 
                     <div className="bg-white rounded-lg shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] flex flex-col flex-1 min-h-[300px]">
-                        <div className="p-4 sm:p-5 border-b border-[#e0e2eb] flex justify-between items-center bg-[#f9f9ff] rounded-t-lg">
-                            <h2 className="text-[20px] sm:text-2xl font-bold text-[#222777] tracking-tight">Intelligence Summary</h2>
+                        <div className="p-4 sm:p-5 border-b border-[#e0e2eb] flex justify-between items-center bg-[#F4F9F8] rounded-t-lg">
+                            <h2 className="text-[20px] sm:text-2xl font-bold text-[#075e51] tracking-tight">Intelligence Summary</h2>
                             <button
                                 onClick={handleSummarize}
                                 disabled={isGeneratingSummary || !currentTranscriptId}
@@ -1463,7 +1463,7 @@ export default function SpeechWorkspace() {
                                             <button
                                                 onClick={handleSummarize}
                                                 disabled={isGeneratingSummary}
-                                                className="bg-[#222777] text-white text-[13px] font-bold px-4 py-2 rounded-md hover:bg-[#3a3f8f] transition-colors disabled:opacity-60 flex items-center gap-2"
+                                                className="bg-[#075e51] text-white text-[13px] font-bold px-4 py-2 rounded-md hover:bg-[#097969] transition-colors disabled:opacity-60 flex items-center gap-2"
                                             >
                                                 <span className={`material-symbols-outlined text-[16px] ${isGeneratingSummary ? 'animate-spin' : ''}`}>auto_awesome</span>
                                                 {isGeneratingSummary ? 'Generating...' : 'Generate Summary'}
@@ -1477,7 +1477,7 @@ export default function SpeechWorkspace() {
 
                     {/* Discussed Topics Box */}
                     <div className="bg-white rounded-lg shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-5 flex flex-col">
-                        <h3 className="font-mono text-[13px] sm:text-[14px] font-bold text-[#222777] tracking-widest uppercase mb-3 sm:mb-4 shrink-0">Discussed Topics</h3>
+                        <h3 className="font-mono text-[13px] sm:text-[14px] font-bold text-[#075e51] tracking-widest uppercase mb-3 sm:mb-4 shrink-0">Discussed Topics</h3>
 
                         <div className="flex flex-col gap-2 overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
                             {topics.map(topic => {
@@ -1486,7 +1486,7 @@ export default function SpeechWorkspace() {
                                     <div key={topic.id} className={`flex flex-col ${isExpanded ? 'border border-[#c7c5d3] rounded-md pb-2' : ''}`}>
                                         <div
                                             onClick={() => setExpandedTopicId(isExpanded ? null : topic.id)}
-                                            className={`p-2 sm:p-3 flex justify-between items-center cursor-pointer transition-colors ${!isExpanded ? 'hover:bg-[#f9f9ff] rounded-md' : ''}`}
+                                            className={`p-2 sm:p-3 flex justify-between items-center cursor-pointer transition-colors ${!isExpanded ? 'hover:bg-[#F4F9F8] rounded-md' : ''}`}
                                         >
                                             <div className="flex items-center gap-2 sm:gap-3">
                                                 <span className={`w-2 h-2 rounded-full ${topic.color}`}></span>
@@ -1500,7 +1500,7 @@ export default function SpeechWorkspace() {
                                         {isExpanded && (
                                             <div className="ml-4 sm:ml-5 border-l-[2px] border-[#e0e2eb] pl-3 sm:pl-4 py-1 flex flex-wrap gap-2 mb-1 mt-1">
                                                 {topic.tags.map((tag, idx) => (
-                                                    <span key={idx} className="bg-[#e6fbfc] text-[#006e73] font-bold text-[11px] sm:text-[12px] px-2 py-1 rounded-full flex items-center gap-1">
+                                                    <span key={idx} className="bg-[#FEF9C3] text-[#006e73] font-bold text-[11px] sm:text-[12px] px-2 py-1 rounded-full flex items-center gap-1">
                                                         {tag}
                                                         <span
                                                             onClick={(e) => { e.stopPropagation(); handleRemoveTopicTag(topic.id, tag); }}
@@ -1519,14 +1519,14 @@ export default function SpeechWorkspace() {
                                                             onChange={(e) => setNewTagValue(e.target.value)}
                                                             onKeyDown={(e) => e.key === 'Enter' && submitNewTag(topic.id)}
                                                             onBlur={() => submitNewTag(topic.id)}
-                                                            className="border border-[#c7c5d3] rounded px-2 py-0.5 text-[11px] sm:text-[12px] outline-none text-[#222777]"
+                                                            className="border border-[#c7c5d3] rounded px-2 py-0.5 text-[11px] sm:text-[12px] outline-none text-[#075e51]"
                                                             placeholder="Type tag..."
                                                         />
                                                     </div>
                                                 ) : (
                                                     <button
                                                         onClick={() => handleAddTopicTag(topic.id)}
-                                                        className="bg-transparent border border-dashed border-[#c7c5d3] text-[#777682] font-bold text-[11px] sm:text-[12px] px-2.5 py-1 rounded-full hover:bg-[#f9f9ff] transition-colors"
+                                                        className="bg-transparent border border-dashed border-[#c7c5d3] text-[#777682] font-bold text-[11px] sm:text-[12px] px-2.5 py-1 rounded-full hover:bg-[#F4F9F8] transition-colors"
                                                     >
                                                         + Add tag
                                                     </button>
@@ -1555,7 +1555,7 @@ export default function SpeechWorkspace() {
                 <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                     <button
                         onClick={handleRunResearch}
-                        className="bg-[#222777] text-white text-[12px] sm:text-[14px] font-bold py-1.5 sm:py-2 px-3 sm:px-6 rounded-[6px] shadow-sm hover:bg-[#3a3f8f] hover:cursor-pointer transition-colors flex items-center gap-1 sm:gap-2"
+                        className="bg-[#075e51] text-white text-[12px] sm:text-[14px] font-bold py-1.5 sm:py-2 px-3 sm:px-6 rounded-[6px] shadow-sm hover:bg-[#097969] hover:cursor-pointer transition-colors flex items-center gap-1 sm:gap-2"
                     >
                         Approve <span className="hidden sm:inline">& Generate Queries</span> <span className="material-symbols-outlined text-[16px] sm:text-[18px]">arrow_forward</span>
                     </button>
@@ -1564,7 +1564,7 @@ export default function SpeechWorkspace() {
 
             {/* --- CUSTOM TOAST NOTIFICATION --- */}
             <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#e6fbfc] border-[#00c2cb] text-[#006e73]'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#006e73]'}`}>
                     <span className="material-symbols-outlined text-[20px]">
                         {toast.type === 'error' ? 'error' : 'check_circle'}
                     </span>

@@ -14,11 +14,11 @@ const customMarkerIcon = L.divIcon({
     className: 'bg-transparent border-none',
     html: `
         <div class="flex flex-col items-center" style="transform: translate(-50%, -100%); margin-top: 8px;">
-            <div class="w-5 h-5 bg-[#00c2cb] rounded-full border-2 border-white shadow-md flex items-center justify-center relative">
+            <div class="w-5 h-5 bg-[#EAB308] rounded-full border-2 border-white shadow-md flex items-center justify-center relative">
                 <div class="w-1.5 h-1.5 bg-white rounded-full"></div>
-                <div class="absolute inset-0 rounded-full border-2 border-[#00c2cb] animate-ping opacity-50"></div>
+                <div class="absolute inset-0 rounded-full border-2 border-[#EAB308] animate-ping opacity-50"></div>
             </div>
-            <div class="w-1 h-3 bg-gradient-to-b from-[#00c2cb] to-transparent mt-0.5"></div>
+            <div class="w-1 h-3 bg-gradient-to-b from-[#EAB308] to-transparent mt-0.5"></div>
         </div>
     `,
     iconSize: [0, 0]
@@ -122,11 +122,11 @@ function LocationMapPicker({ locationString, setLocationString }) {
     }, [isExpanded]);
 
     return (
-        <div className={`w-full rounded-xl border border-[#c7c5d3] overflow-hidden mt-3 relative z-0 transition-all duration-300 ease-in-out bg-[#e0e2eb] ${isExpanded ? 'h-[65vh] shadow-[0_8px_30px_rgba(34,39,119,0.15)] ring-2 ring-[#00c2cb]/50' : 'h-64 hover:shadow-md'}`}>
+        <div className={`w-full rounded-xl border border-[#c7c5d3] overflow-hidden mt-3 relative z-0 transition-all duration-300 ease-in-out bg-[#e0e2eb] ${isExpanded ? 'h-[65vh] shadow-[0_8px_30px_rgba(34,39,119,0.15)] ring-2 ring-[#EAB308]/50' : 'h-64 hover:shadow-md'}`}>
 
             {/* Top Toolbar overlay */}
             <div className="absolute top-3 left-3 right-3 z-[1000] flex gap-2 sm:gap-3 items-center pointer-events-none">
-                <form onSubmit={handleSearch} className="flex-1 flex shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg overflow-hidden bg-white/95 backdrop-blur pointer-events-auto border border-[#c7c5d3]/50 transition-all focus-within:ring-2 focus-within:ring-[#00c2cb]/50">
+                <form onSubmit={handleSearch} className="flex-1 flex shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg overflow-hidden bg-white/95 backdrop-blur pointer-events-auto border border-[#c7c5d3]/50 transition-all focus-within:ring-2 focus-within:ring-[#EAB308]/50">
                     <span className="material-symbols-outlined text-[#777682] text-[18px] pl-3 py-2">search</span>
                     <input
                         type="text"
@@ -135,7 +135,7 @@ function LocationMapPicker({ locationString, setLocationString }) {
                         placeholder="Search for a city, landmark, or address..."
                         className="flex-1 px-2 py-2 text-[13px] outline-none bg-transparent font-medium text-[#181c22] placeholder:text-[#777682]"
                     />
-                    <button type="submit" disabled={isSearching} className="bg-transparent px-3 text-[#222777] border-l border-[#e0e2eb]/50 hover:bg-[#f1f3fc] transition-colors flex items-center justify-center">
+                    <button type="submit" disabled={isSearching} className="bg-transparent px-3 text-[#075e51] border-l border-[#e0e2eb]/50 hover:bg-[#f1f3fc] transition-colors flex items-center justify-center">
                         <span className="material-symbols-outlined text-[18px]">{isSearching ? 'hourglass_empty' : 'arrow_forward'}</span>
                     </button>
                 </form>
@@ -144,7 +144,7 @@ function LocationMapPicker({ locationString, setLocationString }) {
                     type="button"
                     onClick={handleUseMyLocation}
                     disabled={isLocating}
-                    className="bg-white/95 backdrop-blur shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg w-9 h-9 sm:w-10 sm:h-10 text-[#00c2cb] border border-[#c7c5d3]/50 hover:bg-[#f1f3fc] transition-colors flex items-center justify-center pointer-events-auto shrink-0 disabled:opacity-60"
+                    className="bg-white/95 backdrop-blur shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg w-9 h-9 sm:w-10 sm:h-10 text-[#EAB308] border border-[#c7c5d3]/50 hover:bg-[#f1f3fc] transition-colors flex items-center justify-center pointer-events-auto shrink-0 disabled:opacity-60"
                     title="Share my current location"
                 >
                     <span className={`material-symbols-outlined text-[20px] ${isLocating ? 'animate-spin' : ''}`}>{isLocating ? 'progress_activity' : 'my_location'}</span>
@@ -153,7 +153,7 @@ function LocationMapPicker({ locationString, setLocationString }) {
                 <button
                     type="button"
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="bg-white/95 backdrop-blur shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg w-9 h-9 sm:w-10 sm:h-10 text-[#222777] border border-[#c7c5d3]/50 hover:bg-[#f1f3fc] transition-colors flex items-center justify-center pointer-events-auto shrink-0"
+                    className="bg-white/95 backdrop-blur shadow-[0_4px_12px_rgba(0,0,0,0.1)] rounded-lg w-9 h-9 sm:w-10 sm:h-10 text-[#075e51] border border-[#c7c5d3]/50 hover:bg-[#f1f3fc] transition-colors flex items-center justify-center pointer-events-auto shrink-0"
                     title={isExpanded ? "Collapse Map" : "Expand Map"}
                 >
                     <span className="material-symbols-outlined text-[20px]">{isExpanded ? 'fullscreen_exit' : 'fullscreen'}</span>
@@ -187,18 +187,18 @@ function LocationMapPicker({ locationString, setLocationString }) {
 
 // Mirrors NOTIFICATION_META in components/Navbar.jsx so notification cards look identical in both places
 const NOTIFICATION_META = {
-    reminder: { icon: 'schedule', color: 'text-[#222777] bg-[#eef0f9]', title: 'Reminder' },
+    reminder: { icon: 'schedule', color: 'text-[#075e51] bg-[#eef0f9]', title: 'Reminder' },
     system: { icon: 'info', color: 'text-[#464651] bg-[#f1f3fc]', title: 'System' },
-    update: { icon: 'campaign', color: 'text-[#222777] bg-[#eef0f9]', title: 'Update' },
+    update: { icon: 'campaign', color: 'text-[#075e51] bg-[#eef0f9]', title: 'Update' },
     referral_pending: { icon: 'hourglass_empty', color: 'text-[#b45309] bg-[#fff8e1]', title: 'Referral Pending' },
-    referral_approved: { icon: 'check_circle', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Referral Approved' },
+    referral_approved: { icon: 'check_circle', color: 'text-[#006e73] bg-[#FEF9C3]', title: 'Referral Approved' },
     referral_rejected: { icon: 'cancel', color: 'text-[#ba1a1a] bg-[#ffdad6]', title: 'Referral Rejected' },
-    seminar_reward_received: { icon: 'redeem', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Reward Received' },
-    seminar_coins_reserved: { icon: 'lock_clock', color: 'text-[#222777] bg-[#eef0f9]', title: 'Coins Reserved' },
-    seminar_coins_refunded: { icon: 'replay', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Coins Refunded' },
-    form_published: { icon: 'assignment', color: 'text-[#222777] bg-[#eef0f9]', title: 'New Form' },
-    keyword_seminar_match: { icon: 'bookmark', color: 'text-[#00c2cb] bg-[#e6fbfc]', title: 'Followed Topic' },
-    project_unlocked: { icon: 'toll', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Project Unlocked' }
+    seminar_reward_received: { icon: 'redeem', color: 'text-[#006e73] bg-[#FEF9C3]', title: 'Reward Received' },
+    seminar_coins_reserved: { icon: 'lock_clock', color: 'text-[#075e51] bg-[#eef0f9]', title: 'Coins Reserved' },
+    seminar_coins_refunded: { icon: 'replay', color: 'text-[#006e73] bg-[#FEF9C3]', title: 'Coins Refunded' },
+    form_published: { icon: 'assignment', color: 'text-[#075e51] bg-[#eef0f9]', title: 'New Form' },
+    keyword_seminar_match: { icon: 'bookmark', color: 'text-[#EAB308] bg-[#FEF9C3]', title: 'Followed Topic' },
+    project_unlocked: { icon: 'toll', color: 'text-[#006e73] bg-[#FEF9C3]', title: 'Project Unlocked' }
 };
 const DEFAULT_NOTIFICATION_META = { icon: 'notifications', color: 'text-[#777682] bg-[#f1f3fc]', title: 'Notification' };
 
@@ -561,7 +561,7 @@ export default function Settings() {
                                 onClick={() => setActiveTab(tabId)}
                                 className={`text-left px-4 py-2 sm:py-2.5 rounded-md text-[13px] sm:text-sm font-semibold transition-colors flex items-center justify-between group whitespace-nowrap shrink-0 md:shrink
                                     ${isActive
-                                    ? 'bg-[#e6fbfc] text-[#006e73] border border-[#00c2cb]/30 shadow-sm'
+                                    ? 'bg-[#FEF9C3] text-[#006e73] border border-[#EAB308]/30 shadow-sm'
                                     : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 border border-transparent'
                                 }`}
                             >
@@ -639,7 +639,7 @@ export default function Settings() {
                                     className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg bg-gray-100 overflow-hidden border border-gray-200 relative group cursor-pointer shadow-sm"
                                 >
                                     <img src={profileData.avatar} alt="Profile" className="w-full h-full object-cover" />
-                                    <div className="absolute inset-0 bg-[#222777]/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[2px]">
+                                    <div className="absolute inset-0 bg-[#075e51]/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[2px]">
                                         <span className="material-symbols-outlined text-white">upload</span>
                                     </div>
                                 </div>
@@ -653,14 +653,14 @@ export default function Settings() {
                                         <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Full Name</label>
                                         <input
                                             type="text" name="fullName" value={profileData.fullName} onChange={handleProfileChange}
-                                            className="w-full bg-[#f9f9ff] rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
+                                            className="w-full bg-[#F4F9F8] rounded-md border border-gray-200 focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
                                         />
                                     </div>
                                     <div>
                                         <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">Professional Title</label>
                                         <input
                                             type="text" name="title" value={profileData.title} onChange={handleProfileChange}
-                                            className="w-full bg-[#f9f9ff] rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
+                                            className="w-full bg-[#F4F9F8] rounded-md border border-gray-200 focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
                                         />
                                     </div>
                                     <div className="sm:col-span-2">
@@ -683,8 +683,8 @@ export default function Settings() {
                                     <button
                                         onClick={handleSaveProfile}
                                         disabled={isSaving}
-                                        className={`w-full sm:w-auto bg-[#222777] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2
-                                            ${isSaving ? 'opacity-80 cursor-not-allowed' : 'hover:bg-[#3a3f8f]'}`}
+                                        className={`w-full sm:w-auto bg-[#075e51] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2
+                                            ${isSaving ? 'opacity-80 cursor-not-allowed' : 'hover:bg-[#097969]'}`}
                                     >
                                         {isSaving ? (
                                             <>
@@ -714,7 +714,7 @@ export default function Settings() {
                                     <input
                                         type="tel" name="workPhone" value={identityData.workPhone} onChange={handleIdentityFieldChange}
                                         placeholder="+1 555 000 0000"
-                                        className="w-full bg-[#f9f9ff] rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
+                                        className="w-full bg-[#F4F9F8] rounded-md border border-gray-200 focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
                                     />
                                 </div>
                                 <div>
@@ -722,7 +722,7 @@ export default function Settings() {
                                     <input
                                         type="tel" name="personalPhone" value={identityData.personalPhone} onChange={handleIdentityFieldChange}
                                         placeholder="+1 555 000 0000"
-                                        className="w-full bg-[#f9f9ff] rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
+                                        className="w-full bg-[#F4F9F8] rounded-md border border-gray-200 focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
                                     />
                                 </div>
                                 <div className="sm:col-span-2">
@@ -731,7 +731,7 @@ export default function Settings() {
                                     <input
                                         type="text" name="address" value={identityData.address} onChange={handleIdentityFieldChange}
                                         placeholder="Share your location, click the map, or type an address"
-                                        className="w-full bg-[#f9f9ff] rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
+                                        className="w-full bg-[#F4F9F8] rounded-md border border-gray-200 focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
                                     />
                                     <LocationMapPicker
                                         locationString={identityData.address}
@@ -750,7 +750,7 @@ export default function Settings() {
                                     <label className="block text-[11px] sm:text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wider">ID Type</label>
                                     <select
                                         name="kycIdType" value={identityData.kycIdType} onChange={handleIdentityFieldChange}
-                                        className="w-full bg-[#f9f9ff] rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
+                                        className="w-full bg-[#F4F9F8] rounded-md border border-gray-200 focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
                                     >
                                         <option value="">Select type...</option>
                                         <option value="id_card">National ID Card</option>
@@ -762,7 +762,7 @@ export default function Settings() {
                                     <input
                                         type="text" name="kycIdNumber" value={identityData.kycIdNumber} onChange={handleIdentityFieldChange}
                                         placeholder="Enter ID or passport number"
-                                        className="w-full bg-[#f9f9ff] rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
+                                        className="w-full bg-[#F4F9F8] rounded-md border border-gray-200 focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] text-gray-900 py-2.5 px-3 text-[14px] outline-none transition-shadow"
                                     />
                                 </div>
                                 <div className="sm:col-span-2">
@@ -771,13 +771,13 @@ export default function Settings() {
                                     <div className="flex items-center gap-3 flex-wrap">
                                         <button
                                             type="button" onClick={handleIdDocumentClick} disabled={isUploadingIdDoc}
-                                            className="bg-[#f1f3fc] text-[#222777] border border-[#c7c5d3] px-4 py-2.5 rounded-md font-bold text-[13px] hover:bg-[#e0e2eb] transition-colors flex items-center gap-2 shrink-0"
+                                            className="bg-[#f1f3fc] text-[#075e51] border border-[#c7c5d3] px-4 py-2.5 rounded-md font-bold text-[13px] hover:bg-[#e0e2eb] transition-colors flex items-center gap-2 shrink-0"
                                         >
                                             <span className="material-symbols-outlined text-[18px]">{isUploadingIdDoc ? 'hourglass_empty' : 'upload_file'}</span>
                                             {isUploadingIdDoc ? 'Uploading...' : 'Upload Scan'}
                                         </button>
                                         {identityData.idDocumentUrl && (
-                                            <a href={identityData.idDocumentUrl} target="_blank" rel="noreferrer" className="text-[#00c2cb] hover:text-[#006e73] font-semibold text-[13px] flex items-center gap-1">
+                                            <a href={identityData.idDocumentUrl} target="_blank" rel="noreferrer" className="text-[#EAB308] hover:text-[#006e73] font-semibold text-[13px] flex items-center gap-1">
                                                 <span className="material-symbols-outlined text-[16px]">visibility</span>
                                                 View current document
                                             </a>
@@ -790,8 +790,8 @@ export default function Settings() {
                                 <button
                                     onClick={handleSaveIdentity}
                                     disabled={isSavingIdentity}
-                                    className={`w-full sm:w-auto bg-[#222777] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2
-                                        ${isSavingIdentity ? 'opacity-80 cursor-not-allowed' : 'hover:bg-[#3a3f8f]'}`}
+                                    className={`w-full sm:w-auto bg-[#075e51] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2
+                                        ${isSavingIdentity ? 'opacity-80 cursor-not-allowed' : 'hover:bg-[#097969]'}`}
                                 >
                                     {isSavingIdentity ? (
                                         <>
@@ -810,7 +810,7 @@ export default function Settings() {
                                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Certifications</h3>
                                 <button
                                     type="button" onClick={handleAddCertification}
-                                    className="text-[#00c2cb] hover:text-[#006e73] font-semibold text-[13px] transition-colors flex items-center gap-1 whitespace-nowrap"
+                                    className="text-[#EAB308] hover:text-[#006e73] font-semibold text-[13px] transition-colors flex items-center gap-1 whitespace-nowrap"
                                 >
                                     <span className="material-symbols-outlined text-[18px]">add_circle</span>
                                     Add Certification
@@ -823,7 +823,7 @@ export default function Settings() {
                             ) : (
                                 <div className="space-y-4">
                                     {certifications.map((cert, index) => (
-                                        <div key={cert._id || index} className="p-4 rounded-lg border border-gray-100 bg-[#f9f9ff] relative">
+                                        <div key={cert._id || index} className="p-4 rounded-lg border border-gray-100 bg-[#F4F9F8] relative">
                                             <button
                                                 type="button" onClick={() => handleRemoveCertification(index)}
                                                 className="absolute top-3 right-3 text-[#777682] hover:text-[#ba1a1a] transition-colors"
@@ -837,7 +837,7 @@ export default function Settings() {
                                                     <input
                                                         type="text" value={cert.title} onChange={(e) => handleCertificationChange(index, 'title', e.target.value)}
                                                         placeholder="e.g. PMP Certification"
-                                                        className="w-full bg-white rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2 px-3 text-[13px] outline-none transition-shadow"
+                                                        className="w-full bg-white rounded-md border border-gray-200 focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] text-gray-900 py-2 px-3 text-[13px] outline-none transition-shadow"
                                                     />
                                                 </div>
                                                 <div>
@@ -845,14 +845,14 @@ export default function Settings() {
                                                     <input
                                                         type="text" value={cert.issuer || ''} onChange={(e) => handleCertificationChange(index, 'issuer', e.target.value)}
                                                         placeholder="e.g. PMI"
-                                                        className="w-full bg-white rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2 px-3 text-[13px] outline-none transition-shadow"
+                                                        className="w-full bg-white rounded-md border border-gray-200 focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] text-gray-900 py-2 px-3 text-[13px] outline-none transition-shadow"
                                                     />
                                                 </div>
                                                 <div>
                                                     <label className="block text-[10px] sm:text-[11px] font-semibold text-gray-600 mb-1 uppercase tracking-wider">Issue Date</label>
                                                     <input
                                                         type="date" value={cert.issueDate ? String(cert.issueDate).slice(0, 10) : ''} onChange={(e) => handleCertificationChange(index, 'issueDate', e.target.value)}
-                                                        className="w-full bg-white rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2 px-3 text-[13px] outline-none transition-shadow"
+                                                        className="w-full bg-white rounded-md border border-gray-200 focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] text-gray-900 py-2 px-3 text-[13px] outline-none transition-shadow"
                                                     />
                                                 </div>
                                                 <div>
@@ -865,13 +865,13 @@ export default function Settings() {
                                                         <button
                                                             type="button" onClick={() => document.getElementById(`cert-file-${index}`).click()}
                                                             disabled={uploadingCertIndex === index}
-                                                            className="bg-white text-[#222777] border border-[#c7c5d3] px-3 py-2 rounded-md font-bold text-[12px] hover:bg-[#eef0f9] transition-colors flex items-center gap-1.5 shrink-0"
+                                                            className="bg-white text-[#075e51] border border-[#c7c5d3] px-3 py-2 rounded-md font-bold text-[12px] hover:bg-[#eef0f9] transition-colors flex items-center gap-1.5 shrink-0"
                                                         >
                                                             <span className="material-symbols-outlined text-[16px]">{uploadingCertIndex === index ? 'hourglass_empty' : 'upload_file'}</span>
                                                             {uploadingCertIndex === index ? 'Uploading...' : 'Upload'}
                                                         </button>
                                                         {cert.certificateUrl && (
-                                                            <a href={cert.certificateUrl} target="_blank" rel="noreferrer" className="text-[#00c2cb] hover:text-[#006e73] font-semibold text-[12px]">
+                                                            <a href={cert.certificateUrl} target="_blank" rel="noreferrer" className="text-[#EAB308] hover:text-[#006e73] font-semibold text-[12px]">
                                                                 View file
                                                             </a>
                                                         )}
@@ -882,7 +882,7 @@ export default function Settings() {
                                                     <input
                                                         type="text" value={cert.description || ''} onChange={(e) => handleCertificationChange(index, 'description', e.target.value)}
                                                         placeholder="Optional notes"
-                                                        className="w-full bg-white rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2 px-3 text-[13px] outline-none transition-shadow"
+                                                        className="w-full bg-white rounded-md border border-gray-200 focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] text-gray-900 py-2 px-3 text-[13px] outline-none transition-shadow"
                                                     />
                                                 </div>
                                             </div>
@@ -895,8 +895,8 @@ export default function Settings() {
                                 <button
                                     onClick={handleSaveIdentity}
                                     disabled={isSavingIdentity}
-                                    className={`w-full sm:w-auto bg-[#222777] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2
-                                        ${isSavingIdentity ? 'opacity-80 cursor-not-allowed' : 'hover:bg-[#3a3f8f]'}`}
+                                    className={`w-full sm:w-auto bg-[#075e51] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2
+                                        ${isSavingIdentity ? 'opacity-80 cursor-not-allowed' : 'hover:bg-[#097969]'}`}
                                 >
                                     {isSavingIdentity ? (
                                         <>
@@ -933,12 +933,12 @@ export default function Settings() {
                                             value={passwordForm[field]}
                                             onChange={handlePasswordFieldChange}
                                             autoComplete="new-password"
-                                            className="w-full bg-[#f9f9ff] rounded-md border border-gray-200 focus:border-[#222777] focus:ring-1 focus:ring-[#222777] text-gray-900 py-2.5 px-3 pr-10 text-[14px] outline-none transition-shadow"
+                                            className="w-full bg-[#F4F9F8] rounded-md border border-gray-200 focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] text-gray-900 py-2.5 px-3 pr-10 text-[14px] outline-none transition-shadow"
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowPassword(prev => ({ ...prev, [key]: !prev[key] }))}
-                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#777682] hover:text-[#222777] transition-colors"
+                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#777682] hover:text-[#075e51] transition-colors"
                                         >
                                             <span className="material-symbols-outlined text-[18px]">{showPassword[key] ? 'visibility_off' : 'visibility'}</span>
                                         </button>
@@ -950,8 +950,8 @@ export default function Settings() {
                                 <button
                                     onClick={handleChangePassword}
                                     disabled={isChangingPassword}
-                                    className={`w-full sm:w-auto bg-[#222777] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2
-                                        ${isChangingPassword ? 'opacity-80 cursor-not-allowed' : 'hover:bg-[#3a3f8f]'}`}
+                                    className={`w-full sm:w-auto bg-[#075e51] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2
+                                        ${isChangingPassword ? 'opacity-80 cursor-not-allowed' : 'hover:bg-[#097969]'}`}
                                 >
                                     {isChangingPassword ? (
                                         <>
@@ -981,9 +981,9 @@ export default function Settings() {
                                     { key: 'rewardAlerts', icon: 'toll', title: 'Reward & Referral Alerts', desc: 'Alert when coins or referral bonuses are credited.' },
                                     { key: 'systemUpdates', icon: 'notifications', title: 'System Updates', desc: 'Important system announcements and maintenance.' }
                                 ].map(({ key, icon, title, desc }) => (
-                                    <div key={key} className="flex items-center justify-between gap-4 p-3.5 sm:p-4 rounded-lg border border-gray-100 bg-[#f9f9ff]">
+                                    <div key={key} className="flex items-center justify-between gap-4 p-3.5 sm:p-4 rounded-lg border border-gray-100 bg-[#F4F9F8]">
                                         <div className="flex items-start gap-3 min-w-0">
-                                            <span className="material-symbols-outlined text-[#222777] text-[20px] shrink-0 mt-0.5">{icon}</span>
+                                            <span className="material-symbols-outlined text-[#075e51] text-[20px] shrink-0 mt-0.5">{icon}</span>
                                             <div className="min-w-0">
                                                 <p className="text-[13px] sm:text-sm font-bold text-gray-900">{title}</p>
                                                 <p className="font-mono text-[11px] sm:text-xs text-gray-500 mt-0.5">{desc}</p>
@@ -992,7 +992,7 @@ export default function Settings() {
                                         <button
                                             type="button"
                                             onClick={() => handleTogglePref(key)}
-                                            className={`shrink-0 w-11 h-6 rounded-full transition-colors relative ${notificationPrefs[key] ? 'bg-[#222777]' : 'bg-gray-300'}`}
+                                            className={`shrink-0 w-11 h-6 rounded-full transition-colors relative ${notificationPrefs[key] ? 'bg-[#075e51]' : 'bg-gray-300'}`}
                                         >
                                             <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all ${notificationPrefs[key] ? 'left-[22px]' : 'left-0.5'}`}></span>
                                         </button>
@@ -1004,8 +1004,8 @@ export default function Settings() {
                                 <button
                                     onClick={handleSavePrefs}
                                     disabled={isSavingPrefs}
-                                    className={`w-full sm:w-auto bg-[#222777] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2
-                                        ${isSavingPrefs ? 'opacity-80 cursor-not-allowed' : 'hover:bg-[#3a3f8f]'}`}
+                                    className={`w-full sm:w-auto bg-[#075e51] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2
+                                        ${isSavingPrefs ? 'opacity-80 cursor-not-allowed' : 'hover:bg-[#097969]'}`}
                                 >
                                     {isSavingPrefs ? (
                                         <>
@@ -1025,7 +1025,7 @@ export default function Settings() {
                                 <button
                                     onClick={handleMarkAllRead}
                                     disabled={isMarkingRead || !notifications.some(n => !n.isRead)}
-                                    className="text-[#00c2cb] hover:text-[#006e73] font-semibold text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                                    className="text-[#EAB308] hover:text-[#006e73] font-semibold text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
                                 >
                                     Mark all as read
                                 </button>
@@ -1060,7 +1060,7 @@ export default function Settings() {
 
             {/* --- CUSTOM TOAST NOTIFICATION --- */}
             <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#e6fbfc] border-[#00c2cb] text-[#006e73]'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#006e73]'}`}>
                     <span className="material-symbols-outlined text-[20px]">
                         {toast.type === 'error' ? 'error' : 'check_circle'}
                     </span>

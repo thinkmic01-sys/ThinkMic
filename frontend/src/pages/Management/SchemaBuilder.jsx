@@ -6,7 +6,7 @@ import api from '../../services/api';
 
 const STATUS_BADGE = {
     draft: { classes: 'bg-[#ffdad6] text-[#93000a] border-[#ffdad6]', dot: 'bg-[#ba1a1a]', label: 'Draft' },
-    active: { classes: 'bg-[#e6fbfc] text-[#006e73] border-[#6bf6ff]/50', dot: 'bg-[#00c2cb]', label: 'Active' },
+    active: { classes: 'bg-[#FEF9C3] text-[#006e73] border-[#6bf6ff]/50', dot: 'bg-[#EAB308]', label: 'Active' },
     archived: { classes: 'bg-[#f1f3fc] text-[#464651] border-[#e0e2eb]', dot: 'bg-[#777682]', label: 'Archived' }
 };
 
@@ -259,7 +259,7 @@ export default function SchemaBuilder() {
     const handlePublish = () => saveSchema(true);
 
     return (
-        <div className="flex flex-col h-[calc(100vh-64px)] w-full bg-[#f9f9ff] overflow-hidden font-sans">
+        <div className="flex flex-col h-[calc(100vh-64px)] w-full bg-[#F4F9F8] overflow-hidden font-sans">
 
             {/* --- MOBILE BACKDROPS --- */}
             {(isPaletteOpen || isPropertiesOpen) && (
@@ -278,7 +278,7 @@ export default function SchemaBuilder() {
                             onChange={(e) => setSchemaName(e.target.value)} 
                             className="text-[18px] sm:text-[22px] md:text-2xl font-bold text-[#181c22] truncate max-w-[150px] sm:max-w-[300px] bg-transparent outline-none border-b border-transparent focus:border-[#c7c5d3] transition-colors"
                         />
-                        <span className="material-symbols-outlined text-[#777682] group-hover:text-[#222777] transition-colors text-[16px] sm:text-[20px]">edit</span>
+                        <span className="material-symbols-outlined text-[#777682] group-hover:text-[#075e51] transition-colors text-[16px] sm:text-[20px]">edit</span>
                     </div>
                     <div className="hidden lg:flex items-center gap-4 text-[#464651] font-mono text-[13px] font-bold">
                         <input
@@ -297,7 +297,7 @@ export default function SchemaBuilder() {
                             <select
                                 value={targetRole}
                                 onChange={(e) => setTargetRole(e.target.value)}
-                                className="border border-[#c7c5d3] rounded-md py-1 px-2 bg-[#f9f9ff] text-[#181c22] focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none text-[12px] sm:text-sm font-semibold"
+                                className="border border-[#c7c5d3] rounded-md py-1 px-2 bg-[#F4F9F8] text-[#181c22] focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none text-[12px] sm:text-sm font-semibold"
                             >
                                 <option value="all">Everyone</option>
                                 {/* A lecturer-owned schema an admin is now editing - keep it selectable/labeled
@@ -318,7 +318,7 @@ export default function SchemaBuilder() {
                     ) : (
                         <div className="hidden sm:flex items-center gap-2">
                             <span className="text-[12px] font-bold text-[#777682]">Visible to:</span>
-                            <span className="border border-[#c7c5d3] rounded-md py-1 px-2 bg-[#f9f9ff] text-[#181c22] text-[12px] sm:text-sm font-semibold">
+                            <span className="border border-[#c7c5d3] rounded-md py-1 px-2 bg-[#F4F9F8] text-[#181c22] text-[12px] sm:text-sm font-semibold">
                                 Your Students Only
                             </span>
                         </div>
@@ -341,7 +341,7 @@ export default function SchemaBuilder() {
                     ${isPaletteOpen ? 'translate-x-0' : '-translate-x-full absolute lg:static'}
                 `}>
                     <div className="p-4 border-b border-[#c7c5d3] bg-[#eef0f9] flex justify-between items-center">
-                        <h3 className="font-mono text-[13px] font-bold text-[#222777] uppercase tracking-wider">Field Types</h3>
+                        <h3 className="font-mono text-[13px] font-bold text-[#075e51] uppercase tracking-wider">Field Types</h3>
                         <button className="lg:hidden text-[#777682]" onClick={() => setIsPaletteOpen(false)}>
                             <span className="material-symbols-outlined">close</span>
                         </button>
@@ -363,11 +363,11 @@ export default function SchemaBuilder() {
                                     key={i}
                                     onClick={() => handleAddField(tile.name, tile.icon)}
                                     className={`bg-white border rounded-lg p-2 sm:p-3 flex flex-col items-center justify-center gap-1.5 sm:gap-2 cursor-pointer transition-all hover:-translate-y-0.5 group
-                                    ${tile.special ? 'border-[#222777] border-dashed shadow-sm hover:shadow-md relative overflow-hidden bg-[#f9f9ff]' : 'border-[#e0e2eb] hover:border-[#3a3f8f] hover:shadow-sm'}`}
+                                    ${tile.special ? 'border-[#075e51] border-dashed shadow-sm hover:shadow-md relative overflow-hidden bg-[#F4F9F8]' : 'border-[#e0e2eb] hover:border-[#097969] hover:shadow-sm'}`}
                                 >
-                                    {tile.special && <div className="absolute top-1 right-1 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-[#00c2cb] rounded-full"></div>}
-                                    <span className={`material-symbols-outlined text-[20px] sm:text-[24px] ${tile.special ? 'text-[#222777]' : 'text-[#3a3f8f]'}`}>{tile.icon}</span>
-                                    <span className={`text-[11px] sm:text-[12px] font-bold text-center leading-tight ${tile.special ? 'text-[#222777]' : 'text-[#181c22]'}`}>{tile.name}</span>
+                                    {tile.special && <div className="absolute top-1 right-1 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-[#EAB308] rounded-full"></div>}
+                                    <span className={`material-symbols-outlined text-[20px] sm:text-[24px] ${tile.special ? 'text-[#075e51]' : 'text-[#097969]'}`}>{tile.icon}</span>
+                                    <span className={`text-[11px] sm:text-[12px] font-bold text-center leading-tight ${tile.special ? 'text-[#075e51]' : 'text-[#181c22]'}`}>{tile.name}</span>
                                 </div>
                             ))}
                         </div>
@@ -380,10 +380,10 @@ export default function SchemaBuilder() {
 
                     {/* Mobile Only: Top Action Bar */}
                     <div className="lg:hidden flex items-center justify-between p-3 bg-white border-b border-[#e0e2eb] z-10 shrink-0">
-                        <button onClick={() => setIsPaletteOpen(true)} className="flex items-center gap-1 text-[#222777] font-bold text-[13px] bg-[#f1f3fc] px-3 py-1.5 rounded-lg border border-[#e0e2eb]">
+                        <button onClick={() => setIsPaletteOpen(true)} className="flex items-center gap-1 text-[#075e51] font-bold text-[13px] bg-[#f1f3fc] px-3 py-1.5 rounded-lg border border-[#e0e2eb]">
                             <span className="material-symbols-outlined text-[18px]">add</span> Add Field
                         </button>
-                        <button onClick={() => setIsPropertiesOpen(true)} className="flex items-center gap-1 text-[#006e73] font-bold text-[13px] bg-[#e6fbfc] px-3 py-1.5 rounded-lg border border-[#6bf6ff]/50">
+                        <button onClick={() => setIsPropertiesOpen(true)} className="flex items-center gap-1 text-[#006e73] font-bold text-[13px] bg-[#FEF9C3] px-3 py-1.5 rounded-lg border border-[#6bf6ff]/50">
                             Properties <span className="material-symbols-outlined text-[18px]">tune</span>
                         </button>
                     </div>
@@ -394,14 +394,14 @@ export default function SchemaBuilder() {
                                 key={field.id}
                                 onClick={() => handleFieldClick(field.id)}
                                 className={`bg-white rounded-lg flex flex-col group cursor-pointer transition-all border
-                                    ${field.active ? 'border-2 border-[#222777] shadow-[0_4px_16px_rgba(58,63,143,0.12)]' : 'border-[#c7c5d3] shadow-[0_1px_4px_rgba(58,63,143,0.08)] hover:border-[#3a3f8f]'}`}
+                                    ${field.active ? 'border-2 border-[#075e51] shadow-[0_4px_16px_rgba(58,63,143,0.12)]' : 'border-[#c7c5d3] shadow-[0_1px_4px_rgba(58,63,143,0.08)] hover:border-[#097969]'}`}
                             >
-                                {field.active && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#222777] rounded-l-md"></div>}
+                                {field.active && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#075e51] rounded-l-md"></div>}
 
                                 <div className="p-3 sm:p-4 flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-4 relative">
-                                    <span className="hidden sm:block material-symbols-outlined text-[#c7c5d3] cursor-grab hover:text-[#222777] transition-colors shrink-0">drag_indicator</span>
+                                    <span className="hidden sm:block material-symbols-outlined text-[#c7c5d3] cursor-grab hover:text-[#075e51] transition-colors shrink-0">drag_indicator</span>
                                     <span className={`material-symbols-outlined p-1.5 rounded-md shrink-0 text-[18px] sm:text-[24px]
-                                        ${field.active && field.type === 'Voice' ? 'text-white bg-[#00c2cb]' : 'text-[#3a3f8f] bg-[#f1f3fc]'}`}>
+                                        ${field.active && field.type === 'Voice' ? 'text-white bg-[#EAB308]' : 'text-[#097969] bg-[#f1f3fc]'}`}>
                                         {field.icon}
                                     </span>
                                     <div className="flex-1 min-w-[120px]">
@@ -413,7 +413,7 @@ export default function SchemaBuilder() {
                                             <span className="px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-bold uppercase tracking-wider bg-[#ffdad6] text-[#ba1a1a]">Req</span>
                                         )}
                                         <div className={`flex items-center gap-1 sm:gap-2 transition-opacity ${field.active ? 'opacity-100' : 'opacity-100 lg:opacity-0 lg:group-hover:opacity-100'}`}>
-                                            <button className="text-[#3a3f8f] hover:text-[#222777] transition-colors p-1"><span className="material-symbols-outlined text-[18px] sm:text-[20px]">edit</span></button>
+                                            <button className="text-[#097969] hover:text-[#075e51] transition-colors p-1"><span className="material-symbols-outlined text-[18px] sm:text-[20px]">edit</span></button>
                                             <button onClick={(e) => handleDeleteField(e, field.id)} className="text-[#c7c5d3] hover:text-[#ba1a1a] transition-colors p-1">
                                                 <span className="material-symbols-outlined text-[18px] sm:text-[20px]">delete</span>
                                             </button>
@@ -423,15 +423,15 @@ export default function SchemaBuilder() {
 
                                 {/* Canvas preview for Voice Prompt */}
                                 {field.active && field.type === 'Voice' && field.prompt && (
-                                    <div className="bg-[#f9f9ff] px-4 sm:px-6 py-3 border-t border-[#e0e2eb] flex items-start gap-2 sm:gap-3 rounded-b-lg">
-                                        <span className="material-symbols-outlined text-[#00c2cb] text-[16px] sm:text-[18px] mt-0.5">smart_toy</span>
+                                    <div className="bg-[#F4F9F8] px-4 sm:px-6 py-3 border-t border-[#e0e2eb] flex items-start gap-2 sm:gap-3 rounded-b-lg">
+                                        <span className="material-symbols-outlined text-[#EAB308] text-[16px] sm:text-[18px] mt-0.5">smart_toy</span>
                                         <p className="font-mono text-[11px] sm:text-[12px] text-[#464651] italic leading-relaxed">"{field.prompt}"</p>
                                     </div>
                                 )}
 
                                 {/* Canvas preview for Dropdown/Checkbox options */}
                                 {field.active && (field.type === 'Dropdown' || field.type === 'Checkbox') && field.options && (
-                                    <div className="bg-[#f9f9ff] px-4 sm:px-6 py-3 border-t border-[#e0e2eb] flex flex-wrap gap-2 rounded-b-lg">
+                                    <div className="bg-[#F4F9F8] px-4 sm:px-6 py-3 border-t border-[#e0e2eb] flex flex-wrap gap-2 rounded-b-lg">
                                         {field.options.map((opt, i) => (
                                             <span key={i} className="bg-white border border-[#e0e2eb] text-[#777682] text-[10px] sm:text-[11px] font-bold px-2 py-1 rounded shadow-sm">
                                                 {field.type === 'Checkbox' ? '☐' : '▾'} {opt}
@@ -444,14 +444,14 @@ export default function SchemaBuilder() {
 
                         {/* Drop Zone */}
                         {fields.length === 0 ? (
-                            <div className="border-2 border-dashed border-[#c7c5d3] bg-[#f9f9ff]/50 rounded-lg p-6 sm:h-32 flex flex-col items-center justify-center text-[#777682] hover:border-[#222777] hover:text-[#222777] hover:bg-[#f1f3fc] transition-colors text-center">
+                            <div className="border-2 border-dashed border-[#c7c5d3] bg-[#F4F9F8]/50 rounded-lg p-6 sm:h-32 flex flex-col items-center justify-center text-[#777682] hover:border-[#075e51] hover:text-[#075e51] hover:bg-[#f1f3fc] transition-colors text-center">
                                 <span className="material-symbols-outlined text-3xl mb-2">add_box</span>
                                 <span className="font-mono text-[12px] sm:text-[13px] font-bold">Tap "+ Add Field" or click left palette to begin</span>
                             </div>
                         ) : (
                             <div
                                 onClick={() => { if(window.innerWidth < 1024) setIsPaletteOpen(true); }}
-                                className="border-2 border-dashed border-[#c7c5d3] bg-[#f9f9ff]/50 rounded-lg h-20 sm:h-24 flex items-center justify-center text-[#777682] font-mono text-[12px] sm:text-[13px] font-bold cursor-pointer lg:cursor-default hover:border-[#222777] hover:text-[#222777] transition-colors"
+                                className="border-2 border-dashed border-[#c7c5d3] bg-[#F4F9F8]/50 rounded-lg h-20 sm:h-24 flex items-center justify-center text-[#777682] font-mono text-[12px] sm:text-[13px] font-bold cursor-pointer lg:cursor-default hover:border-[#075e51] hover:text-[#075e51] transition-colors"
                             >
                                 Add more fields...
                             </div>
@@ -466,8 +466,8 @@ export default function SchemaBuilder() {
                     transform transition-transform duration-300 ease-in-out lg:translate-x-0
                     ${isPropertiesOpen ? 'translate-x-0' : 'translate-x-full absolute lg:static'}
                 `}>
-                    <div className="p-4 border-b border-[#c7c5d3] bg-[#f9f9ff] flex justify-between items-center">
-                        <h3 className="font-mono text-[13px] font-bold text-[#222777] uppercase tracking-wider">Field Properties</h3>
+                    <div className="p-4 border-b border-[#c7c5d3] bg-[#F4F9F8] flex justify-between items-center">
+                        <h3 className="font-mono text-[13px] font-bold text-[#075e51] uppercase tracking-wider">Field Properties</h3>
                         <div className="flex gap-2">
                             <span className="material-symbols-outlined text-[#777682] text-[20px] hidden lg:block">settings</span>
                             <button className="lg:hidden text-[#777682]" onClick={() => setIsPropertiesOpen(false)}>
@@ -481,7 +481,7 @@ export default function SchemaBuilder() {
                             <>
                                 {/* Selected Type Indicator */}
                                 <div className="flex items-center gap-2 sm:gap-3 bg-[#f1f3fc] p-3 rounded-lg border border-[#e0e2eb]">
-                                    <span className="material-symbols-outlined text-[#222777] text-[20px]">{activeField.icon}</span>
+                                    <span className="material-symbols-outlined text-[#075e51] text-[20px]">{activeField.icon}</span>
                                     <span className="font-mono text-[12px] sm:text-[13px] font-bold text-[#181c22]">{activeField.type} Input</span>
                                 </div>
 
@@ -493,14 +493,14 @@ export default function SchemaBuilder() {
                                             type="text"
                                             value={activeField.label}
                                             onChange={(e) => updateActiveField({ label: e.target.value })}
-                                            className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[13px] sm:text-[14px] text-[#181c22] bg-[#f9f9ff] focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none transition-shadow font-semibold"
+                                            className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[13px] sm:text-[14px] text-[#181c22] bg-[#F4F9F8] focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none transition-shadow font-semibold"
                                         />
                                     </div>
                                     <div className="flex items-center justify-between pt-1">
                                         <label className="text-[12px] sm:text-[13px] font-bold text-[#464651]">Required Field</label>
                                         <div
                                             onClick={() => updateActiveField({ required: !activeField.required })}
-                                            className={`w-11 h-6 rounded-full relative cursor-pointer transition-colors ${activeField.required ? 'bg-[#222777]' : 'bg-[#c7c5d3]'}`}
+                                            className={`w-11 h-6 rounded-full relative cursor-pointer transition-colors ${activeField.required ? 'bg-[#075e51]' : 'bg-[#c7c5d3]'}`}
                                         >
                                             <div className={`absolute top-[2px] w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${activeField.required ? 'translate-x-[22px]' : 'translate-x-[2px]'}`}></div>
                                         </div>
@@ -519,7 +519,7 @@ export default function SchemaBuilder() {
                                                         type="text"
                                                         value={option}
                                                         onChange={(e) => handleOptionChange(idx, e.target.value)}
-                                                        className="flex-1 border border-[#c7c5d3] rounded-md p-2 text-[13px] sm:text-[14px] text-[#181c22] bg-[#f9f9ff] focus:border-[#222777] outline-none"
+                                                        className="flex-1 border border-[#c7c5d3] rounded-md p-2 text-[13px] sm:text-[14px] text-[#181c22] bg-[#F4F9F8] focus:border-[#075e51] outline-none"
                                                     />
                                                     <button onClick={() => handleRemoveOption(idx)} className="text-[#c7c5d3] hover:text-[#ba1a1a] transition-colors p-1">
                                                         <span className="material-symbols-outlined text-[18px] sm:text-[20px]">close</span>
@@ -528,7 +528,7 @@ export default function SchemaBuilder() {
                                             ))}
                                             <button
                                                 onClick={handleAddOption}
-                                                className="mt-2 text-[#3a3f8f] font-bold text-[12px] sm:text-[13px] hover:text-[#222777] transition-colors flex items-center gap-1"
+                                                className="mt-2 text-[#097969] font-bold text-[12px] sm:text-[13px] hover:text-[#075e51] transition-colors flex items-center gap-1"
                                             >
                                                 <span className="material-symbols-outlined text-[16px] sm:text-[18px]">add</span> Add Option
                                             </button>
@@ -543,7 +543,7 @@ export default function SchemaBuilder() {
                                                             onChange={(e) => updateActiveField({ allowMultiple: e.target.checked })}
                                                             className="sr-only"
                                                         />
-                                                        <div className={`w-10 h-5 rounded-full transition-colors ${activeField.allowMultiple !== false ? 'bg-[#222777]' : 'bg-[#c7c5d3]'}`}></div>
+                                                        <div className={`w-10 h-5 rounded-full transition-colors ${activeField.allowMultiple !== false ? 'bg-[#075e51]' : 'bg-[#c7c5d3]'}`}></div>
                                                         <div className={`absolute left-1 top-1 w-3 h-3 bg-white rounded-full transition-transform ${activeField.allowMultiple !== false ? 'translate-x-5' : 'translate-x-0'}`}></div>
                                                     </div>
                                                     <div>
@@ -559,19 +559,19 @@ export default function SchemaBuilder() {
                                 {/* Voice Specific Settings */}
                                 {activeField.type === 'Voice' && (
                                     <div className="pt-5 sm:pt-6 border-t border-[#e0e2eb]">
-                                        <label className="flex items-center gap-2 text-[12px] sm:text-[13px] font-bold text-[#222777] mb-2">
+                                        <label className="flex items-center gap-2 text-[12px] sm:text-[13px] font-bold text-[#075e51] mb-2">
                                             <span className="material-symbols-outlined text-[16px] sm:text-[18px]">record_voice_over</span> AI Voice Prompt
                                         </label>
                                         <p className="font-mono text-[10px] sm:text-[11px] text-[#777682] mb-3 leading-relaxed">This text will be spoken to prompt the user before recording.</p>
 
-                                        <div className="relative border border-[#c7c5d3] rounded-lg overflow-hidden focus-within:border-[#222777] focus-within:ring-1 focus-within:ring-[#222777] transition-shadow">
+                                        <div className="relative border border-[#c7c5d3] rounded-lg overflow-hidden focus-within:border-[#075e51] focus-within:ring-1 focus-within:ring-[#075e51] transition-shadow">
                                             <textarea
                                                 value={activeField.prompt || ''}
                                                 onChange={(e) => updateActiveField({ prompt: e.target.value })}
-                                                className="w-full p-2.5 sm:p-3 h-24 sm:h-28 text-[13px] sm:text-[14px] text-[#181c22] bg-[#f9f9ff] outline-none resize-none"
+                                                className="w-full p-2.5 sm:p-3 h-24 sm:h-28 text-[13px] sm:text-[14px] text-[#181c22] bg-[#F4F9F8] outline-none resize-none"
                                             />
                                             <div className="absolute bottom-2 right-2 flex gap-2">
-                                                <button className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white border border-[#e0e2eb] flex items-center justify-center text-[#222777] hover:bg-[#f1f3fc] transition-colors shadow-sm">
+                                                <button className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white border border-[#e0e2eb] flex items-center justify-center text-[#075e51] hover:bg-[#f1f3fc] transition-colors shadow-sm">
                                                     <span className="material-symbols-outlined text-[16px] sm:text-[18px]">play_arrow</span>
                                                 </button>
                                             </div>
@@ -597,19 +597,19 @@ export default function SchemaBuilder() {
                 <div className="flex flex-wrap items-center justify-center md:justify-end gap-2 sm:gap-4 w-full md:w-auto">
                     <button
                         onClick={handleSaveDraft}
-                        className="flex-1 md:flex-none px-3 sm:px-5 py-2 border border-[#c7c5d3] rounded-md font-bold text-[12px] sm:text-[13px] text-[#181c22] hover:bg-[#f9f9ff] transition-colors text-center"
+                        className="flex-1 md:flex-none px-3 sm:px-5 py-2 border border-[#c7c5d3] rounded-md font-bold text-[12px] sm:text-[13px] text-[#181c22] hover:bg-[#F4F9F8] transition-colors text-center"
                     >
                         Save
                     </button>
                     <button
                         onClick={handlePreview}
-                        className="flex-1 md:flex-none px-3 sm:px-5 py-2 border border-[#00c2cb] rounded-md font-bold text-[12px] sm:text-[13px] text-[#006e73] bg-[#e6fbfc] hover:bg-[#00c2cb] hover:text-white transition-colors text-center"
+                        className="flex-1 md:flex-none px-3 sm:px-5 py-2 border border-[#EAB308] rounded-md font-bold text-[12px] sm:text-[13px] text-[#006e73] bg-[#FEF9C3] hover:bg-[#EAB308] hover:text-white transition-colors text-center"
                     >
                         Preview
                     </button>
                     <button
                         onClick={handlePublish}
-                        className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-[#222777] rounded-md font-bold text-[12px] sm:text-[13px] text-white hover:bg-[#3a3f8f] transition-colors shadow-sm text-center"
+                        className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-[#075e51] rounded-md font-bold text-[12px] sm:text-[13px] text-white hover:bg-[#097969] transition-colors shadow-sm text-center"
                     >
                         Publish Schema
                     </button>
@@ -619,7 +619,7 @@ export default function SchemaBuilder() {
             {/* --- CUSTOM TOAST --- */}
             {toast.show && (
                 <div className={`fixed bottom-6 right-6 px-6 py-4 rounded-xl shadow-2xl z-[100] flex items-center gap-3 animate-in slide-in-from-bottom-5 fade-in duration-300 font-sans border-l-4 ${
-                    toast.type === 'error' ? 'bg-[#ffdad6] text-[#ba1a1a] border-[#ba1a1a]' : 'bg-[#181c22] text-white border-[#00c2cb]'
+                    toast.type === 'error' ? 'bg-[#ffdad6] text-[#ba1a1a] border-[#ba1a1a]' : 'bg-[#181c22] text-white border-[#EAB308]'
                 }`}>
                     <span className="material-symbols-outlined text-[24px]">
                         {toast.type === 'error' ? 'error' : 'check_circle'}
@@ -631,9 +631,9 @@ export default function SchemaBuilder() {
             {/* --- PREVIEW OVERLAY --- */}
             {isPreviewOpen && (
                 <div className="fixed inset-0 bg-[#181c22]/60 backdrop-blur-sm z-[99] flex items-center justify-center p-4 lg:p-8">
-                    <div className="bg-[#f9f9ff] w-full max-w-3xl h-full lg:h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+                    <div className="bg-[#F4F9F8] w-full max-w-3xl h-full lg:h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
                         {/* Header */}
-                        <div className="bg-[#222777] text-white px-6 sm:px-8 py-5 sm:py-6 flex justify-between items-center shrink-0 shadow-md z-10 relative">
+                        <div className="bg-[#075e51] text-white px-6 sm:px-8 py-5 sm:py-6 flex justify-between items-center shrink-0 shadow-md z-10 relative">
                             <div>
                                 <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-1">{schemaName}</h2>
                                 <p className="text-[#c7c5d3] text-xs sm:text-sm font-semibold">Previewing as {targetRole === 'all' ? 'Everyone' : targetRole === 'own-students' ? 'Your Students Only' : targetRole}</p>
@@ -671,11 +671,11 @@ export default function SchemaBuilder() {
                                                 <textarea
                                                     value={previewAnswers[field.id] || ''} onChange={(e) => handlePreviewAnswerChange(field.id, e.target.value)}
                                                     placeholder={`Enter ${field.label.toLowerCase()}...`}
-                                                    className="w-full bg-white border border-[#c7c5d3] rounded-xl p-4 text-[14px] sm:text-[15px] focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none text-[#181c22] resize-none h-32 shadow-sm transition-shadow"
+                                                    className="w-full bg-white border border-[#c7c5d3] rounded-xl p-4 text-[14px] sm:text-[15px] focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none text-[#181c22] resize-none h-32 shadow-sm transition-shadow"
                                                 />
                                             ) : field.type.toLowerCase() === 'dropdown' || field.type.toLowerCase() === 'select' ? (
                                                 <div className="relative">
-                                                    <select value={previewAnswers[field.id] || ''} onChange={(e) => handlePreviewAnswerChange(field.id, e.target.value)} className="w-full appearance-none bg-white border border-[#c7c5d3] rounded-xl py-3 sm:py-3.5 pl-4 pr-10 text-[14px] sm:text-[15px] font-semibold text-[#464651] focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none shadow-sm transition-shadow cursor-pointer">
+                                                    <select value={previewAnswers[field.id] || ''} onChange={(e) => handlePreviewAnswerChange(field.id, e.target.value)} className="w-full appearance-none bg-white border border-[#c7c5d3] rounded-xl py-3 sm:py-3.5 pl-4 pr-10 text-[14px] sm:text-[15px] font-semibold text-[#464651] focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none shadow-sm transition-shadow cursor-pointer">
                                                         <option value="">Select an option</option>
                                                         {field.options?.map((opt, i) => (
                                                             <option key={i} value={opt}>{opt}</option>
@@ -695,7 +695,7 @@ export default function SchemaBuilder() {
                                                                     const next = current.includes(opt) ? current.filter(x => x !== opt) : [...current, opt];
                                                                     handlePreviewAnswerChange(field.id, next);
                                                                 }
-                                                            }} className={`w-5 h-5 border-[#c7c5d3] text-[#222777] focus:ring-[#222777] cursor-pointer ${field.allowMultiple === false ? 'rounded-full' : 'rounded'}`} />
+                                                            }} className={`w-5 h-5 border-[#c7c5d3] text-[#075e51] focus:ring-[#075e51] cursor-pointer ${field.allowMultiple === false ? 'rounded-full' : 'rounded'}`} />
                                                             <span className="text-[#464651] text-[14px] sm:text-[15px] font-semibold group-hover:text-[#181c22] transition-colors">{opt}</span>
                                                         </label>
                                                     ))}
@@ -706,7 +706,7 @@ export default function SchemaBuilder() {
                                                     <input
                                                         type="date"
                                                         value={previewAnswers[field.id] || ''} onChange={(e) => handlePreviewAnswerChange(field.id, e.target.value)}
-                                                        className="w-full bg-white border border-[#c7c5d3] rounded-xl py-3 sm:py-3.5 pl-11 pr-4 text-[14px] sm:text-[15px] font-semibold text-[#464651] focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none shadow-sm transition-shadow"
+                                                        className="w-full bg-white border border-[#c7c5d3] rounded-xl py-3 sm:py-3.5 pl-11 pr-4 text-[14px] sm:text-[15px] font-semibold text-[#464651] focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none shadow-sm transition-shadow"
                                                     />
                                                 </div>
                                             ) : field.type.toLowerCase() === 'number' ? (
@@ -714,7 +714,7 @@ export default function SchemaBuilder() {
                                                     type="number"
                                                     value={previewAnswers[field.id] || ''} onChange={(e) => handlePreviewAnswerChange(field.id, e.target.value)}
                                                     placeholder={`Enter ${field.label.toLowerCase()}...`}
-                                                    className="w-full bg-white border border-[#c7c5d3] rounded-xl px-4 py-3 sm:py-3.5 text-[14px] sm:text-[15px] focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none text-[#181c22] shadow-sm transition-shadow"
+                                                    className="w-full bg-white border border-[#c7c5d3] rounded-xl px-4 py-3 sm:py-3.5 text-[14px] sm:text-[15px] focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none text-[#181c22] shadow-sm transition-shadow"
                                                 />
                                             ) : field.type.toLowerCase() === 'rating' ? (
                                                 <div className="flex gap-2">
@@ -723,13 +723,13 @@ export default function SchemaBuilder() {
                                                     ))}
                                                 </div>
                                             ) : field.type.toLowerCase() === 'file' ? (
-                                                <input type="file" className="text-[14px] file:mr-4 file:py-2.5 file:px-5 file:rounded-md file:border-0 file:text-[14px] file:font-semibold file:bg-[#f1f3fc] file:text-[#222777] hover:file:bg-[#e0e2eb] cursor-pointer" />
+                                                <input type="file" className="text-[14px] file:mr-4 file:py-2.5 file:px-5 file:rounded-md file:border-0 file:text-[14px] file:font-semibold file:bg-[#f1f3fc] file:text-[#075e51] hover:file:bg-[#e0e2eb] cursor-pointer" />
                                             ) : (
                                                 <input
                                                     type="text"
                                                     value={previewAnswers[field.id] || ''} onChange={(e) => handlePreviewAnswerChange(field.id, e.target.value)}
                                                     placeholder={`Enter ${field.label.toLowerCase()}...`}
-                                                    className="w-full bg-white border border-[#c7c5d3] rounded-xl px-4 py-3 sm:py-3.5 text-[14px] sm:text-[15px] focus:border-[#222777] focus:ring-1 focus:ring-[#222777] outline-none text-[#181c22] shadow-sm transition-shadow"
+                                                    className="w-full bg-white border border-[#c7c5d3] rounded-xl px-4 py-3 sm:py-3.5 text-[14px] sm:text-[15px] focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none text-[#181c22] shadow-sm transition-shadow"
                                                 />
                                             )}
                                         </div>
@@ -742,7 +742,7 @@ export default function SchemaBuilder() {
                         <div className="border-t border-[#e0e2eb] bg-white p-5 sm:p-6 shrink-0 flex justify-end">
                             <button
                                 onClick={() => setIsPreviewOpen(false)}
-                                className="bg-[#222777] text-white font-bold text-[14px] sm:text-[15px] px-8 py-3 rounded-lg hover:bg-[#3a3f8f] transition-colors shadow-md"
+                                className="bg-[#075e51] text-white font-bold text-[14px] sm:text-[15px] px-8 py-3 rounded-lg hover:bg-[#097969] transition-colors shadow-md"
                             >
                                 Close Preview
                             </button>

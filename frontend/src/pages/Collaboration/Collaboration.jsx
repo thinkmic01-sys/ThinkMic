@@ -5,7 +5,7 @@ import VoiceRecorder from '../../components/VoiceRecorder';
 import api from '../../services/api';
 
 const NETWORK_STATUS_CLASSES = {
-    approved: 'bg-[#e6fbfc] text-[#006e73]',
+    approved: 'bg-[#FEF9C3] text-[#006e73]',
     rejected: 'bg-[#ffdad6] text-[#ba1a1a]',
     pending: '!border-[#c7c5d3] text-[#777682] bg-white'
 };
@@ -21,13 +21,13 @@ function NetworkNode({ node }) {
             <div className="flex items-center justify-between p-3 sm:p-4">
                 <div className="flex items-center gap-3">
                     {hasChildren ? (
-                        <button onClick={() => setExpanded(e => !e)} className="text-[#777682] hover:text-[#222777] transition-colors">
+                        <button onClick={() => setExpanded(e => !e)} className="text-[#777682] hover:text-[#075e51] transition-colors">
                             <span className="material-symbols-outlined text-[20px]">{expanded ? 'expand_more' : 'chevron_right'}</span>
                         </button>
                     ) : (
                         <span className="w-5" />
                     )}
-                    <div className="w-8 h-8 rounded-full bg-[#e0e0ff] text-[#222777] flex items-center justify-center text-[11px] font-bold shrink-0">{initials}</div>
+                    <div className="w-8 h-8 rounded-full bg-[#e0e0ff] text-[#075e51] flex items-center justify-center text-[11px] font-bold shrink-0">{initials}</div>
                     <div>
                         <p className="font-bold text-[#181c22] text-[13px] sm:text-[14px]">{node.user.fullName}</p>
                         <p className="text-[11px] text-[#777682] font-mono">L{node.level} • {new Date(node.user.createdAt).toLocaleDateString()}</p>
@@ -35,7 +35,7 @@ function NetworkNode({ node }) {
                 </div>
                 <div className="flex items-center gap-3">
                     {node.reward && (
-                        <span className="font-mono text-[12px] font-bold text-[#00c2cb]">{node.reward.coinAmount} coins</span>
+                        <span className="font-mono text-[12px] font-bold text-[#EAB308]">{node.reward.coinAmount} coins</span>
                     )}
                     <span className={`inline-flex items-center text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wider border border-transparent ${NETWORK_STATUS_CLASSES[status]}`}>
                         {status}
@@ -66,7 +66,7 @@ export default function Collaboration() {
             QRCode.toCanvas(qrCanvasRef.current, referralLink, {
                 width: 256,
                 margin: 1,
-                color: { dark: '#222777', light: '#f1f3fc' }
+                color: { dark: '#075e51', light: '#f1f3fc' }
             }).then(() => {
                 // QRCode.toCanvas sets inline width/height styles matching the pixel
                 // buffer size (256px) - override them so the canvas still scales down
@@ -136,7 +136,7 @@ export default function Collaboration() {
     }, [token]);
 
     const statusBadgeClasses = (status) => {
-        if (status === 'approved') return 'bg-[#e6fbfc] text-[#006e73]';
+        if (status === 'approved') return 'bg-[#FEF9C3] text-[#006e73]';
         if (status === 'rejected') return 'bg-[#ffdad6] text-[#ba1a1a]';
         return '!border-[#c7c5d3] text-[#777682] bg-white'; // pending
     };
@@ -256,7 +256,7 @@ export default function Collaboration() {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-64px)] bg-[#f9f9ff] overflow-y-auto relative font-sans custom-scrollbar">
+        <div className="w-full h-[calc(100vh-64px)] bg-[#F4F9F8] overflow-y-auto relative font-sans custom-scrollbar">
 
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -269,14 +269,14 @@ export default function Collaboration() {
                 {/* --- HERO BANNER (UPDATED WITH FORM BUTTON) --- */}
                 <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8">
                     <div className="w-full md:max-w-2xl text-center md:text-left">
-                        <h2 className="text-[28px] sm:text-[32px] md:text-[40px] font-bold text-[#222777] mb-2 sm:mb-3 leading-tight tracking-tight">Grow the ThinkMic Community</h2>
+                        <h2 className="text-[28px] sm:text-[32px] md:text-[40px] font-bold text-[#075e51] mb-2 sm:mb-3 leading-tight tracking-tight">Grow the ThinkMic Community</h2>
                         <p className="text-[#464651] text-[14px] sm:text-[16px] leading-[1.7] sm:leading-[1.85] mb-5 sm:mb-6">
                             Invite researchers, scholars, and AI enthusiasts to ThinkMic. Earn platform coins for every active referral and unlock premium collaboration features.
                         </p>
                         <div className="flex justify-center md:justify-start gap-4 w-full">
                             <button
                                 onClick={() => setIsFormOpen(true)}
-                                className="w-full sm:w-auto justify-center bg-[#222777] text-white font-bold text-[13px] sm:text-[14px] px-6 py-3 rounded-lg hover:bg-[#3a3f8f] transition-colors shadow-sm flex items-center gap-2"
+                                className="w-full sm:w-auto justify-center bg-[#075e51] text-white font-bold text-[13px] sm:text-[14px] px-6 py-3 rounded-lg hover:bg-[#097969] transition-colors shadow-sm flex items-center gap-2"
                             >
                                 <span className="material-symbols-outlined text-[18px]">assignment</span>
                                 Submit Research
@@ -296,7 +296,7 @@ export default function Collaboration() {
                             <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">person_add</span>
                         </div>
                         <div className="flex items-baseline gap-2">
-                            <span className="text-[28px] sm:text-[32px] font-bold text-[#222777] leading-none">{stats.totalReferrals}</span>
+                            <span className="text-[28px] sm:text-[32px] font-bold text-[#075e51] leading-none">{stats.totalReferrals}</span>
                             <span className="text-[11px] sm:text-[12px] font-bold text-[#777682]">{stats.conversionRate}% conversion</span>
                         </div>
                     </div>
@@ -305,35 +305,35 @@ export default function Collaboration() {
                             <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">L1 Referrals</span>
                             <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">looks_one</span>
                         </div>
-                        <span className="text-[28px] sm:text-[32px] font-bold text-[#222777] leading-none">{stats.l1Count}</span>
+                        <span className="text-[28px] sm:text-[32px] font-bold text-[#075e51] leading-none">{stats.l1Count}</span>
                     </div>
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-6 flex flex-col justify-between h-auto sm:h-[120px] gap-2 sm:gap-0">
                         <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center text-[#777682] gap-1 sm:gap-0">
                             <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">L2 Referrals</span>
                             <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">looks_two</span>
                         </div>
-                        <span className="text-[28px] sm:text-[32px] font-bold text-[#222777] leading-none">{stats.l2Count}</span>
+                        <span className="text-[28px] sm:text-[32px] font-bold text-[#075e51] leading-none">{stats.l2Count}</span>
                     </div>
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-6 flex flex-col justify-between h-auto sm:h-[120px] gap-2 sm:gap-0">
                         <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center text-[#777682] gap-1 sm:gap-0">
                             <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">L3 Referrals</span>
                             <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">looks_3</span>
                         </div>
-                        <span className="text-[28px] sm:text-[32px] font-bold text-[#222777] leading-none">{stats.l3Count}</span>
+                        <span className="text-[28px] sm:text-[32px] font-bold text-[#075e51] leading-none">{stats.l3Count}</span>
                     </div>
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-6 flex flex-col justify-between h-auto sm:h-[120px] gap-2 sm:gap-0">
                         <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center text-[#777682] gap-1 sm:gap-0">
                             <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">Pending Coins</span>
                             <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">hourglass_empty</span>
                         </div>
-                        <span className="text-[28px] sm:text-[32px] font-bold text-[#00c2cb] leading-none">{stats.pendingCoins.toLocaleString()}</span>
+                        <span className="text-[28px] sm:text-[32px] font-bold text-[#EAB308] leading-none">{stats.pendingCoins.toLocaleString()}</span>
                     </div>
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-6 flex flex-col justify-between h-auto sm:h-[120px] gap-2 sm:gap-0">
                         <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center text-[#777682] gap-1 sm:gap-0">
                             <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">Approved Coins</span>
                             <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">toll</span>
                         </div>
-                        <span className="text-[28px] sm:text-[32px] font-bold text-[#00c2cb] leading-none">{stats.approvedCoins.toLocaleString()}</span>
+                        <span className="text-[28px] sm:text-[32px] font-bold text-[#EAB308] leading-none">{stats.approvedCoins.toLocaleString()}</span>
                     </div>
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-4 sm:p-6 flex flex-col justify-between h-auto sm:h-[120px] gap-2 sm:gap-0">
                         <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center text-[#777682] gap-1 sm:gap-0">
@@ -347,7 +347,7 @@ export default function Collaboration() {
                             <span className="text-[10px] sm:text-[12px] font-bold uppercase tracking-wider">Lifetime Referral Coins</span>
                             <span className="material-symbols-outlined text-[16px] sm:text-[20px] hidden sm:block">military_tech</span>
                         </div>
-                        <span className="text-[28px] sm:text-[32px] font-bold text-[#222777] leading-none">{stats.lifetimeReferralCoins.toLocaleString()}</span>
+                        <span className="text-[28px] sm:text-[32px] font-bold text-[#075e51] leading-none">{stats.lifetimeReferralCoins.toLocaleString()}</span>
                     </div>
                 </div>
 
@@ -355,12 +355,12 @@ export default function Collaboration() {
                 {pendingRewards.length > 0 && (
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] overflow-hidden w-full flex flex-col">
                         <div className="p-4 sm:p-6 border-b border-[#e0e2eb]">
-                            <h3 className="text-[18px] sm:text-[20px] font-bold text-[#222777]">Pending Coins</h3>
+                            <h3 className="text-[18px] sm:text-[20px] font-bold text-[#075e51]">Pending Coins</h3>
                         </div>
                         <div className="overflow-x-auto w-full custom-scrollbar">
                             <table className="w-full text-left border-collapse min-w-[600px]">
                                 <thead>
-                                <tr className="bg-[#f9f9ff] border-b border-[#e0e2eb] text-[11px] sm:text-[12px] font-bold text-[#777682] uppercase tracking-wider whitespace-nowrap">
+                                <tr className="bg-[#F4F9F8] border-b border-[#e0e2eb] text-[11px] sm:text-[12px] font-bold text-[#777682] uppercase tracking-wider whitespace-nowrap">
                                     <th className="py-3 px-4 sm:px-6">Referral</th>
                                     <th className="py-3 px-4 sm:px-6">Level</th>
                                     <th className="py-3 px-4 sm:px-6">Registered</th>
@@ -370,7 +370,7 @@ export default function Collaboration() {
                                 </thead>
                                 <tbody className="divide-y divide-[#e0e2eb] text-[13px] sm:text-[14px]">
                                 {pendingRewards.map((r) => (
-                                    <tr key={r._id} className="hover:bg-[#f9f9ff] transition-colors">
+                                    <tr key={r._id} className="hover:bg-[#F4F9F8] transition-colors">
                                         <td className="py-3 sm:py-4 px-4 sm:px-6 font-bold text-[#181c22] whitespace-nowrap">{r.referredName}</td>
                                         <td className="py-3 sm:py-4 px-4 sm:px-6 font-mono text-[11px] sm:text-[12px] text-[#464651]">L{r.level}</td>
                                         <td className="py-3 sm:py-4 px-4 sm:px-6 font-mono text-[11px] sm:text-[12px] text-[#464651] whitespace-nowrap">{new Date(r.createdAt).toLocaleDateString()}</td>
@@ -380,7 +380,7 @@ export default function Collaboration() {
                                                 {r.approvalStatus}
                                             </span>
                                         </td>
-                                        <td className="py-3 sm:py-4 px-4 sm:px-6 text-right font-mono font-bold text-[13px] sm:text-[14px] text-[#00c2cb] whitespace-nowrap">{r.coinAmount}</td>
+                                        <td className="py-3 sm:py-4 px-4 sm:px-6 text-right font-mono font-bold text-[13px] sm:text-[14px] text-[#EAB308] whitespace-nowrap">{r.coinAmount}</td>
                                     </tr>
                                 ))}
                                 </tbody>
@@ -391,30 +391,30 @@ export default function Collaboration() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-5 sm:p-6 lg:p-8 lg:col-span-2 flex flex-col justify-center">
-                        <h3 className="text-[18px] sm:text-[20px] font-bold text-[#222777] mb-4">Your Unique Referral Link</h3>
+                        <h3 className="text-[18px] sm:text-[20px] font-bold text-[#075e51] mb-4">Your Unique Referral Link</h3>
                         <div className="flex flex-col sm:flex-row gap-3 mb-5 sm:mb-6">
                             <div className="flex-1 relative">
                                 <span className="material-symbols-outlined absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-[#777682]">link</span>
                                 <input type="text" readOnly value={referralLink} className="w-full bg-[#f1f3fc] border border-[#c7c5d3] rounded-lg py-3 pl-10 sm:pl-12 pr-4 text-[13px] sm:text-[14px] font-mono text-[#181c22] outline-none" />
                             </div>
-                            <button onClick={handleCopyLink} className={`px-6 py-3 rounded-lg text-[13px] sm:text-[14px] font-bold transition-colors flex items-center justify-center min-w-[120px] shadow-sm ${isCopied ? 'bg-[#00c2cb] text-[#002022]' : 'bg-[#222777] text-white hover:bg-[#3a3f8f]'}`}>
+                            <button onClick={handleCopyLink} className={`px-6 py-3 rounded-lg text-[13px] sm:text-[14px] font-bold transition-colors flex items-center justify-center min-w-[120px] shadow-sm ${isCopied ? 'bg-[#EAB308] text-[#002022]' : 'bg-[#075e51] text-white hover:bg-[#097969]'}`}>
                                 {isCopied ? 'Copied!' : 'Copy Link'}
                             </button>
                         </div>
                         <div className="flex items-center gap-3 sm:gap-4">
                             <span className="text-[13px] sm:text-[14px] font-bold text-[#464651]">Share via:</span>
-                            <button onClick={handleShareEmail} title="Share via Email" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#f1f3fc] border border-[#c7c5d3] text-[#222777] hover:bg-[#e0e2eb] flex items-center justify-center transition-colors"><span className="material-symbols-outlined text-[18px] sm:text-[20px]">mail</span></button>
-                            <button onClick={handleShareChat} title="Share via WhatsApp" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#f1f3fc] border border-[#c7c5d3] text-[#222777] hover:bg-[#e0e2eb] flex items-center justify-center transition-colors"><span className="material-symbols-outlined text-[18px] sm:text-[20px]">chat</span></button>
+                            <button onClick={handleShareEmail} title="Share via Email" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#f1f3fc] border border-[#c7c5d3] text-[#075e51] hover:bg-[#e0e2eb] flex items-center justify-center transition-colors"><span className="material-symbols-outlined text-[18px] sm:text-[20px]">mail</span></button>
+                            <button onClick={handleShareChat} title="Share via WhatsApp" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#f1f3fc] border border-[#c7c5d3] text-[#075e51] hover:bg-[#e0e2eb] flex items-center justify-center transition-colors"><span className="material-symbols-outlined text-[18px] sm:text-[20px]">chat</span></button>
                         </div>
                     </div>
 
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-5 sm:p-6 lg:p-8 flex flex-col items-center justify-center text-center">
-                        <h3 className="text-[18px] sm:text-[20px] font-bold text-[#222777] mb-4 sm:mb-6">Quick Scan</h3>
+                        <h3 className="text-[18px] sm:text-[20px] font-bold text-[#075e51] mb-4 sm:mb-6">Quick Scan</h3>
                         <div className="w-24 h-24 sm:w-32 sm:h-32 bg-[#f1f3fc] border border-[#e0e2eb] rounded-lg mb-4 p-2 flex items-center justify-center">
                             <canvas ref={qrCanvasRef} className="w-full h-full" />
                         </div>
                         <p className="text-[11px] sm:text-[12px] font-bold text-[#777682] mb-3 sm:mb-4">Let colleagues scan to join instantly.</p>
-                        <button onClick={handleDownloadQr} className="text-[#222777] text-[13px] sm:text-[14px] font-bold hover:text-[#00c2cb] transition-colors flex items-center justify-center w-full sm:w-auto gap-1">
+                        <button onClick={handleDownloadQr} className="text-[#075e51] text-[13px] sm:text-[14px] font-bold hover:text-[#EAB308] transition-colors flex items-center justify-center w-full sm:w-auto gap-1">
                             <span className="material-symbols-outlined text-[18px]">download</span> Download PNG
                         </button>
                     </div>
@@ -423,12 +423,12 @@ export default function Collaboration() {
                 {/* Referrals Table */}
                 <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] overflow-hidden w-full flex flex-col">
                     <div className="flex justify-between items-center p-4 sm:p-6 border-b border-[#e0e2eb]">
-                        <h3 className="text-[18px] sm:text-[20px] font-bold text-[#222777]">Recent Referrals</h3>
+                        <h3 className="text-[18px] sm:text-[20px] font-bold text-[#075e51]">Recent Referrals</h3>
                     </div>
                     <div className="overflow-x-auto w-full custom-scrollbar">
                         <table className="w-full text-left border-collapse min-w-[600px]">
                             <thead>
-                            <tr className="bg-[#f9f9ff] border-b border-[#e0e2eb] text-[11px] sm:text-[12px] font-bold text-[#777682] uppercase tracking-wider whitespace-nowrap">
+                            <tr className="bg-[#F4F9F8] border-b border-[#e0e2eb] text-[11px] sm:text-[12px] font-bold text-[#777682] uppercase tracking-wider whitespace-nowrap">
                                 <th className="py-3 px-4 sm:px-6">User</th>
                                 <th className="py-3 px-4 sm:px-6">Level</th>
                                 <th className="py-3 px-4 sm:px-6">Date Registered</th>
@@ -442,10 +442,10 @@ export default function Collaboration() {
                             ) : recentReferrals.map((r) => {
                                 const initials = (r.referredName || '?').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
                                 return (
-                                    <tr key={r._id} className="hover:bg-[#f9f9ff] transition-colors">
+                                    <tr key={r._id} className="hover:bg-[#F4F9F8] transition-colors">
                                         <td className="py-3 sm:py-4 px-4 sm:px-6">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded flex items-center justify-center text-[11px] sm:text-[12px] font-bold shrink-0 bg-[#e0e0ff] text-[#222777]">{initials}</div>
+                                                <div className="w-8 h-8 rounded flex items-center justify-center text-[11px] sm:text-[12px] font-bold shrink-0 bg-[#e0e0ff] text-[#075e51]">{initials}</div>
                                                 <span className="font-bold text-[#181c22] whitespace-nowrap">{r.referredName}</span>
                                             </div>
                                         </td>
@@ -457,7 +457,7 @@ export default function Collaboration() {
                                                 {r.approvalStatus}
                                             </span>
                                         </td>
-                                        <td className={`py-3 sm:py-4 px-4 sm:px-6 text-right font-mono font-bold text-[13px] sm:text-[14px] whitespace-nowrap ${r.approvalStatus === 'approved' ? 'text-[#00c2cb]' : 'text-[#777682]'}`}>{r.coinAmount}</td>
+                                        <td className={`py-3 sm:py-4 px-4 sm:px-6 text-right font-mono font-bold text-[13px] sm:text-[14px] whitespace-nowrap ${r.approvalStatus === 'approved' ? 'text-[#EAB308]' : 'text-[#777682]'}`}>{r.coinAmount}</td>
                                     </tr>
                                 );
                             })}
@@ -469,7 +469,7 @@ export default function Collaboration() {
                 {/* Referral Network */}
                 <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] overflow-hidden w-full flex flex-col">
                     <div className="p-4 sm:p-6 border-b border-[#e0e2eb]">
-                        <h3 className="text-[18px] sm:text-[20px] font-bold text-[#222777]">Referral Network</h3>
+                        <h3 className="text-[18px] sm:text-[20px] font-bold text-[#075e51]">Referral Network</h3>
                         <p className="text-[12px] sm:text-[13px] text-[#777682] mt-1">Your referral hierarchy, up to 3 levels deep.</p>
                     </div>
                     <div className="p-4 sm:p-6 space-y-2">
@@ -491,20 +491,20 @@ export default function Collaboration() {
 
                     {isSubmittedState ? (
                         <div className="bg-white rounded-xl shadow-2xl flex flex-col items-center justify-center p-12 sm:p-20 text-center min-h-[500px] animate-in zoom-in-95 duration-500">
-                            <div className="w-24 h-24 bg-[#e6fbfc] rounded-full flex items-center justify-center mb-6 text-[#00c2cb] animate-bounce">
+                            <div className="w-24 h-24 bg-[#FEF9C3] rounded-full flex items-center justify-center mb-6 text-[#EAB308] animate-bounce">
                                 <span className="material-symbols-outlined text-[64px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
                             </div>
-                            <h2 className="text-[32px] font-bold text-[#222777] mb-4">Thank you for your submission</h2>
+                            <h2 className="text-[32px] font-bold text-[#075e51] mb-4">Thank you for your submission</h2>
                             <p className="text-[16px] text-[#464651] mb-8 max-w-md">Your research has been successfully submitted and added to the peer review queue. We appreciate your contribution!</p>
                             <button
                                 onClick={() => { setIsSubmittedState(false); setIsFormOpen(false); setAnswers({}); }}
-                                className="px-8 py-3 bg-[#222777] text-white font-bold rounded-lg hover:bg-[#3a3f8f] transition-colors shadow-md text-[14px]"
+                                className="px-8 py-3 bg-[#075e51] text-white font-bold rounded-lg hover:bg-[#097969] transition-colors shadow-md text-[14px]"
                             >
                                 Back to Forms
                             </button>
                         </div>
                     ) : (
-                        <div className="bg-[#f9f9ff] rounded-xl shadow-2xl flex flex-col p-4 sm:p-6">
+                        <div className="bg-[#F4F9F8] rounded-xl shadow-2xl flex flex-col p-4 sm:p-6">
                             <div className="flex justify-end mb-3 sm:mb-4 -mt-2 -mr-2">
                                 <button
                                     onClick={() => setIsFormOpen(false)}
@@ -518,7 +518,7 @@ export default function Collaboration() {
                                 <div className="bg-white rounded-lg border border-[#e0e2eb] p-4 sm:p-6 shadow-sm">
                                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3 sm:gap-0">
                                         <div>
-                                            <h1 className="text-[20px] sm:text-[28px] font-bold text-[#222777] tracking-tight">{selectedSchema?.name || 'Form Submission'}</h1>
+                                            <h1 className="text-[20px] sm:text-[28px] font-bold text-[#075e51] tracking-tight">{selectedSchema?.name || 'Form Submission'}</h1>
                                             <p className="text-[13px] sm:text-[14px] text-[#464651] mt-1 leading-relaxed">Complete the fields below to submit.</p>
                                         </div>
                                         {schemas.length > 1 && (
@@ -537,7 +537,7 @@ export default function Collaboration() {
                                             <span>{completedFields} of {totalFields} completed</span>
                                         </div>
                                         <div className="w-full bg-[#ebeef6] h-1.5 rounded-full overflow-hidden">
-                                            <div className="bg-[#222777] h-full rounded-full transition-all duration-500 ease-out" style={{ width: totalFields ? `${(completedFields / totalFields) * 100}%` : '0%' }}></div>
+                                            <div className="bg-[#075e51] h-full rounded-full transition-all duration-500 ease-out" style={{ width: totalFields ? `${(completedFields / totalFields) * 100}%` : '0%' }}></div>
                                         </div>
                                     </div>
                                 </div>
@@ -551,13 +551,13 @@ export default function Collaboration() {
 
                                         {/* Field Types Routing */}
                                         {field.type.toLowerCase() === 'text' && (
-                                            <input type="text" value={answers[field.id] || ''} onChange={(e) => handleAnswerChange(field.id, e.target.value)} className="w-full border border-[#c7c5d3] rounded p-2.5 text-[14px] outline-none focus:border-[#222777]" />
+                                            <input type="text" value={answers[field.id] || ''} onChange={(e) => handleAnswerChange(field.id, e.target.value)} className="w-full border border-[#c7c5d3] rounded p-2.5 text-[14px] outline-none focus:border-[#075e51]" />
                                         )}
                                         {field.type.toLowerCase() === 'textarea' && (
-                                            <textarea value={answers[field.id] || ''} onChange={(e) => handleAnswerChange(field.id, e.target.value)} className="w-full border border-[#c7c5d3] rounded p-2.5 text-[14px] outline-none focus:border-[#222777] h-24 resize-none" />
+                                            <textarea value={answers[field.id] || ''} onChange={(e) => handleAnswerChange(field.id, e.target.value)} className="w-full border border-[#c7c5d3] rounded p-2.5 text-[14px] outline-none focus:border-[#075e51] h-24 resize-none" />
                                         )}
                                         {field.type.toLowerCase() === 'select' && (
-                                            <select value={answers[field.id] || ''} onChange={(e) => handleAnswerChange(field.id, e.target.value)} className="w-full border border-[#c7c5d3] rounded p-2.5 text-[14px] outline-none focus:border-[#222777] cursor-pointer bg-white">
+                                            <select value={answers[field.id] || ''} onChange={(e) => handleAnswerChange(field.id, e.target.value)} className="w-full border border-[#c7c5d3] rounded p-2.5 text-[14px] outline-none focus:border-[#075e51] cursor-pointer bg-white">
                                                 <option value="">Select an option</option>
                                                 {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                                             </select>
@@ -572,7 +572,7 @@ export default function Collaboration() {
                                                             } else {
                                                                 handleCheckboxChange(field.id, opt);
                                                             }
-                                                        }} className={`w-4 h-4 text-[#222777] ${field.allowMultiple === false ? 'rounded-full' : ''}`} />
+                                                        }} className={`w-4 h-4 text-[#075e51] ${field.allowMultiple === false ? 'rounded-full' : ''}`} />
                                                         <span className="text-[14px] text-[#181c22]">{opt}</span>
                                                     </label>
                                                 ))}
@@ -586,10 +586,10 @@ export default function Collaboration() {
                                             />
                                         )}
                                         {field.type.toLowerCase() === 'date' && (
-                                            <input type="date" value={answers[field.id] || ''} onChange={(e) => handleAnswerChange(field.id, e.target.value)} className="border border-[#c7c5d3] rounded p-2 text-[14px] outline-none focus:border-[#222777]" />
+                                            <input type="date" value={answers[field.id] || ''} onChange={(e) => handleAnswerChange(field.id, e.target.value)} className="border border-[#c7c5d3] rounded p-2 text-[14px] outline-none focus:border-[#075e51]" />
                                         )}
                                         {field.type.toLowerCase() === 'number' && (
-                                            <input type="number" value={answers[field.id] || ''} onChange={(e) => handleAnswerChange(field.id, e.target.value)} className="w-full border border-[#c7c5d3] rounded p-2.5 text-[14px] outline-none focus:border-[#222777]" />
+                                            <input type="number" value={answers[field.id] || ''} onChange={(e) => handleAnswerChange(field.id, e.target.value)} className="w-full border border-[#c7c5d3] rounded p-2.5 text-[14px] outline-none focus:border-[#075e51]" />
                                         )}
                                         {field.type.toLowerCase() === 'rating' && (
                                             <div className="flex gap-2">
@@ -599,7 +599,7 @@ export default function Collaboration() {
                                             </div>
                                         )}
                                         {field.type.toLowerCase() === 'file' && (
-                                            <input type="file" className="text-[13px] file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-[#f1f3fc] file:text-[#222777] hover:file:bg-[#e0e2eb]" />
+                                            <input type="file" className="text-[13px] file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-[#f1f3fc] file:text-[#075e51] hover:file:bg-[#e0e2eb]" />
                                         )}
                                     </div>
                                 ))}
@@ -607,7 +607,7 @@ export default function Collaboration() {
                                 {/* Action Footer */}
                                 <div className="flex justify-center gap-3 mt-4">
                                     <button onClick={() => setIsFormOpen(false)} className="px-8 py-2.5 bg-white border border-[#c7c5d3] rounded text-[13px] font-bold text-[#464651]">Cancel</button>
-                                    <button onClick={handleFormSubmit} className="px-8 py-2.5 bg-[#222777] rounded text-[13px] font-bold text-white shadow-sm flex items-center gap-2">Submit Form <span className="material-symbols-outlined text-[16px]">send</span></button>
+                                    <button onClick={handleFormSubmit} className="px-8 py-2.5 bg-[#075e51] rounded text-[13px] font-bold text-white shadow-sm flex items-center gap-2">Submit Form <span className="material-symbols-outlined text-[16px]">send</span></button>
                                 </div>
                             </div>
                         </div>
@@ -617,7 +617,7 @@ export default function Collaboration() {
             
             {/* --- CUSTOM TOAST NOTIFICATION --- */}
             <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#e6fbfc] border-[#00c2cb] text-[#006e73]'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#006e73]'}`}>
                     <span className="material-symbols-outlined text-[20px]">
                         {toast.type === 'error' ? 'error' : 'check_circle'}
                     </span>

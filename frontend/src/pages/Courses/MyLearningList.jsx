@@ -92,7 +92,7 @@ export default function MyLearningList() {
     const suggestedKeywords = allKeywords.filter((k) => !myKeywordIds.includes(k._id));
 
     return (
-        <div className="w-full h-[calc(100vh-64px)] bg-[#f9f9ff] overflow-y-auto custom-scrollbar font-sans">
+        <div className="w-full h-[calc(100vh-64px)] bg-[#F4F9F8] overflow-y-auto custom-scrollbar font-sans">
 
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -102,12 +102,12 @@ export default function MyLearningList() {
 
             <div className="w-full p-4 sm:p-6 md:p-8 pb-12 sm:pb-8 animate-in fade-in duration-300">
                 <header className="mb-6 sm:mb-8">
-                    <h1 className="text-[28px] sm:text-[32px] md:text-[40px] font-bold text-[#222777] leading-[1.2] tracking-tight sm:tracking-[-0.02em]">My Learning List</h1>
+                    <h1 className="text-[28px] sm:text-[32px] md:text-[40px] font-bold text-[#075e51] leading-[1.2] tracking-tight sm:tracking-[-0.02em]">My Learning List</h1>
                     <p className="text-[14px] sm:text-[16px] leading-[1.6] sm:leading-[1.85] text-[#464651] mt-1 sm:mt-2 max-w-2xl">Follow topics to get notified when a seminar is hosted in that category.</p>
                 </header>
 
                 <section className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-5 sm:p-6 mb-6 sm:mb-8">
-                    <h3 className="text-[20px] sm:text-[24px] font-semibold text-[#222777] mb-1 flex items-center gap-1.5">
+                    <h3 className="text-[20px] sm:text-[24px] font-semibold text-[#075e51] mb-1 flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-[20px] sm:text-[24px]">bookmark</span> My Keywords
                     </h3>
                     <p className="text-[13px] sm:text-[14px] text-[#777682] mb-4">Topics you're following.</p>
@@ -123,7 +123,7 @@ export default function MyLearningList() {
                                     key={keyword._id}
                                     onClick={() => toggleKeyword(keyword._id)}
                                     disabled={savingId === keyword._id}
-                                    className="inline-flex items-center gap-2 bg-[#e6fbfc] text-[#006e73] border border-[#6bf6ff]/50 rounded-full pl-3.5 pr-2 py-1.5 text-[13px] font-bold hover:bg-[#6bf6ff]/20 transition-colors disabled:opacity-60"
+                                    className="inline-flex items-center gap-2 bg-[#FEF9C3] text-[#006e73] border border-[#6bf6ff]/50 rounded-full pl-3.5 pr-2 py-1.5 text-[13px] font-bold hover:bg-[#6bf6ff]/20 transition-colors disabled:opacity-60"
                                 >
                                     {keyword.text}
                                     <span className="material-symbols-outlined text-[15px]">{savingId === keyword._id ? 'hourglass_empty' : 'close'}</span>
@@ -134,7 +134,7 @@ export default function MyLearningList() {
                 </section>
 
                 <section className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-5 sm:p-6 mb-6 sm:mb-8">
-                    <h3 className="text-[20px] sm:text-[24px] font-semibold text-[#222777] mb-1 flex items-center gap-1.5">
+                    <h3 className="text-[20px] sm:text-[24px] font-semibold text-[#075e51] mb-1 flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-[20px] sm:text-[24px]">explore</span> Discover Keywords
                     </h3>
                     <p className="text-[13px] sm:text-[14px] text-[#777682] mb-4">Add a topic to start getting notified about it.</p>
@@ -150,7 +150,7 @@ export default function MyLearningList() {
                                     key={keyword._id}
                                     onClick={() => toggleKeyword(keyword._id)}
                                     disabled={savingId === keyword._id}
-                                    className="inline-flex items-center gap-2 bg-[#f1f3fc] text-[#222777] border border-[#c7c5d3] rounded-full pl-3.5 pr-2 py-1.5 text-[13px] font-bold hover:bg-[#e0e2eb] transition-colors disabled:opacity-60"
+                                    className="inline-flex items-center gap-2 bg-[#f1f3fc] text-[#075e51] border border-[#c7c5d3] rounded-full pl-3.5 pr-2 py-1.5 text-[13px] font-bold hover:bg-[#e0e2eb] transition-colors disabled:opacity-60"
                                 >
                                     {keyword.text}
                                     <span className="material-symbols-outlined text-[15px]">{savingId === keyword._id ? 'hourglass_empty' : 'add'}</span>
@@ -162,7 +162,7 @@ export default function MyLearningList() {
 
                 {sharedProjects.length > 0 && (
                     <section className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-5 sm:p-6 mb-6 sm:mb-8">
-                        <h3 className="text-[20px] sm:text-[24px] font-semibold text-[#222777] mb-1 flex items-center gap-1.5">
+                        <h3 className="text-[20px] sm:text-[24px] font-semibold text-[#075e51] mb-1 flex items-center gap-1.5">
                             <span className="material-symbols-outlined text-[20px] sm:text-[24px]">folder_shared</span> Shared Projects
                         </h3>
                         <p className="text-[13px] sm:text-[14px] text-[#777682] mb-4">Projects shared by other users under a keyword you follow.</p>
@@ -186,8 +186,8 @@ export default function MyLearningList() {
                                         disabled={unlockingId === project._id}
                                         className={`shrink-0 inline-flex items-center gap-1.5 text-[12px] font-bold px-3.5 py-2 rounded-full transition-colors disabled:opacity-60 ${
                                             project.hasUnlocked
-                                                ? 'bg-[#e6fbfc] text-[#006e73] border border-[#6bf6ff]/50 hover:bg-[#d0f6f8]'
-                                                : 'bg-[#222777] text-white hover:bg-[#3a3f8f]'
+                                                ? 'bg-[#FEF9C3] text-[#006e73] border border-[#6bf6ff]/50 hover:bg-[#d0f6f8]'
+                                                : 'bg-[#075e51] text-white hover:bg-[#097969]'
                                         }`}
                                     >
                                         <span className="material-symbols-outlined text-[15px]">
@@ -203,7 +203,7 @@ export default function MyLearningList() {
             </div>
 
             {toast.show && (
-                <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-[13px] font-bold ${toast.type === 'error' ? 'bg-[#ba1a1a]' : 'bg-[#222777]'}`}>
+                <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-[13px] font-bold ${toast.type === 'error' ? 'bg-[#ba1a1a]' : 'bg-[#075e51]'}`}>
                     {toast.message}
                 </div>
             )}

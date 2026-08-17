@@ -30,7 +30,7 @@ export default function Support() {
     );
 
     return (
-        <div className="w-full h-[calc(100vh-64px)] overflow-y-auto bg-[#f9f9ff] font-sans custom-scrollbar">
+        <div className="w-full h-[calc(100vh-64px)] overflow-y-auto bg-[#F4F9F8] font-sans custom-scrollbar">
             <div className="w-full p-4 sm:p-6 md:p-8 flex flex-col pb-20">
 
             {/* Hero Section */}

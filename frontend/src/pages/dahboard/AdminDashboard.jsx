@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import api from '../../services/api';
 
-const AVATAR_COLORS = ['bg-[#222777]', 'bg-[#3a3f8f]', 'bg-[#5156a7]', 'bg-[#181c22]'];
+const AVATAR_COLORS = ['bg-[#075e51]', 'bg-[#097969]', 'bg-[#5156a7]', 'bg-[#181c22]'];
 const DAY_OPTIONS = [7, 30, 90];
 
 function downsampleCounts(series, buckets) {
@@ -101,7 +101,7 @@ export default function AdminDashboard() {
     const trendXLabels = sampleSeries(trend, 5);
 
     const renderDelta = (deltaPct) => {
-        if (deltaPct > 0) return <span className="text-[11px] sm:text-[12px] font-bold text-[#00c2cb] mb-0.5 sm:mb-1">↑{deltaPct}%</span>;
+        if (deltaPct > 0) return <span className="text-[11px] sm:text-[12px] font-bold text-[#EAB308] mb-0.5 sm:mb-1">↑{deltaPct}%</span>;
         if (deltaPct < 0) return <span className="text-[11px] sm:text-[12px] font-bold text-[#ba1a1a] mb-0.5 sm:mb-1">↓{Math.abs(deltaPct)}%</span>;
         return <span className="text-[11px] sm:text-[12px] font-bold text-[#c7c5d3] mb-0.5 sm:mb-1">—0%</span>;
     };
@@ -124,7 +124,7 @@ export default function AdminDashboard() {
     const handleExportActivityCsv = () => downloadCsv('recent-activity.csv', ['User', 'Email', 'Form', 'Submitted At', 'Status'], filteredActivity.map((a) => [a.user, a.email, a.form, a.submittedAt, a.status]));
 
     return (
-        <div className="w-full h-[calc(100vh-64px)] overflow-y-auto bg-[#f9f9ff] font-sans custom-scrollbar">
+        <div className="w-full h-[calc(100vh-64px)] overflow-y-auto bg-[#F4F9F8] font-sans custom-scrollbar">
 
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -142,14 +142,14 @@ export default function AdminDashboard() {
                                 <button
                                     key={d}
                                     onClick={() => setFilters((prev) => ({ ...prev, days: d }))}
-                                    className={`px-3 sm:px-4 py-1.5 rounded-md text-[12px] sm:text-[13px] font-bold transition-colors ${filters.days === d ? 'bg-[#222777] text-white' : 'bg-[#eef0f9] text-[#464651] hover:bg-[#e0e2eb]'}`}
+                                    className={`px-3 sm:px-4 py-1.5 rounded-md text-[12px] sm:text-[13px] font-bold transition-colors ${filters.days === d ? 'bg-[#075e51] text-white' : 'bg-[#eef0f9] text-[#464651] hover:bg-[#e0e2eb]'}`}
                                 >
                                     {d}D
                                 </button>
                             ))}
                         </div>
                         <div className="flex items-center shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-md overflow-hidden border border-[#c7c5d3] w-full sm:w-auto mt-1 sm:mt-0">
-                            <div className="bg-[#222777] text-white px-3 sm:px-4 py-2 sm:py-1.5 text-[12px] sm:text-[13px] font-bold tracking-wide">Range</div>
+                            <div className="bg-[#075e51] text-white px-3 sm:px-4 py-2 sm:py-1.5 text-[12px] sm:text-[13px] font-bold tracking-wide">Range</div>
                             <div className="bg-white text-[#181c22] px-3 py-2 sm:py-1.5 flex items-center gap-1.5 sm:gap-2 flex-1 sm:flex-none">
                                 <span className="font-mono text-[12px] sm:text-[13px] font-bold">{range?.startDate || '-'}</span>
                                 <span className="text-[#c7c5d3]">-</span>
@@ -164,7 +164,7 @@ export default function AdminDashboard() {
                             <select
                                 value={filters.userId}
                                 onChange={(e) => setFilters((prev) => ({ ...prev, userId: e.target.value }))}
-                                className="w-full sm:w-auto appearance-none bg-white border border-[#c7c5d3] rounded-md pl-3 pr-8 py-1.5 text-[12px] sm:text-[13px] font-bold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none cursor-pointer shadow-sm"
+                                className="w-full sm:w-auto appearance-none bg-white border border-[#c7c5d3] rounded-md pl-3 pr-8 py-1.5 text-[12px] sm:text-[13px] font-bold text-[#181c22] focus:ring-1 focus:ring-[#075e51] focus:border-[#075e51] outline-none cursor-pointer shadow-sm"
                             >
                                 <option value="">All Users</option>
                                 {filterUsers.map((u) => (
@@ -210,7 +210,7 @@ export default function AdminDashboard() {
                     <div className="shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] rounded-xl bg-white p-5 sm:p-6 flex flex-col h-64 sm:h-80">
                         <div className="flex justify-between items-center mb-4 sm:mb-6">
                             <h3 className="text-[16px] sm:text-lg font-bold text-[#181c22]">Submissions Trend</h3>
-                            <button onClick={handleExportTrendCsv} className="text-[#464651] hover:text-[#222777] text-[11px] sm:text-[13px] font-bold flex items-center gap-1 transition-colors">
+                            <button onClick={handleExportTrendCsv} className="text-[#464651] hover:text-[#075e51] text-[11px] sm:text-[13px] font-bold flex items-center gap-1 transition-colors">
                                 Export CSV <span className="material-symbols-outlined text-[14px] sm:text-[16px]">download</span>
                             </button>
                         </div>
@@ -231,7 +231,7 @@ export default function AdminDashboard() {
                                             </linearGradient>
                                         </defs>
                                         <path d={trendAreaPath} fill="url(#areaGradient2)"></path>
-                                        <path d={trendLinePath} fill="none" stroke="#222777" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"></path>
+                                        <path d={trendLinePath} fill="none" stroke="#075e51" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"></path>
                                     </svg>
                                 </div>
                             </div>
@@ -243,7 +243,7 @@ export default function AdminDashboard() {
                     <div className="shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] rounded-xl bg-white p-5 sm:p-6 flex flex-col h-64 sm:h-80">
                         <div className="flex justify-between items-center mb-4 sm:mb-6">
                             <h3 className="text-[16px] sm:text-lg font-bold text-[#181c22]">Completion Rate</h3>
-                            <button onClick={handleExportCompletionCsv} className="text-[#464651] hover:text-[#222777] text-[11px] sm:text-[13px] font-bold flex items-center gap-1 transition-colors">
+                            <button onClick={handleExportCompletionCsv} className="text-[#464651] hover:text-[#075e51] text-[11px] sm:text-[13px] font-bold flex items-center gap-1 transition-colors">
                                 Export CSV <span className="material-symbols-outlined text-[14px] sm:text-[16px]">download</span>
                             </button>
                         </div>
@@ -253,7 +253,7 @@ export default function AdminDashboard() {
                                     {completionByForm.map((f) => <span key={f.schemaId} className="truncate max-w-[60px]">{f.name}</span>)}
                                 </div>
                                 {completionByForm.map((f) => (
-                                    <div key={f.schemaId} title={`${f.percentage}%`} className="w-full bg-[#3a3f8f] hover:bg-[#5156a7] transition-colors rounded-t-sm" style={{ height: `${Math.max(f.percentage, 3)}%` }}></div>
+                                    <div key={f.schemaId} title={`${f.percentage}%`} className="w-full bg-[#097969] hover:bg-[#5156a7] transition-colors rounded-t-sm" style={{ height: `${Math.max(f.percentage, 3)}%` }}></div>
                                 ))}
                             </div>
                         ) : (
@@ -267,7 +267,7 @@ export default function AdminDashboard() {
                     <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-5 sm:p-6 flex flex-col">
                         <div className="flex justify-between items-center mb-4 sm:mb-6">
                             <h3 className="text-[16px] sm:text-lg font-bold text-[#181c22]">Top Users</h3>
-                            <button onClick={handleExportTopUsersCsv} className="text-[#464651] hover:text-[#222777] text-[11px] sm:text-[13px] font-bold flex items-center gap-1 transition-colors">
+                            <button onClick={handleExportTopUsersCsv} className="text-[#464651] hover:text-[#075e51] text-[11px] sm:text-[13px] font-bold flex items-center gap-1 transition-colors">
                                 Export CSV <span className="material-symbols-outlined text-[14px] sm:text-[16px]">download</span>
                             </button>
                         </div>
@@ -335,10 +335,10 @@ export default function AdminDashboard() {
                                     type="text" placeholder="Search rows..."
                                     value={activitySearch}
                                     onChange={(e) => setActivitySearch(e.target.value)}
-                                    className="pl-8 sm:pl-9 pr-4 py-2 bg-[#f9f9ff] border border-[#e0e2eb] rounded-md text-[12px] sm:text-[13px] font-mono text-[#464651] focus:outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777] w-full sm:w-64 placeholder:text-[#c7c5d3]"
+                                    className="pl-8 sm:pl-9 pr-4 py-2 bg-[#F4F9F8] border border-[#e0e2eb] rounded-md text-[12px] sm:text-[13px] font-mono text-[#464651] focus:outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] w-full sm:w-64 placeholder:text-[#c7c5d3]"
                                 />
                             </div>
-                            <button onClick={handleExportActivityCsv} className="text-[#464651] hover:text-[#222777] text-[11px] sm:text-[13px] font-bold flex items-center gap-1 transition-colors shrink-0">
+                            <button onClick={handleExportActivityCsv} className="text-[#464651] hover:text-[#075e51] text-[11px] sm:text-[13px] font-bold flex items-center gap-1 transition-colors shrink-0">
                                 Export CSV <span className="material-symbols-outlined text-[14px] sm:text-[16px]">download</span>
                             </button>
                         </div>
@@ -347,7 +347,7 @@ export default function AdminDashboard() {
                     <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left border-collapse min-w-[800px]">
                             <thead>
-                            <tr className="bg-[#f9f9ff] border-b border-[#e0e2eb] text-[#777682] font-bold text-[11px] sm:text-[12px] uppercase tracking-wider">
+                            <tr className="bg-[#F4F9F8] border-b border-[#e0e2eb] text-[#777682] font-bold text-[11px] sm:text-[12px] uppercase tracking-wider">
                                 <th className="p-3 sm:p-4 pl-4 sm:pl-6 font-mono w-1/4 whitespace-nowrap">User</th>
                                 <th className="p-3 sm:p-4 font-mono w-1/4 whitespace-nowrap">Form</th>
                                 <th className="p-3 sm:p-4 font-mono w-1/5 whitespace-nowrap">Submitted At</th>
@@ -370,7 +370,7 @@ export default function AdminDashboard() {
                                     <td className="p-3 sm:p-4 font-mono text-[11px] sm:text-[12px] font-bold text-[#777682] whitespace-nowrap">{new Date(activity.submittedAt).toLocaleString()}</td>
                                     <td className="p-3 sm:p-4 whitespace-nowrap">
                                             <span className={`px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 w-fit border
-                                                ${activity.status === 'Submitted' ? 'bg-[#e6fbfc] text-[#006e73] border-[#b2f0f4]' : ''}
+                                                ${activity.status === 'Submitted' ? 'bg-[#FEF9C3] text-[#006e73] border-[#b2f0f4]' : ''}
                                                 ${activity.status === 'Draft' ? 'bg-[#fff8e1] text-[#b45309] border-[#ffe082]' : ''}
                                                 ${activity.status === 'Overdue' ? 'bg-[#ffdad6] text-[#ba1a1a] border-[#ffb4ab]' : ''}
                                             `}>

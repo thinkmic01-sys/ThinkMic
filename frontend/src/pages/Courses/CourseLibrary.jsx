@@ -124,7 +124,7 @@ export default function CourseLibrary() {
         // recorded-view button everyone (including the host) sees below.
         if (isHost && (course.status === 'UPCOMING' || course.status === 'DRAFT')) {
             return (
-                <button onClick={(e) => { e.stopPropagation(); navigate(`/app/courses/broadcast/${course.id}`); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-[#006e73] text-white hover:bg-[#00c2cb]">
+                <button onClick={(e) => { e.stopPropagation(); navigate(`/app/courses/broadcast/${course.id}`); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-[#006e73] text-white hover:bg-[#EAB308]">
                     <span className="material-symbols-outlined text-[14px] sm:text-[16px]">podcasts</span>
                     Start Broadcast
                 </button>
@@ -150,7 +150,7 @@ export default function CourseLibrary() {
 
         if (course.status === 'RECORDED') {
             return (
-                <button onClick={(e) => { e.stopPropagation(); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-[#f1f3fc] text-[#222777] border border-[#c7c5d3] hover:bg-[#e0e2eb]">
+                <button onClick={(e) => { e.stopPropagation(); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-[#f1f3fc] text-[#075e51] border border-[#c7c5d3] hover:bg-[#e0e2eb]">
                     <span className="material-symbols-outlined text-[14px] sm:text-[16px]">play_arrow</span> {isHost ? 'View Recording' : 'Resume'}
                 </button>
             );
@@ -158,21 +158,21 @@ export default function CourseLibrary() {
 
         if (isRegistered) {
             return (
-                <button onClick={(e) => { e.stopPropagation(); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-white text-[#006e73] border border-[#00c2cb] cursor-default">
+                <button onClick={(e) => { e.stopPropagation(); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-white text-[#006e73] border border-[#EAB308] cursor-default">
                     <span className="material-symbols-outlined text-[14px] sm:text-[16px]">check_circle</span> Registered
                 </button>
             );
         }
 
         return (
-            <button onClick={(e) => handleRegister(e, course.id)} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-[#222777] text-white hover:bg-[#3a3f8f]">
+            <button onClick={(e) => handleRegister(e, course.id)} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-[#075e51] text-white hover:bg-[#097969]">
                 Register
             </button>
         );
     };
 
     return (
-        <div className="w-full h-[calc(100vh-64px)] bg-[#f9f9ff] overflow-y-auto relative font-sans custom-scrollbar">
+        <div className="w-full h-[calc(100vh-64px)] bg-[#F4F9F8] overflow-y-auto relative font-sans custom-scrollbar">
 
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -187,19 +187,19 @@ export default function CourseLibrary() {
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-5 sm:mb-6 border-b border-[#e0e2eb] pb-4 gap-4">
                     <div className="w-full sm:w-auto">
-                        <h1 className="text-[24px] sm:text-[28px] md:text-[32px] font-bold text-[#222777] leading-tight tracking-tight">Seminar Library</h1>
+                        <h1 className="text-[24px] sm:text-[28px] md:text-[32px] font-bold text-[#075e51] leading-tight tracking-tight">Seminar Library</h1>
                         <p className="text-[13px] sm:text-[14px] md:text-[15px] text-[#464651] mt-1">Discover live seminars, recorded lectures, and interactive modules.</p>
                     </div>
                     <div className="flex gap-2 sm:gap-3 w-full sm:w-auto overflow-x-auto hide-scrollbar shrink-0">
                         <button
                             onClick={() => navigate('/app/projects/create-seminar')}
-                            className="bg-[#222777] text-white px-4 py-2.5 sm:py-2 rounded-lg font-bold text-[13px] hover:bg-[#3a3f8f] transition-colors flex items-center justify-center gap-2 shadow-sm shrink-0 whitespace-nowrap"
+                            className="bg-[#075e51] text-white px-4 py-2.5 sm:py-2 rounded-lg font-bold text-[13px] hover:bg-[#097969] transition-colors flex items-center justify-center gap-2 shadow-sm shrink-0 whitespace-nowrap"
                         >
                             <span className="material-symbols-outlined text-[18px]">event</span> Create Seminar
                         </button>
                         <button
                             onClick={() => navigate('/app/courses/seminars')}
-                            className="bg-[#e6fbfc] text-[#006e73] border border-[#6bf6ff]/50 px-4 py-2.5 sm:py-2 rounded-lg font-bold text-[13px] hover:bg-[#6bf6ff]/20 transition-colors flex items-center justify-center gap-2 shadow-sm shrink-0 whitespace-nowrap"
+                            className="bg-[#FEF9C3] text-[#006e73] border border-[#6bf6ff]/50 px-4 py-2.5 sm:py-2 rounded-lg font-bold text-[13px] hover:bg-[#6bf6ff]/20 transition-colors flex items-center justify-center gap-2 shadow-sm shrink-0 whitespace-nowrap"
                         >
                             <span className="material-symbols-outlined text-[18px]">location_on</span> Nearby Seminars
                         </button>
@@ -209,10 +209,10 @@ export default function CourseLibrary() {
                 {/* Hero Banner: whichever seminar is actually live right now, if any */}
                 {featuredLive && (
                     <section
-                        className="mb-6 sm:mb-8 rounded-xl overflow-hidden relative shadow-[0_4px_16px_rgba(58,63,143,0.08)] group cursor-pointer border border-[#222777]"
+                        className="mb-6 sm:mb-8 rounded-xl overflow-hidden relative shadow-[0_4px_16px_rgba(58,63,143,0.08)] group cursor-pointer border border-[#075e51]"
                         onClick={() => handleCourseClick(featuredLive)}
                     >
-                        <div className="absolute inset-0 bg-gradient-to-br md:bg-gradient-to-r from-[#222777] to-[#3a3f8f] opacity-95 z-0"></div>
+                        <div className="absolute inset-0 bg-gradient-to-br md:bg-gradient-to-r from-[#075e51] to-[#097969] opacity-95 z-0"></div>
                         <div className="absolute inset-0 bg-cover bg-center mix-blend-overlay z-0 opacity-30 transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url('${featuredLive.img}')` }}></div>
 
                         <div className="relative z-10 p-5 sm:p-8 lg:p-12 flex flex-col md:flex-row gap-6 sm:gap-8 justify-between items-start md:items-center">
@@ -234,7 +234,7 @@ export default function CourseLibrary() {
                                         <span className="material-symbols-outlined">play_arrow</span> Join Broadcast
                                     </button>
                                     <div className="flex items-center gap-3">
-                                        <img src={featuredLive.hostImage} alt="Host" className="w-10 h-10 rounded-full border-2 border-[#3a3f8f]" />
+                                        <img src={featuredLive.hostImage} alt="Host" className="w-10 h-10 rounded-full border-2 border-[#097969]" />
                                         <div className="text-sm">
                                             <p className="font-bold text-white leading-tight">{featuredLive.host}</p>
                                             <p className="font-mono text-[10px] sm:text-[11px] text-[#bfc2ff]">{featuredLive.hostTitle}</p>
@@ -254,14 +254,14 @@ export default function CourseLibrary() {
                                 <button
                                     key={tab}
                                     onClick={() => setActiveFilter(tab)}
-                                    className={`px-4 sm:px-5 py-1.5 rounded-full text-[12px] sm:text-[13px] font-bold whitespace-nowrap transition-colors ${activeFilter === tab ? 'bg-[#222777] text-white shadow-sm' : 'bg-transparent text-[#464651] border border-[#c7c5d3] hover:border-[#222777] hover:text-[#222777]'}`}
+                                    className={`px-4 sm:px-5 py-1.5 rounded-full text-[12px] sm:text-[13px] font-bold whitespace-nowrap transition-colors ${activeFilter === tab ? 'bg-[#075e51] text-white shadow-sm' : 'bg-transparent text-[#464651] border border-[#c7c5d3] hover:border-[#075e51] hover:text-[#075e51]'}`}
                                 >
                                     {tab === 'Draft' ? 'Drafts' : tab === 'Mine' ? `My Seminars (${myCount})` : tab}
                                 </button>
                             ))}
                         </div>
                         <div className="h-6 w-px bg-[#c7c5d3] mx-2 hidden sm:block shrink-0"></div>
-                        <button className="text-[#464651] hover:text-[#222777] flex items-center gap-1 font-bold text-[12px] sm:text-[13px] p-2 rounded-lg hover:bg-[#ebeef6] transition-colors shrink-0 ml-auto sm:ml-0">
+                        <button className="text-[#464651] hover:text-[#075e51] flex items-center gap-1 font-bold text-[12px] sm:text-[13px] p-2 rounded-lg hover:bg-[#ebeef6] transition-colors shrink-0 ml-auto sm:ml-0">
                             <span className="material-symbols-outlined text-[16px] sm:text-[18px]">tune</span> <span className="hidden sm:inline">Filters</span>
                         </button>
                     </div>
@@ -270,7 +270,7 @@ export default function CourseLibrary() {
                 {/* Grid Layout for Courses */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {filteredCourses.map((course) => (
-                        <div key={course.id} onClick={() => handleCourseClick(course)} className={`bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border overflow-hidden flex flex-col hover:shadow-md transition-shadow cursor-pointer group ${course.status === 'LIVE' ? 'border-[#00c2cb] ring-1 ring-[#00c2cb]/50' : 'border-[#e0e2eb]'}`}>
+                        <div key={course.id} onClick={() => handleCourseClick(course)} className={`bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border overflow-hidden flex flex-col hover:shadow-md transition-shadow cursor-pointer group ${course.status === 'LIVE' ? 'border-[#EAB308] ring-1 ring-[#EAB308]/50' : 'border-[#e0e2eb]'}`}>
                             <div className="relative h-36 sm:h-40 bg-[#ebeef6]">
                                 <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: `url('${course.img}')` }}></div>
                                 <div className="absolute inset-0 bg-black/10"></div>
@@ -280,7 +280,7 @@ export default function CourseLibrary() {
                                             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> {course.status}
                                         </span>
                                     ) : (
-                                        <span className="bg-white text-[#222777] font-bold text-[9px] sm:text-[10px] px-2 py-1 rounded-sm border border-[#e0e2eb] flex items-center gap-1 shadow-sm uppercase tracking-wider">
+                                        <span className="bg-white text-[#075e51] font-bold text-[9px] sm:text-[10px] px-2 py-1 rounded-sm border border-[#e0e2eb] flex items-center gap-1 shadow-sm uppercase tracking-wider">
                                             <span className="material-symbols-outlined text-[12px] sm:text-[14px]">
                                                 {course.status === 'UPCOMING' ? 'event' : 'movie'}
                                             </span> {course.status}
@@ -297,9 +297,9 @@ export default function CourseLibrary() {
                             <div className="p-4 sm:p-5 flex flex-col flex-1">
                                 <div className="flex justify-between items-start mb-2">
                                     <span className="text-[#00696e] font-mono text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">{course.tag}</span>
-                                    <button className="text-[#c7c5d3] hover:text-[#222777] transition-colors"><span className="material-symbols-outlined text-[18px] sm:text-[20px]">bookmark_border</span></button>
+                                    <button className="text-[#c7c5d3] hover:text-[#075e51] transition-colors"><span className="material-symbols-outlined text-[18px] sm:text-[20px]">bookmark_border</span></button>
                                 </div>
-                                <h4 className="text-[16px] sm:text-[18px] font-bold text-[#181c22] mb-1.5 sm:mb-2 group-hover:text-[#222777] transition-colors leading-snug">{course.title}</h4>
+                                <h4 className="text-[16px] sm:text-[18px] font-bold text-[#181c22] mb-1.5 sm:mb-2 group-hover:text-[#075e51] transition-colors leading-snug">{course.title}</h4>
                                 <p className="text-[13px] sm:text-[14px] text-[#464651] line-clamp-2 mb-4 flex-1">{course.desc}</p>
                                 <div className="p-4 sm:p-5 pt-0 mt-auto">
                                     <div className="flex items-center gap-2 sm:gap-3">
@@ -328,7 +328,7 @@ export default function CourseLibrary() {
             <aside className={`fixed top-0 right-0 h-full w-full sm:w-[480px] md:w-[540px] bg-white shadow-2xl z-50 flex flex-col border-l border-[#c7c5d3] overflow-hidden transform transition-transform duration-300 ease-in-out ${isDrawerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
                 {/* Header Image Area */}
-                <div className="relative h-48 sm:h-56 bg-[#222777] shrink-0">
+                <div className="relative h-48 sm:h-56 bg-[#075e51] shrink-0">
                     <div className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-60" style={{ backgroundImage: `url('${selectedCourse.img}')` }}></div>
 
                     <button className="absolute top-4 right-4 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#181c22]/40 backdrop-blur-md text-white flex items-center justify-center hover:bg-[#181c22]/60 transition-colors border border-white/20" onClick={closeDrawer}>
@@ -399,13 +399,13 @@ export default function CourseLibrary() {
                     </div>
 
                     {/* Completion Rewards Box */}
-                    <div className="bg-[#f9f9ff] rounded-xl p-4 sm:p-5 border border-[#e0e2eb] mb-6">
+                    <div className="bg-[#F4F9F8] rounded-xl p-4 sm:p-5 border border-[#e0e2eb] mb-6">
                         <h4 className="font-bold text-[13px] sm:text-[14px] text-[#181c22] mb-2 sm:mb-3 flex items-center gap-1.5">
-                            <span className="material-symbols-outlined text-[18px] sm:text-[20px] text-[#00c2cb]" style={{ fontVariationSettings: "'FILL' 1" }}>workspace_premium</span>
+                            <span className="material-symbols-outlined text-[18px] sm:text-[20px] text-[#EAB308]" style={{ fontVariationSettings: "'FILL' 1" }}>workspace_premium</span>
                             Completion Rewards
                         </h4>
                         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center">
-                            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#e6fbfc] border border-[#61f4fd] w-fit">
+                            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#FEF9C3] border border-[#61f4fd] w-fit">
                                 <span className="material-symbols-outlined text-[#006e73] text-[14px] sm:text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>generating_tokens</span>
                                 <span className="font-bold text-[11px] sm:text-[12px] text-[#006e73]">+500 Tokens</span>
                             </div>
@@ -422,13 +422,13 @@ export default function CourseLibrary() {
 
                         let btnText = 'Watch Recording';
                         let icon = 'play_circle';
-                        let btnStyle = 'bg-[#f1f3fc] text-[#222777] border-[#c7c5d3] hover:bg-[#e0e2eb]';
+                        let btnStyle = 'bg-[#f1f3fc] text-[#075e51] border-[#c7c5d3] hover:bg-[#e0e2eb]';
                         let onClick = (e) => e.stopPropagation();
 
                         if (isHost && (selectedCourse.status === 'UPCOMING' || selectedCourse.status === 'DRAFT')) {
                             btnText = 'Start Broadcast';
                             icon = 'podcasts';
-                            btnStyle = 'bg-[#006e73] text-white border-[#006e73] hover:bg-[#00c2cb]';
+                            btnStyle = 'bg-[#006e73] text-white border-[#006e73] hover:bg-[#EAB308]';
                             onClick = (e) => { e.stopPropagation(); navigate(`/app/courses/broadcast/${selectedCourse.id}`); };
                         } else if (isHost && selectedCourse.status === 'LIVE') {
                             btnText = 'Manage Broadcast';
@@ -453,11 +453,11 @@ export default function CourseLibrary() {
                             if (isRegistered) {
                                 btnText = 'Registered';
                                 icon = 'check_circle';
-                                btnStyle = 'bg-white text-[#006e73] border-[#00c2cb] cursor-default';
+                                btnStyle = 'bg-white text-[#006e73] border-[#EAB308] cursor-default';
                             } else {
                                 btnText = 'Register for Seminar';
                                 icon = 'event_available';
-                                btnStyle = 'bg-[#222777] text-white border-[#222777] hover:bg-[#3a3f8f]';
+                                btnStyle = 'bg-[#075e51] text-white border-[#075e51] hover:bg-[#097969]';
                                 onClick = (e) => handleRegister(e, selectedCourse.id);
                             }
                         }
@@ -470,11 +470,11 @@ export default function CourseLibrary() {
                         );
                     })()}
 
-                    <button className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg border border-[#c7c5d3] text-[#464651] flex items-center justify-center hover:bg-[#f1f3fc] hover:text-[#222777] transition-colors shrink-0">
+                    <button className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg border border-[#c7c5d3] text-[#464651] flex items-center justify-center hover:bg-[#f1f3fc] hover:text-[#075e51] transition-colors shrink-0">
                         <span className="material-symbols-outlined text-[18px] sm:text-[20px]">bookmark_border</span>
                     </button>
 
-                    <button className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg border border-[#c7c5d3] text-[#464651] flex items-center justify-center hover:bg-[#f1f3fc] hover:text-[#222777] transition-colors shrink-0">
+                    <button className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg border border-[#c7c5d3] text-[#464651] flex items-center justify-center hover:bg-[#f1f3fc] hover:text-[#075e51] transition-colors shrink-0">
                         <span className="material-symbols-outlined text-[18px] sm:text-[20px]">share</span>
                     </button>
                 </div>
@@ -483,7 +483,7 @@ export default function CourseLibrary() {
             {/* Custom Toast Notification */}
             {toast && (
                 <div className="fixed bottom-6 right-6 z-[60] animate-fade-in-up">
-                    <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border ${toast.type === 'error' ? 'bg-[#ba1a1a] text-white border-[#93000a]' : 'bg-[#222777] text-white border-[#070963]'}`}>
+                    <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border ${toast.type === 'error' ? 'bg-[#ba1a1a] text-white border-[#93000a]' : 'bg-[#075e51] text-white border-[#070963]'}`}>
                         <span className="material-symbols-outlined">
                             {toast.type === 'error' ? 'error' : 'check_circle'}
                         </span>

@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import api from '../../services/api';
 
 const STATUS_META = {
-    transcribed: { label: 'Transcribed', className: 'bg-[#e6fbfc] text-[#006e73] border-[#6bf6ff]/50' },
+    transcribed: { label: 'Transcribed', className: 'bg-[#FEF9C3] text-[#006e73] border-[#6bf6ff]/50' },
     processing: { label: 'Processing', className: 'bg-[#fff8e1] text-[#b45309] border-[#ffe082]' },
     uploaded: { label: 'Uploaded', className: 'bg-[#f1f3fc] text-[#464651] border-[#e0e2eb]' },
     failed: { label: 'Failed', className: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ffb4ab]' }
@@ -58,7 +58,7 @@ export default function SessionHistory() {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-64px)] overflow-y-auto custom-scrollbar bg-[#f9f9ff] font-sans">
+        <div className="w-full h-[calc(100vh-64px)] overflow-y-auto custom-scrollbar bg-[#F4F9F8] font-sans">
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -67,7 +67,7 @@ export default function SessionHistory() {
 
             <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 md:p-8 pb-12">
                 <header className="mb-6 sm:mb-8">
-                    <h1 className="text-[28px] sm:text-[32px] md:text-[40px] font-bold text-[#222777] leading-[1.2] tracking-tight">Session History</h1>
+                    <h1 className="text-[28px] sm:text-[32px] md:text-[40px] font-bold text-[#075e51] leading-[1.2] tracking-tight">Session History</h1>
                     <p className="text-[14px] sm:text-[16px] text-[#464651] mt-1 sm:mt-2 max-w-2xl">Every past recording, its transcript, summary, and the research queries it generated - pick one up where you left off.</p>
                 </header>
 
@@ -100,7 +100,7 @@ export default function SessionHistory() {
                                 >
                                     <div className="flex items-start justify-between gap-3 mb-2">
                                         <div className="flex items-center gap-2.5 min-w-0">
-                                            <span className="w-9 h-9 rounded-full bg-[#eef0f9] text-[#222777] flex items-center justify-center shrink-0">
+                                            <span className="w-9 h-9 rounded-full bg-[#eef0f9] text-[#075e51] flex items-center justify-center shrink-0">
                                                 <span className="material-symbols-outlined text-[18px]">mic</span>
                                             </span>
                                             <h3 className="font-bold text-[15px] sm:text-[16px] text-[#181c22] truncate">{session.title || 'Untitled Recording'}</h3>
@@ -132,7 +132,7 @@ export default function SessionHistory() {
                                                 </span>
                                             ))}
                                             {session.queries?.map((q, i) => (
-                                                <span key={i} className="inline-flex items-center gap-1 bg-[#e6fbfc] text-[#006e73] text-[11px] font-semibold px-2 py-0.5 rounded-full border border-[#6bf6ff]/50">
+                                                <span key={i} className="inline-flex items-center gap-1 bg-[#FEF9C3] text-[#006e73] text-[11px] font-semibold px-2 py-0.5 rounded-full border border-[#6bf6ff]/50">
                                                     <span className="material-symbols-outlined text-[12px]">search</span>{q}
                                                 </span>
                                             ))}

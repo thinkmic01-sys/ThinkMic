@@ -6,18 +6,18 @@ import api from '../services/api';
 import { API_BASE_URL } from '../config';
 
 const NOTIFICATION_META = {
-    reminder: { icon: 'schedule', color: 'text-[#222777] bg-[#eef0f9]', title: 'Reminder' },
+    reminder: { icon: 'schedule', color: 'text-[#075e51] bg-[#eef0f9]', title: 'Reminder' },
     system: { icon: 'info', color: 'text-[#464651] bg-[#f1f3fc]', title: 'System' },
-    update: { icon: 'auto_awesome', color: 'text-[#00c2cb] bg-[#e6fbfc]', title: 'Update' },
+    update: { icon: 'auto_awesome', color: 'text-[#EAB308] bg-[#FEF9C3]', title: 'Update' },
     referral_pending: { icon: 'hourglass_empty', color: 'text-[#b45309] bg-[#fff8e1]', title: 'Referral Pending' },
-    referral_approved: { icon: 'check_circle', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Referral Approved' },
+    referral_approved: { icon: 'check_circle', color: 'text-[#006e73] bg-[#FEF9C3]', title: 'Referral Approved' },
     referral_rejected: { icon: 'cancel', color: 'text-[#ba1a1a] bg-[#ffdad6]', title: 'Referral Rejected' },
-    seminar_reward_received: { icon: 'redeem', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Reward Received' },
-    seminar_coins_reserved: { icon: 'lock_clock', color: 'text-[#222777] bg-[#eef0f9]', title: 'Coins Reserved' },
-    seminar_coins_refunded: { icon: 'replay', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Coins Refunded' },
-    form_published: { icon: 'assignment', color: 'text-[#222777] bg-[#eef0f9]', title: 'New Form' },
-    keyword_seminar_match: { icon: 'bookmark', color: 'text-[#00c2cb] bg-[#e6fbfc]', title: 'Followed Topic' },
-    project_unlocked: { icon: 'toll', color: 'text-[#006e73] bg-[#e6fbfc]', title: 'Project Unlocked' }
+    seminar_reward_received: { icon: 'redeem', color: 'text-[#006e73] bg-[#FEF9C3]', title: 'Reward Received' },
+    seminar_coins_reserved: { icon: 'lock_clock', color: 'text-[#075e51] bg-[#eef0f9]', title: 'Coins Reserved' },
+    seminar_coins_refunded: { icon: 'replay', color: 'text-[#006e73] bg-[#FEF9C3]', title: 'Coins Refunded' },
+    form_published: { icon: 'assignment', color: 'text-[#075e51] bg-[#eef0f9]', title: 'New Form' },
+    keyword_seminar_match: { icon: 'bookmark', color: 'text-[#EAB308] bg-[#FEF9C3]', title: 'Followed Topic' },
+    project_unlocked: { icon: 'toll', color: 'text-[#006e73] bg-[#FEF9C3]', title: 'Project Unlocked' }
 };
 const DEFAULT_NOTIFICATION_META = { icon: 'notifications', color: 'text-[#777682] bg-[#f1f3fc]', title: 'Notification' };
 
@@ -101,7 +101,7 @@ export default function Navbar({ onMenuClick }) {
                 <div className="flex items-center gap-2 sm:gap-4 text-[13px] sm:text-sm whitespace-nowrap">
                     <span className="text-gray-500 font-medium hidden sm:inline">ThinkMic</span>
                     <span className="text-gray-400 hidden sm:inline">/</span>
-                    <span className="text-[#222777] font-bold">Seminars</span>
+                    <span className="text-[#075e51] font-bold">Seminars</span>
                 </div>
             );
         }
@@ -111,7 +111,7 @@ export default function Navbar({ onMenuClick }) {
         if (location.pathname.includes('/app/research')) {
             return (
                 <div className="flex space-x-4 sm:space-x-6 h-full items-center overflow-x-auto hide-scrollbar">
-                    <Link to="/app/research" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/research') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
+                    <Link to="/app/research" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${isTopActive('/app/research') ? 'border-[#075e51] text-[#075e51]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
                         AI Research Wizard
                     </Link>
                 </div>
@@ -122,10 +122,10 @@ export default function Navbar({ onMenuClick }) {
         if (location.pathname.includes('/app/achievements')) {
             return (
                 <div className="flex space-x-4 sm:space-x-6 h-full items-center overflow-x-auto hide-scrollbar">
-                    <Link to="/app/achievements" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${location.pathname === '/app/achievements' ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
+                    <Link to="/app/achievements" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${location.pathname === '/app/achievements' ? 'border-[#075e51] text-[#075e51]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
                         Rewards
                     </Link>
-                    <Link to="/app/achievements/timeline" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${location.pathname.includes('timeline') ? 'border-[#222777] text-[#222777]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
+                    <Link to="/app/achievements/timeline" className={`h-full flex items-center border-b-[3px] px-1 text-[13px] sm:text-[14px] font-bold transition-colors whitespace-nowrap ${location.pathname.includes('timeline') ? 'border-[#075e51] text-[#075e51]' : 'border-transparent text-[#777682] hover:text-[#464651]'}`}>
                         My Timeline
                     </Link>
                 </div>
@@ -139,7 +139,7 @@ export default function Navbar({ onMenuClick }) {
                 <div className="flex items-center gap-2 sm:gap-4 text-[13px] sm:text-sm whitespace-nowrap">
                     <span className="text-gray-500 font-medium hidden sm:inline">ThinkMic</span>
                     <span className="text-gray-400 hidden sm:inline">/</span>
-                    <span className="text-[#222777] font-bold">Seminars</span>
+                    <span className="text-[#075e51] font-bold">Seminars</span>
                 </div>
             );
         }
@@ -150,7 +150,7 @@ export default function Navbar({ onMenuClick }) {
             <div className="flex items-center gap-2 sm:gap-4 text-[13px] sm:text-sm whitespace-nowrap">
                 <span className="text-gray-500 font-medium hidden sm:inline">ThinkMic</span>
                 <span className="text-gray-400 hidden sm:inline">/</span>
-                <span className="text-[#222777] font-bold">{pageName}</span>
+                <span className="text-[#075e51] font-bold">{pageName}</span>
             </div>
         );
     };
@@ -166,7 +166,7 @@ export default function Navbar({ onMenuClick }) {
 
                 {/* Left side: Hamburger Menu & Dynamic Top Navigation */}
                 <div className="flex items-center gap-2 sm:gap-4 h-full overflow-hidden flex-1">
-                    <button onClick={onMenuClick} className="lg:hidden text-gray-500 hover:text-[#222777] transition-colors flex items-center shrink-0">
+                    <button onClick={onMenuClick} className="lg:hidden text-gray-500 hover:text-[#075e51] transition-colors flex items-center shrink-0">
                         <span className="material-symbols-outlined text-[24px]">menu</span>
                     </button>
                     {renderTopNav()}
@@ -176,7 +176,7 @@ export default function Navbar({ onMenuClick }) {
                 <div className="flex items-center gap-3 sm:gap-4 md:gap-6 shrink-0 pl-2">
 
                     {isAuthenticated && user && (
-                        <div className="hidden md:flex items-center gap-2 bg-[#e6fbfc] px-3 py-1.5 rounded-full border border-[#6bf6ff]/50 cursor-default shrink-0">
+                        <div className="hidden md:flex items-center gap-2 bg-[#FEF9C3] px-3 py-1.5 rounded-full border border-[#6bf6ff]/50 cursor-default shrink-0">
                             <span className="material-symbols-outlined text-[#006e73] text-[16px]">toll</span>
                             <span className="text-[#006e73] font-mono text-[13px] font-bold">+{user.coins.toLocaleString()}</span>
                         </div>
@@ -184,7 +184,7 @@ export default function Navbar({ onMenuClick }) {
 
                     <div className="flex gap-1 sm:gap-2 shrink-0">
                         <div className="relative">
-                            <button onClick={handleNotificationClick} className="text-[#777682] hover:text-[#222777] transition relative w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full hover:bg-[#f1f3fc]">
+                            <button onClick={handleNotificationClick} className="text-[#777682] hover:text-[#075e51] transition relative w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full hover:bg-[#f1f3fc]">
                                 <span className="material-symbols-outlined text-[20px] sm:text-[24px]">notifications</span>
                                 {notifications.some(n => !n.isRead) && (
                                     <span className="absolute top-1.5 right-1.5 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-[#ba1a1a] rounded-full border-2 border-white"></span>
@@ -193,7 +193,7 @@ export default function Navbar({ onMenuClick }) {
                             
                             {isNotifOpen && (
                                 <div className="absolute top-full right-0 mt-2 w-72 sm:w-80 bg-white border border-[#e0e2eb] rounded-xl shadow-lg z-50 overflow-hidden flex flex-col max-h-96">
-                                    <div className="p-3 border-b border-[#e0e2eb] bg-[#f9f9ff]">
+                                    <div className="p-3 border-b border-[#e0e2eb] bg-[#F4F9F8]">
                                         <h3 className="font-bold text-[#181c22] text-[14px]">Notifications</h3>
                                     </div>
                                     <div className="overflow-y-auto flex-1">
@@ -221,7 +221,7 @@ export default function Navbar({ onMenuClick }) {
                             )}
                         </div>
 
-                        <button onClick={handleSettingsClick} className={`transition w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full ${isSettingsActive ? 'text-[#222777] bg-[#f1f3fc]' : 'text-[#777682] hover:text-[#222777] hover:bg-[#f1f3fc]'}`}>
+                        <button onClick={handleSettingsClick} className={`transition w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full ${isSettingsActive ? 'text-[#075e51] bg-[#f1f3fc]' : 'text-[#777682] hover:text-[#075e51] hover:bg-[#f1f3fc]'}`}>
                             <span className="material-symbols-outlined text-[20px] sm:text-[24px]">settings</span>
                         </button>
                     </div>
@@ -237,7 +237,7 @@ export default function Navbar({ onMenuClick }) {
                             </div>
                         </div>
                     ) : (
-                        <button className="bg-[#222777] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-[12px] sm:text-[13px] font-bold shadow-sm shrink-0">
+                        <button className="bg-[#075e51] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-md text-[12px] sm:text-[13px] font-bold shadow-sm shrink-0">
                             Log In
                         </button>
                     )}

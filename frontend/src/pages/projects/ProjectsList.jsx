@@ -60,17 +60,17 @@ export default function ProjectsList() {
     };
 
     return (
-        <div className="flex-1 w-full bg-[#f9f9ff] p-4 sm:p-6 md:p-8 flex justify-center h-[calc(100vh-64px)] overflow-y-auto font-sans">
+        <div className="flex-1 w-full bg-[#F4F9F8] p-4 sm:p-6 md:p-8 flex justify-center h-[calc(100vh-64px)] overflow-y-auto font-sans">
             <div className="w-full flex flex-col pb-12">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6 sm:mb-8 border-b border-[#e0e2eb] pb-4 sm:pb-6">
                     <div className="w-full sm:w-auto">
-                        <h2 className="text-[24px] sm:text-[28px] md:text-[32px] font-bold text-[#222777] tracking-tight leading-tight">Projects Hub</h2>
+                        <h2 className="text-[24px] sm:text-[28px] md:text-[32px] font-bold text-[#075e51] tracking-tight leading-tight">Projects Hub</h2>
                         <p className="text-[13px] sm:text-[14px] md:text-[15px] text-[#464651] mt-1">Organize your research sessions, recordings, and reports.</p>
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto">
                         <button
                             onClick={() => setIsCreateModalOpen(true)}
-                            className="flex-1 sm:flex-none bg-[#222777] text-white px-5 py-2.5 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm hover:bg-[#3a3f8f] transition-colors flex items-center justify-center gap-2 shrink-0"
+                            className="flex-1 sm:flex-none bg-[#075e51] text-white px-5 py-2.5 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm hover:bg-[#097969] transition-colors flex items-center justify-center gap-2 shrink-0"
                         >
                             <span className="material-symbols-outlined text-[18px]">add</span> New Project
                         </button>
@@ -86,18 +86,18 @@ export default function ProjectsList() {
                                 className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border border-[#e0e2eb] p-5 sm:p-6 cursor-pointer hover:shadow-md hover:border-[#c7c5d3] transition-all group flex flex-col h-[180px]"
                             >
                                 <div className="flex justify-between items-start mb-2">
-                                    <h3 className="text-[16px] sm:text-[18px] font-bold text-[#181c22] group-hover:text-[#222777] transition-colors line-clamp-1">{project.name}</h3>
-                                    <span className="material-symbols-outlined text-[#c7c5d3] text-[20px] group-hover:text-[#222777] transition-colors">folder</span>
+                                    <h3 className="text-[16px] sm:text-[18px] font-bold text-[#181c22] group-hover:text-[#075e51] transition-colors line-clamp-1">{project.name}</h3>
+                                    <span className="material-symbols-outlined text-[#c7c5d3] text-[20px] group-hover:text-[#075e51] transition-colors">folder</span>
                                 </div>
                                 <p className="text-[13px] sm:text-[14px] text-[#777682] line-clamp-2 mb-4 flex-1">
                                     {project.description || "No description provided."}
                                 </p>
                                 <div className="mt-auto flex items-center gap-4 text-[12px] font-bold text-[#464651] border-t border-[#f1f3fc] pt-3">
-                                    <div className="flex items-center gap-1.5 bg-[#f9f9ff] px-2 py-1 rounded">
+                                    <div className="flex items-center gap-1.5 bg-[#F4F9F8] px-2 py-1 rounded">
                                         <span className="material-symbols-outlined text-[14px] text-[#777682]">mic</span>
                                         {project.counts?.recordings || 0}
                                     </div>
-                                    <div className="flex items-center gap-1.5 bg-[#f9f9ff] px-2 py-1 rounded">
+                                    <div className="flex items-center gap-1.5 bg-[#F4F9F8] px-2 py-1 rounded">
                                         <span className="material-symbols-outlined text-[14px] text-[#777682]">description</span>
                                         {project.counts?.reports || 0}
                                     </div>
@@ -116,7 +116,7 @@ export default function ProjectsList() {
                         </p>
                         <button
                             onClick={() => setIsCreateModalOpen(true)}
-                            className="bg-[#222777] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm hover:bg-[#3a3f8f] transition-colors"
+                            className="bg-[#075e51] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm hover:bg-[#097969] transition-colors"
                         >
                             Create First Project
                         </button>
@@ -142,7 +142,7 @@ export default function ProjectsList() {
                                     required
                                     value={newProjectName}
                                     onChange={(e) => setNewProjectName(e.target.value)}
-                                    className="w-full bg-[#f9f9ff] border border-[#c7c5d3] rounded-md px-3 py-2 text-[14px] font-semibold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none"
+                                    className="w-full bg-[#F4F9F8] border border-[#c7c5d3] rounded-md px-3 py-2 text-[14px] font-semibold text-[#181c22] focus:ring-1 focus:ring-[#075e51] focus:border-[#075e51] outline-none"
                                     placeholder="e.g. Q3 Customer Interviews"
                                 />
                             </div>
@@ -151,7 +151,7 @@ export default function ProjectsList() {
                                 <textarea
                                     value={newProjectDesc}
                                     onChange={(e) => setNewProjectDesc(e.target.value)}
-                                    className="w-full bg-[#f9f9ff] border border-[#c7c5d3] rounded-md px-3 py-2 text-[14px] font-semibold text-[#181c22] focus:ring-1 focus:ring-[#222777] focus:border-[#222777] outline-none min-h-[80px]"
+                                    className="w-full bg-[#F4F9F8] border border-[#c7c5d3] rounded-md px-3 py-2 text-[14px] font-semibold text-[#181c22] focus:ring-1 focus:ring-[#075e51] focus:border-[#075e51] outline-none min-h-[80px]"
                                     placeholder="Brief details about this initiative..."
                                 />
                             </div>
@@ -169,8 +169,8 @@ export default function ProjectsList() {
                                                     onClick={() => toggleKeyword(kw._id)}
                                                     className={`text-[12px] font-bold px-3 py-1.5 rounded-full border transition-colors ${
                                                         isSelected
-                                                            ? 'bg-[#e6fbfc] text-[#006e73] border-[#6bf6ff]/50'
-                                                            : 'bg-[#f9f9ff] text-[#464651] border-[#e0e2eb] hover:border-[#c7c5d3]'
+                                                            ? 'bg-[#FEF9C3] text-[#006e73] border-[#6bf6ff]/50'
+                                                            : 'bg-[#F4F9F8] text-[#464651] border-[#e0e2eb] hover:border-[#c7c5d3]'
                                                     }`}
                                                 >
                                                     {kw.text}
@@ -182,7 +182,7 @@ export default function ProjectsList() {
                                 </div>
                             )}
                         </div>
-                        <div className="px-6 py-4 bg-[#f9f9ff] flex justify-end gap-3 border-t border-[#e0e2eb]">
+                        <div className="px-6 py-4 bg-[#F4F9F8] flex justify-end gap-3 border-t border-[#e0e2eb]">
                             <button
                                 type="button"
                                 onClick={() => setIsCreateModalOpen(false)}
@@ -192,7 +192,7 @@ export default function ProjectsList() {
                             </button>
                             <button
                                 type="submit"
-                                className="bg-[#222777] text-white px-5 py-2 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm hover:bg-[#3a3f8f] transition-colors"
+                                className="bg-[#075e51] text-white px-5 py-2 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm hover:bg-[#097969] transition-colors"
                             >
                                 Create Project
                             </button>

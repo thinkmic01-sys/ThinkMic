@@ -312,11 +312,11 @@ export default function ProjectNotes({ projectId }) {
     const [noteToDelete, setNoteToDelete] = useState(null);
 
     return (
-        <div className="flex w-full h-[calc(100vh-64px)] bg-[#f9f9ff] overflow-hidden relative">
+        <div className="flex w-full h-[calc(100vh-64px)] bg-[#F4F9F8] overflow-hidden relative">
 
             {/* Custom Toast */}
             {toast.show && (
-                <div className="fixed bottom-6 right-6 bg-[#222777] text-white px-6 py-3 rounded-lg shadow-xl font-bold text-[14px] z-[100] animate-fade-in-up flex items-center gap-2">
+                <div className="fixed bottom-6 right-6 bg-[#075e51] text-white px-6 py-3 rounded-lg shadow-xl font-bold text-[14px] z-[100] animate-fade-in-up flex items-center gap-2">
                     <span className="material-symbols-outlined text-[#61f4fd]">info</span>
                     {toast.message}
                 </div>
@@ -326,7 +326,7 @@ export default function ProjectNotes({ projectId }) {
             {linkModalOpen && (
                 <div className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-4 animate-fade-in">
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-scale-in">
-                        <div className="bg-[#f9f9ff] px-4 py-3 border-b border-[#e0e2eb] flex items-center justify-between">
+                        <div className="bg-[#F4F9F8] px-4 py-3 border-b border-[#e0e2eb] flex items-center justify-between">
                             <h3 className="font-bold text-[#181c22] text-[15px]">Add Link</h3>
                             <button onClick={() => setLinkModalOpen(false)} className="text-[#777682] hover:text-[#ba1a1a]">
                                 <span className="material-symbols-outlined text-[20px]">close</span>
@@ -338,7 +338,7 @@ export default function ProjectNotes({ projectId }) {
                                 <input
                                     type="text"
                                     autoFocus
-                                    className="w-full bg-[#f1f3fc] border border-[#c7c5d3] rounded-md px-3 py-2 text-[14px] text-[#181c22] focus:outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777]"
+                                    className="w-full bg-[#f1f3fc] border border-[#c7c5d3] rounded-md px-3 py-2 text-[14px] text-[#181c22] focus:outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51]"
                                     placeholder="https://example.com"
                                     value={linkUrlInput}
                                     onChange={(e) => setLinkUrlInput(e.target.value)}
@@ -346,7 +346,7 @@ export default function ProjectNotes({ projectId }) {
                             </div>
                             <div className="flex justify-end gap-2 pt-2">
                                 <button type="button" onClick={() => setLinkModalOpen(false)} className="px-4 py-2 text-[13px] font-bold text-[#464651] hover:bg-[#f1f3fc] rounded-md transition-colors">Cancel</button>
-                                <button type="submit" className="px-4 py-2 text-[13px] font-bold bg-[#222777] text-white rounded-md hover:bg-[#151958] transition-colors">Apply Link</button>
+                                <button type="submit" className="px-4 py-2 text-[13px] font-bold bg-[#075e51] text-white rounded-md hover:bg-[#151958] transition-colors">Apply Link</button>
                             </div>
                         </form>
                     </div>
@@ -436,13 +436,13 @@ export default function ProjectNotes({ projectId }) {
                     <div className="flex gap-2">
                         <button
                             onClick={handleAddNote}
-                            className="flex-1 bg-white border border-[#c7c5d3] text-[#222777] hover:bg-[#f9f9ff] py-1.5 rounded-md text-[12px] font-bold flex items-center justify-center gap-1 transition-colors shadow-sm"
+                            className="flex-1 bg-white border border-[#c7c5d3] text-[#075e51] hover:bg-[#F4F9F8] py-1.5 rounded-md text-[12px] font-bold flex items-center justify-center gap-1 transition-colors shadow-sm"
                         >
                             <span className="material-symbols-outlined text-[16px]">edit_document</span> New Note
                         </button>
                         <button
                             onClick={() => navigate(projectId ? `/app/projects/create-seminar?projectId=${projectId}` : '/app/projects/create-seminar')}
-                            className="flex-1 bg-[#222777] text-white hover:bg-[#3a3f8f] py-1.5 rounded-md text-[12px] font-bold flex items-center justify-center gap-1 transition-colors shadow-sm"
+                            className="flex-1 bg-[#075e51] text-white hover:bg-[#097969] py-1.5 rounded-md text-[12px] font-bold flex items-center justify-center gap-1 transition-colors shadow-sm"
                         >
                             <span className="material-symbols-outlined text-[16px]">record_voice_over</span> <span className="hidden sm:inline">Seminar</span>
                         </button>
@@ -455,11 +455,11 @@ export default function ProjectNotes({ projectId }) {
                             key={note._id}
                             onClick={() => selectNoteOnMobile(note._id)}
                             className={`p-4 border-b border-[#e0e2eb] cursor-pointer transition-colors group
-                                ${activeNoteId === note._id ? 'bg-[#e0e0ff]/30 border-l-4 border-l-[#222777]' : 'hover:bg-[#f1f3fc] border-l-4 border-l-transparent'}
+                                ${activeNoteId === note._id ? 'bg-[#e0e0ff]/30 border-l-4 border-l-[#075e51]' : 'hover:bg-[#f1f3fc] border-l-4 border-l-transparent'}
                             `}
                         >
                             <div className="flex justify-between items-start mb-1">
-                                <h4 className={`text-[15px] truncate pr-2 flex-1 ${activeNoteId === note._id ? 'font-bold text-[#181c22]' : 'font-semibold text-[#181c22] group-hover:text-[#222777]'}`}>
+                                <h4 className={`text-[15px] truncate pr-2 flex-1 ${activeNoteId === note._id ? 'font-bold text-[#181c22]' : 'font-semibold text-[#181c22] group-hover:text-[#075e51]'}`}>
                                     {note.title}
                                 </h4>
                                 <div className="flex items-center gap-2 shrink-0 h-5">
@@ -485,29 +485,29 @@ export default function ProjectNotes({ projectId }) {
             <div className="flex-1 w-full flex flex-col h-full bg-white relative z-0 md:z-10 min-w-0">
 
                 {/* Mobile Top Context Bar (Only visible on small screens) */}
-                <div className="md:hidden h-12 bg-[#f9f9ff] border-b border-[#e0e2eb] flex items-center px-4 shrink-0">
-                    <button onClick={() => setIsLeftPaneOpen(true)} className="flex items-center gap-1 text-[#222777] font-bold text-[13px]">
+                <div className="md:hidden h-12 bg-[#F4F9F8] border-b border-[#e0e2eb] flex items-center px-4 shrink-0">
+                    <button onClick={() => setIsLeftPaneOpen(true)} className="flex items-center gap-1 text-[#075e51] font-bold text-[13px]">
                         <span className="material-symbols-outlined text-[18px]">menu_open</span> Notes
                     </button>
                 </div>
 
                 {/* Toolbar */}
                 <div className="h-14 border-b border-[#c7c5d3] bg-white flex items-center px-2 md:px-4 space-x-1 md:space-x-2 shrink-0 z-20 overflow-x-auto hide-scroll-x">
-                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('Bold')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[18px] md:text-[20px]">format_bold</span></button>
-                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('Italic')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[18px] md:text-[20px]">format_italic</span></button>
+                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('Bold')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#075e51] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[18px] md:text-[20px]">format_bold</span></button>
+                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('Italic')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#075e51] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[18px] md:text-[20px]">format_italic</span></button>
                     <div className="w-px h-6 bg-[#c7c5d3] mx-1 shrink-0"></div>
-                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('H1')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors text-[12px] md:text-[13px] font-bold">H1</button>
-                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('H2')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors text-[12px] md:text-[13px] font-bold">H2</button>
+                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('H1')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#075e51] hover:bg-[#f1f3fc] rounded transition-colors text-[12px] md:text-[13px] font-bold">H1</button>
+                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('H2')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#075e51] hover:bg-[#f1f3fc] rounded transition-colors text-[12px] md:text-[13px] font-bold">H2</button>
                     <div className="w-px h-6 bg-[#c7c5d3] mx-1 shrink-0"></div>
-                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('Bullet List')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[18px] md:text-[20px]">format_list_bulleted</span></button>
-                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('Numbered List')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[18px] md:text-[20px]">format_list_numbered</span></button>
-                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('Task List')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[18px] md:text-[20px]">check_box</span></button>
+                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('Bullet List')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#075e51] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[18px] md:text-[20px]">format_list_bulleted</span></button>
+                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('Numbered List')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#075e51] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[18px] md:text-[20px]">format_list_numbered</span></button>
+                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('Task List')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#075e51] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[18px] md:text-[20px]">check_box</span></button>
                     <div className="w-px h-6 bg-[#c7c5d3] mx-1 shrink-0 hidden sm:block"></div>
-                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('Code Block')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors hidden sm:block"><span className="material-symbols-outlined text-[18px] md:text-[20px]">code</span></button>
-                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('Highlight')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors hidden sm:block"><span className="material-symbols-outlined text-[18px] md:text-[20px]">format_ink_highlighter</span></button>
-                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('Add Link')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#222777] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[18px] md:text-[20px]">link</span></button>
+                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('Code Block')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#075e51] hover:bg-[#f1f3fc] rounded transition-colors hidden sm:block"><span className="material-symbols-outlined text-[18px] md:text-[20px]">code</span></button>
+                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('Highlight')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#075e51] hover:bg-[#f1f3fc] rounded transition-colors hidden sm:block"><span className="material-symbols-outlined text-[18px] md:text-[20px]">format_ink_highlighter</span></button>
+                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleToolbarAction('Add Link')} className="p-1 md:p-1.5 shrink-0 text-[#464651] hover:text-[#075e51] hover:bg-[#f1f3fc] rounded transition-colors"><span className="material-symbols-outlined text-[18px] md:text-[20px]">link</span></button>
                     <div className="flex-1"></div>
-                    <button onMouseDown={(e) => e.preventDefault()} onClick={handleDownloadNote} className="p-1 md:p-1.5 shrink-0 text-[#00696e] hover:text-[#004f53] hover:bg-[#e6fbfc] rounded transition-colors flex items-center gap-1"><span className="material-symbols-outlined text-[18px] md:text-[20px]">download</span> <span className="text-[12px] font-bold hidden sm:block">Export DOCX</span></button>
+                    <button onMouseDown={(e) => e.preventDefault()} onClick={handleDownloadNote} className="p-1 md:p-1.5 shrink-0 text-[#00696e] hover:text-[#004f53] hover:bg-[#FEF9C3] rounded transition-colors flex items-center gap-1"><span className="material-symbols-outlined text-[18px] md:text-[20px]">download</span> <span className="text-[12px] font-bold hidden sm:block">Export DOCX</span></button>
                 </div>
 
                 {/* Editor Area */}
@@ -543,23 +543,23 @@ export default function ProjectNotes({ projectId }) {
 
                 {/* Inline Voice Note Status Block */}
                 {isDictating && (
-                    <div className="mt-10 mb-6 p-5 pt-7 bg-[#f9f9ff] border border-[#c7c5d3] rounded-xl relative shadow-md max-w-sm">
+                    <div className="mt-10 mb-6 p-5 pt-7 bg-[#F4F9F8] border border-[#c7c5d3] rounded-xl relative shadow-md max-w-sm">
                         <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-30">
                             <button
                                 onClick={handleVoiceNote}
-                                className="bg-white text-[#222777] border border-[#e0e2eb] shadow-sm rounded-full px-3 py-1 flex items-center space-x-2 hover:bg-[#f1f3fc] transition-all group"
+                                className="bg-white text-[#075e51] border border-[#e0e2eb] shadow-sm rounded-full px-3 py-1 flex items-center space-x-2 hover:bg-[#f1f3fc] transition-all group"
                             >
-                                <div className="w-5 h-5 rounded-full bg-[#222777] flex items-center justify-center pulse-ring shrink-0">
+                                <div className="w-5 h-5 rounded-full bg-[#075e51] flex items-center justify-center pulse-ring shrink-0">
                                     <span className="material-symbols-outlined text-white text-[12px]">stop</span>
                                 </div>
-                                <span className="text-[10px] font-bold tracking-widest uppercase text-[#222777] whitespace-nowrap">Stop Voice Note</span>
+                                <span className="text-[10px] font-bold tracking-widest uppercase text-[#075e51] whitespace-nowrap">Stop Voice Note</span>
                             </button>
                         </div>
                         <div className="flex items-center justify-between mb-3">
-                            <h5 className="font-mono text-[10px] font-bold text-[#222777] tracking-widest uppercase">
+                            <h5 className="font-mono text-[10px] font-bold text-[#075e51] tracking-widest uppercase">
                                 Transcribed
                             </h5>
-                            <span className="font-mono text-[10px] font-bold text-[#222777] tracking-widest uppercase">
+                            <span className="font-mono text-[10px] font-bold text-[#075e51] tracking-widest uppercase">
                                 {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                         </div>
@@ -578,12 +578,12 @@ export default function ProjectNotes({ projectId }) {
                 {!isDictating && (
                     <button
                         onClick={handleVoiceNote}
-                        className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 bg-white text-[#222777] border border-[#c7c5d3] shadow-[0_4px_16px_rgba(58,63,143,0.12)] rounded-full px-4 md:px-6 py-2 md:py-3 flex items-center space-x-2 md:space-x-3 hover:bg-[#f9f9ff] hover:shadow-[0_8px_24px_rgba(58,63,143,0.16)] transition-all group z-30"
+                        className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 bg-white text-[#075e51] border border-[#c7c5d3] shadow-[0_4px_16px_rgba(58,63,143,0.12)] rounded-full px-4 md:px-6 py-2 md:py-3 flex items-center space-x-2 md:space-x-3 hover:bg-[#F4F9F8] hover:shadow-[0_8px_24px_rgba(58,63,143,0.16)] transition-all group z-30"
                     >
-                        <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-[#222777] flex items-center justify-center shrink-0">
+                        <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-[#075e51] flex items-center justify-center shrink-0">
                             <span className="material-symbols-outlined text-white text-[14px] md:text-[18px]">mic</span>
                         </div>
-                        <span className="text-[12px] md:text-[13px] font-bold tracking-wide uppercase text-[#222777] whitespace-nowrap">Voice Note</span>
+                        <span className="text-[12px] md:text-[13px] font-bold tracking-wide uppercase text-[#075e51] whitespace-nowrap">Voice Note</span>
                     </button>
                 )}
             </div>

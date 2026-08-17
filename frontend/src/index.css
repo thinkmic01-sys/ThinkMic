@@ -3,15 +3,15 @@
 
 @theme {
   /* Colors from ThinkMic DESIGN.md */
-  --color-background: #f9f9ff;
+  --color-background: #F4F9F8;
   --color-surface: #ffffff;
-  --color-surface-border: #E2E6F4;
-  --color-sidebar: #1E2255;
-  --color-sidebar-active: #3A3F8F;
-  --color-sidebar-text: #C5CAE9;
-  --color-primary: #3A3F8F;
-  --color-cyan: #00C2CB;
-  --color-cyan-soft: #E6FBFC;
+  --color-surface-border: #E0EFEA;
+  --color-sidebar: #064D43;
+  --color-sidebar-active: #097969;
+  --color-sidebar-text: #A3E4D7;
+  --color-primary: #097969;
+  --color-cyan: #EAB308;
+  --color-cyan-soft: #FEF9C3;
 
   /* Typography */
   --font-sans: "Inter", sans-serif;

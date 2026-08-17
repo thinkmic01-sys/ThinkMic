@@ -12,7 +12,7 @@ const userLocationIcon = L.divIcon({
     html: `
         <div class="flex flex-col items-center" style="transform: translate(-50%, -100%); margin-top: 8px;">
             <span class="bg-white text-[#464651] font-mono font-bold text-[10px] px-2 py-0.5 rounded shadow-sm mb-1 whitespace-nowrap">You are here</span>
-            <div class="w-4 h-4 bg-[#00c2cb] rounded-full border-2 border-white" style="box-shadow: 0 0 0 4px rgba(0,194,203,0.2)"></div>
+            <div class="w-4 h-4 bg-[#EAB308] rounded-full border-2 border-white" style="box-shadow: 0 0 0 4px rgba(0,194,203,0.2)"></div>
         </div>
     `,
     iconSize: [0, 0]
@@ -24,7 +24,7 @@ const seminarMarkerIcon = (title, distanceLabel) => L.divIcon({
     html: `
         <div class="flex flex-col items-center cursor-pointer transition-transform hover:scale-105" style="transform: translate(-50%, -100%); margin-top: 10px;">
             <div class="bg-white px-3 py-2 rounded shadow-md mb-2 whitespace-nowrap border border-[#e0e2eb]">
-                <p class="text-[14px] font-bold text-[#222777] mb-0.5">${title}</p>
+                <p class="text-[14px] font-bold text-[#075e51] mb-0.5">${title}</p>
                 ${distanceLabel ? `<p class="text-[10px] font-mono text-[#777682] font-semibold tracking-wide">${distanceLabel}</p>` : ''}
             </div>
             <div class="w-5 h-5 bg-[#61f4fd] rounded-full border-2 border-white shadow-md"></div>
@@ -53,13 +53,13 @@ const CustomMapControls = ({ userLocation }) => {
             <div className="flex flex-col bg-white rounded shadow-sm overflow-hidden border border-[#e0e2eb]">
                 <button
                     onClick={() => map.zoomIn()}
-                    className="w-10 h-10 border-b border-[#e0e2eb] flex items-center justify-center text-[#464651] hover:bg-[#f9f9ff] transition-colors"
+                    className="w-10 h-10 border-b border-[#e0e2eb] flex items-center justify-center text-[#464651] hover:bg-[#F4F9F8] transition-colors"
                 >
                     <span className="material-symbols-outlined">add</span>
                 </button>
                 <button
                     onClick={() => map.zoomOut()}
-                    className="w-10 h-10 flex items-center justify-center text-[#464651] hover:bg-[#f9f9ff] transition-colors"
+                    className="w-10 h-10 flex items-center justify-center text-[#464651] hover:bg-[#F4F9F8] transition-colors"
                 >
                     <span className="material-symbols-outlined">remove</span>
                 </button>
@@ -191,7 +191,7 @@ export default function NearbySeminars() {
     const seminarsWithCoords = enrichedSeminars.filter((s) => s.coords);
 
     return (
-        <div className="flex flex-col h-[calc(100vh-64px)] w-full bg-[#f9f9ff] font-sans">
+        <div className="flex flex-col h-[calc(100vh-64px)] w-full bg-[#F4F9F8] font-sans">
 
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -202,14 +202,14 @@ export default function NearbySeminars() {
             {/* Top Toolbar */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[#e0e2eb] bg-white shrink-0 shadow-sm z-20 gap-3 sm:gap-0">
                 <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
-                    <button onClick={() => navigate('/app/courses')} className="text-[#777682] hover:text-[#222777] transition-colors w-8 h-8 rounded-full hover:bg-[#f1f3fc] flex items-center justify-center shrink-0">
+                    <button onClick={() => navigate('/app/courses')} className="text-[#777682] hover:text-[#075e51] transition-colors w-8 h-8 rounded-full hover:bg-[#f1f3fc] flex items-center justify-center shrink-0">
                         <span className="material-symbols-outlined text-[20px] sm:text-[24px]">arrow_back</span>
                     </button>
-                    <h1 className="text-[20px] sm:text-[24px] md:text-[28px] font-bold text-[#222777] truncate">Nearby Seminars</h1>
+                    <h1 className="text-[20px] sm:text-[24px] md:text-[28px] font-bold text-[#075e51] truncate">Nearby Seminars</h1>
                 </div>
                 <div className="flex gap-2 sm:gap-4 w-full sm:w-auto pl-11 sm:pl-0">
                     <div className="relative flex-1 sm:flex-none">
-                        <select value={topicFilter} onChange={(e) => setTopicFilter(e.target.value)} className="w-full appearance-none bg-[#f9f9ff] sm:bg-white border border-[#e0e2eb] sm:border-[#c7c5d3] rounded text-[#181c22] px-3 sm:px-4 py-2 pr-8 sm:pr-10 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#222777] cursor-pointer">
+                        <select value={topicFilter} onChange={(e) => setTopicFilter(e.target.value)} className="w-full appearance-none bg-[#F4F9F8] sm:bg-white border border-[#e0e2eb] sm:border-[#c7c5d3] rounded text-[#181c22] px-3 sm:px-4 py-2 pr-8 sm:pr-10 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#075e51] cursor-pointer">
                             <option>All Topics</option>
                             <option>Machine Learning</option>
                             <option>Quantum Computing</option>
@@ -219,7 +219,7 @@ export default function NearbySeminars() {
                         <span className="material-symbols-outlined absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none text-[18px]">expand_more</span>
                     </div>
                     <div className="relative flex-1 sm:flex-none">
-                        <select value={distanceFilter} onChange={(e) => setDistanceFilter(e.target.value)} className="w-full appearance-none bg-[#f9f9ff] sm:bg-white border border-[#e0e2eb] sm:border-[#c7c5d3] rounded text-[#181c22] px-3 sm:px-4 py-2 pr-8 sm:pr-10 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#222777] cursor-pointer">
+                        <select value={distanceFilter} onChange={(e) => setDistanceFilter(e.target.value)} className="w-full appearance-none bg-[#F4F9F8] sm:bg-white border border-[#e0e2eb] sm:border-[#c7c5d3] rounded text-[#181c22] px-3 sm:px-4 py-2 pr-8 sm:pr-10 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#075e51] cursor-pointer">
                             <option>Any Distance</option>
                             <option>&lt; 5 km</option>
                             <option>&lt; 10 km</option>
@@ -243,21 +243,21 @@ export default function NearbySeminars() {
             <div className="flex flex-col md:flex-row flex-1 overflow-hidden relative">
 
                 {/* Left List Column: takes 50% height on mobile, full height on desktop */}
-                <div className="w-full md:w-[360px] lg:w-[420px] h-[50vh] md:h-full border-b md:border-b-0 md:border-r border-[#e0e2eb] bg-[#f9f9ff] overflow-y-auto p-4 sm:p-5 space-y-4 shrink-0 shadow-[2px_0_10px_rgba(0,0,0,0.03)] z-10 custom-scrollbar pb-6 md:pb-20">
+                <div className="w-full md:w-[360px] lg:w-[420px] h-[50vh] md:h-full border-b md:border-b-0 md:border-r border-[#e0e2eb] bg-[#F4F9F8] overflow-y-auto p-4 sm:p-5 space-y-4 shrink-0 shadow-[2px_0_10px_rgba(0,0,0,0.03)] z-10 custom-scrollbar pb-6 md:pb-20">
 
                     {/* Dynamic Cards */}
                     {filteredSeminars.length === 0 ? (
                         <div className="text-center py-10 text-[#777682] text-[14px]">No seminars found.</div>
                     ) : (
                         filteredSeminars.map((seminar, idx) => (
-                            <div key={seminar._id || idx} className="bg-white border border-[#e0e2eb] rounded-lg p-4 sm:p-5 hover:border-[#222777] transition-colors cursor-pointer relative shadow-sm">
-                                {idx === 0 && <div className="absolute top-0 left-0 w-1 h-full bg-[#00c2cb] rounded-l-lg"></div>}
+                            <div key={seminar._id || idx} className="bg-white border border-[#e0e2eb] rounded-lg p-4 sm:p-5 hover:border-[#075e51] transition-colors cursor-pointer relative shadow-sm">
+                                {idx === 0 && <div className="absolute top-0 left-0 w-1 h-full bg-[#EAB308] rounded-l-lg"></div>}
                                 <div className="flex justify-between items-start mb-2 sm:mb-3 pl-2">
-                                    <span className="bg-[#e6fbfc] text-[#006e73] font-mono text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 uppercase">
+                                    <span className="bg-[#FEF9C3] text-[#006e73] font-mono text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 uppercase">
                                         <span className="material-symbols-outlined text-[12px] sm:text-[14px]">{seminar.format === 'Live Broadcast' ? 'sensors' : seminar.format === 'In-Person' ? 'location_on' : 'videocam'}</span> {seminar.format}
                                     </span>
                                     {seminar.distanceKm !== null && (
-                                        <span className="text-[11px] sm:text-[12px] font-mono font-bold text-[#00c2cb] flex items-center gap-1">
+                                        <span className="text-[11px] sm:text-[12px] font-mono font-bold text-[#EAB308] flex items-center gap-1">
                                             <span className="material-symbols-outlined text-[12px] sm:text-[14px]">location_on</span> {formatDistance(seminar.distanceKm)}
                                         </span>
                                     )}
@@ -266,7 +266,7 @@ export default function NearbySeminars() {
                                 <p className="text-[13px] sm:text-[14px] text-[#464651] line-clamp-2 mb-4 sm:mb-5 pl-2 leading-relaxed">{seminar.abstract || 'No description provided.'}</p>
 
                                 {seminar.location && (
-                                    <div className="text-[12px] sm:text-[13px] text-[#222777] font-semibold mb-3 pl-2 flex items-center gap-1">
+                                    <div className="text-[12px] sm:text-[13px] text-[#075e51] font-semibold mb-3 pl-2 flex items-center gap-1">
                                         <span className="material-symbols-outlined text-[16px]">link</span>
                                         <span className="truncate">{seminar.location}</span>
                                     </div>
@@ -279,7 +279,7 @@ export default function NearbySeminars() {
                                     <button
                                         onClick={() => handleRegister(seminar)}
                                         disabled={registeredIds.has(seminar._id) || registeringId === seminar._id}
-                                        className={`w-full sm:w-auto px-5 py-2 sm:py-1.5 rounded text-[12px] font-bold transition-colors text-center disabled:opacity-70 disabled:cursor-not-allowed ${registeredIds.has(seminar._id) ? 'bg-[#e6fbfc] border border-[#00c2cb] text-[#006e73]' : idx === 0 ? 'bg-[#222777] text-white hover:bg-[#3a3f8f] shadow-sm' : 'bg-white border border-[#222777] text-[#222777] hover:bg-[#f1f3fc]'}`}
+                                        className={`w-full sm:w-auto px-5 py-2 sm:py-1.5 rounded text-[12px] font-bold transition-colors text-center disabled:opacity-70 disabled:cursor-not-allowed ${registeredIds.has(seminar._id) ? 'bg-[#FEF9C3] border border-[#EAB308] text-[#006e73]' : idx === 0 ? 'bg-[#075e51] text-white hover:bg-[#097969] shadow-sm' : 'bg-white border border-[#075e51] text-[#075e51] hover:bg-[#f1f3fc]'}`}
                                     >
                                         {registeredIds.has(seminar._id)
                                             ? 'Registered'
@@ -339,7 +339,7 @@ export default function NearbySeminars() {
 
             {/* --- CUSTOM TOAST NOTIFICATION --- */}
             <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#e6fbfc] border-[#00c2cb] text-[#006e73]'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#006e73]'}`}>
                     <span className="material-symbols-outlined text-[20px]">
                         {toast.type === 'error' ? 'error' : 'check_circle'}
                     </span>

@@ -308,16 +308,16 @@ export default function Auth() {
     };
 
     return (
-        <main className="flex w-full h-screen bg-[#f9f9ff] text-[#181c22] antialiased font-sans">
+        <main className="flex w-full h-screen bg-[#F4F9F8] text-[#181c22] antialiased font-sans">
 
             {/* Left Panel: Branding & Value Props (Hidden on mobile) */}
-            <section className="hidden lg:flex flex-col justify-between w-1/2 bg-[#222777] text-white p-12 relative overflow-hidden">
-                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#00c2cb]/40 via-[#222777] to-[#181c22] pointer-events-none"></div>
+            <section className="hidden lg:flex flex-col justify-between w-1/2 bg-[#075e51] text-white p-12 relative overflow-hidden">
+                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#EAB308]/40 via-[#075e51] to-[#181c22] pointer-events-none"></div>
 
                 <div className="z-10 mt-12">
                     <div className="flex items-center gap-2 mb-12">
-                        <div className="w-8 h-8 rounded-full bg-[#00c2cb] ring-2 ring-[#6bf6ff]/50 flex items-center justify-center">
-                            <span className="material-symbols-outlined text-[#222777] text-sm font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>mic</span>
+                        <div className="w-8 h-8 rounded-full bg-[#EAB308] ring-2 ring-[#6bf6ff]/50 flex items-center justify-center">
+                            <span className="material-symbols-outlined text-[#075e51] text-sm font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>mic</span>
                         </div>
                         <h1 className="font-bold text-3xl tracking-tight">ThinkMic</h1>
                     </div>
@@ -333,14 +333,14 @@ export default function Auth() {
 
                     <ul className="mt-12 space-y-6">
                         <li className="flex items-start gap-4">
-                            <span className="material-symbols-outlined text-[#00c2cb] mt-1" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                            <span className="material-symbols-outlined text-[#EAB308] mt-1" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
                             <div>
                                 <h3 className="font-mono font-medium text-white mb-1">Instant Transcription</h3>
                                 <p className="text-[#bfc2ff] opacity-80">Capture ideas at the speed of thought with unmatched accuracy.</p>
                             </div>
                         </li>
                         <li className="flex items-start gap-4">
-                            <span className="material-symbols-outlined text-[#00c2cb] mt-1" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                            <span className="material-symbols-outlined text-[#EAB308] mt-1" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
                             <div>
                                 <h3 className="font-mono font-medium text-white mb-1">AI Structuring</h3>
                                 <p className="text-[#bfc2ff] opacity-80">Automatically organize notes into actionable insights and summaries.</p>
@@ -363,13 +363,13 @@ export default function Auth() {
                             <div className="flex border-b border-[#e0e2eb] mb-8">
                                 <button
                                     onClick={() => { setIsLoginView(true); setError(''); setSuccessMsg(''); }}
-                                    className={`flex-1 pb-2 text-center text-sm font-semibold transition-colors border-b-2 ${isLoginView ? 'text-[#222777] border-[#222777]' : 'text-[#777682] hover:text-[#222777] border-transparent'}`}
+                                    className={`flex-1 pb-2 text-center text-sm font-semibold transition-colors border-b-2 ${isLoginView ? 'text-[#075e51] border-[#075e51]' : 'text-[#777682] hover:text-[#075e51] border-transparent'}`}
                                 >
                                     Sign In
                                 </button>
                                 <button
                                     onClick={() => { setIsLoginView(false); setError(''); setSuccessMsg(''); }}
-                                    className={`flex-1 pb-2 text-center text-sm font-semibold transition-colors border-b-2 ${!isLoginView ? 'text-[#222777] border-[#222777]' : 'text-[#777682] hover:text-[#222777] border-transparent'}`}
+                                    className={`flex-1 pb-2 text-center text-sm font-semibold transition-colors border-b-2 ${!isLoginView ? 'text-[#075e51] border-[#075e51]' : 'text-[#777682] hover:text-[#075e51] border-transparent'}`}
                                 >
                                     Register
                                 </button>
@@ -395,7 +395,7 @@ export default function Auth() {
                                 )}
 
                                 {successMsg && (
-                                    <div className="mb-6 bg-[#e6fbfc] text-[#006e73] p-3 rounded-lg text-sm font-semibold flex items-center gap-2 border border-[#b2f0f4]">
+                                    <div className="mb-6 bg-[#FEF9C3] text-[#006e73] p-3 rounded-lg text-sm font-semibold flex items-center gap-2 border border-[#b2f0f4]">
                                         <span className="material-symbols-outlined text-[18px]">check_circle</span>
                                         {successMsg}
                                     </div>
@@ -413,7 +413,7 @@ export default function Auth() {
                                                 value={formData.fullName}
                                                 onChange={handleChange}
                                                 placeholder="Dr. Jane Doe"
-                                                className="w-full h-10 px-4 rounded-lg bg-[#f9f9ff] border border-[#c7c5d3] text-[#181c22] focus:outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777] transition-shadow"
+                                                className="w-full h-10 px-4 rounded-lg bg-[#F4F9F8] border border-[#c7c5d3] text-[#181c22] focus:outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] transition-shadow"
                                             />
                                         </div>
                                     )}
@@ -427,7 +427,7 @@ export default function Auth() {
                                             value={formData.email}
                                             onChange={handleChange}
                                             placeholder="name@company.com"
-                                            className="w-full h-10 px-4 rounded-lg bg-[#f9f9ff] border border-[#c7c5d3] text-[#181c22] focus:outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777] transition-shadow"
+                                            className="w-full h-10 px-4 rounded-lg bg-[#F4F9F8] border border-[#c7c5d3] text-[#181c22] focus:outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] transition-shadow"
                                         />
                                     </div>
 
@@ -435,7 +435,7 @@ export default function Auth() {
                                         <div className="flex justify-between items-center mb-1">
                                             <label className="block text-xs font-semibold text-[#464651] uppercase tracking-wider">Password</label>
                                             {isLoginView && (
-                                                <button type="button" onClick={openForgotModal} className="text-xs text-[#222777] font-bold hover:underline">
+                                                <button type="button" onClick={openForgotModal} className="text-xs text-[#075e51] font-bold hover:underline">
                                                     Forgot password?
                                                 </button>
                                             )}
@@ -448,7 +448,7 @@ export default function Auth() {
                                                 value={formData.password}
                                                 onChange={handleChange}
                                                 placeholder="••••••••"
-                                                className="w-full h-10 px-4 rounded-lg bg-[#f9f9ff] border border-[#c7c5d3] text-[#181c22] focus:outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777] transition-shadow pr-10"
+                                                className="w-full h-10 px-4 rounded-lg bg-[#F4F9F8] border border-[#c7c5d3] text-[#181c22] focus:outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] transition-shadow pr-10"
                                             />
                                             <button
                                                 type="button"
@@ -465,7 +465,7 @@ export default function Auth() {
                                     <button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="w-full h-11 bg-[#222777] text-white rounded-lg text-sm font-bold hover:bg-[#3a3f8f] transition-colors flex items-center justify-center gap-2 mt-4 shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+                                        className="w-full h-11 bg-[#075e51] text-white rounded-lg text-sm font-bold hover:bg-[#097969] transition-colors flex items-center justify-center gap-2 mt-4 shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
                                     >
                                         {isLoading ? (
                                             <>
@@ -497,7 +497,7 @@ export default function Auth() {
                                         type="button"
                                         disabled
                                         title="Set VITE_GOOGLE_CLIENT_ID in frontend/.env to enable Google sign-in"
-                                        className="w-full h-11 border border-[#c7c5d3] rounded-lg bg-[#f9f9ff] text-[#777682] text-sm font-bold flex items-center justify-center gap-2 opacity-60 cursor-not-allowed"
+                                        className="w-full h-11 border border-[#c7c5d3] rounded-lg bg-[#F4F9F8] text-[#777682] text-sm font-bold flex items-center justify-center gap-2 opacity-60 cursor-not-allowed"
                                     >
                                         <svg className="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
@@ -511,9 +511,9 @@ export default function Auth() {
                             </div>
 
                             <div className="mt-8 text-center font-mono text-xs text-[#777682] flex justify-center gap-4">
-                                <a href="#" className="hover:text-[#222777] font-bold transition-colors">Privacy Policy</a>
+                                <a href="#" className="hover:text-[#075e51] font-bold transition-colors">Privacy Policy</a>
                                 <span>•</span>
-                                <a href="#" className="hover:text-[#222777] font-bold transition-colors">Terms of Service</a>
+                                <a href="#" className="hover:text-[#075e51] font-bold transition-colors">Terms of Service</a>
                             </div>
                         </>
                     )}
@@ -521,7 +521,7 @@ export default function Auth() {
                     {step === 'otp' && (
                         <div className="bg-white rounded-xl shadow-[0_4px_16px_rgba(58,63,143,0.08)] p-8 border border-[#e0e2eb]">
                             <div className="mb-8 text-center">
-                                <div className="w-12 h-12 rounded-full bg-[#e6fbfc] flex items-center justify-center mx-auto mb-4">
+                                <div className="w-12 h-12 rounded-full bg-[#FEF9C3] flex items-center justify-center mx-auto mb-4">
                                     <span className="material-symbols-outlined text-[#00838a] text-[24px]">mail</span>
                                 </div>
                                 <h2 className="text-2xl font-bold text-[#181c22] mb-2">Verify your email</h2>
@@ -538,7 +538,7 @@ export default function Auth() {
                             )}
 
                             {successMsg && (
-                                <div className="mb-6 bg-[#e6fbfc] text-[#006e73] p-3 rounded-lg text-sm font-semibold flex items-center gap-2 border border-[#b2f0f4]">
+                                <div className="mb-6 bg-[#FEF9C3] text-[#006e73] p-3 rounded-lg text-sm font-semibold flex items-center gap-2 border border-[#b2f0f4]">
                                     <span className="material-symbols-outlined text-[18px]">check_circle</span>
                                     {successMsg}
                                 </div>
@@ -556,7 +556,7 @@ export default function Auth() {
                                             value={digit}
                                             onChange={(e) => handleOtpChange(index, e.target.value)}
                                             onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                                            className="w-full h-14 text-center text-xl font-bold rounded-lg bg-[#f9f9ff] border border-[#c7c5d3] text-[#181c22] focus:outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777] transition-shadow"
+                                            className="w-full h-14 text-center text-xl font-bold rounded-lg bg-[#F4F9F8] border border-[#c7c5d3] text-[#181c22] focus:outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] transition-shadow"
                                         />
                                     ))}
                                 </div>
@@ -564,7 +564,7 @@ export default function Auth() {
                                 <button
                                     type="submit"
                                     disabled={verifyLoading}
-                                    className="w-full h-11 bg-[#222777] text-white rounded-lg text-sm font-bold hover:bg-[#3a3f8f] transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+                                    className="w-full h-11 bg-[#075e51] text-white rounded-lg text-sm font-bold hover:bg-[#097969] transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
                                 >
                                     {verifyLoading ? 'Verifying...' : 'Verify & Enter Workspace'}
                                 </button>
@@ -574,7 +574,7 @@ export default function Auth() {
                                         type="button"
                                         onClick={handleResendCode}
                                         disabled={resendCooldown > 0 || resendLoading}
-                                        className="text-sm font-semibold text-[#222777] hover:underline disabled:text-[#777682] disabled:no-underline disabled:cursor-not-allowed"
+                                        className="text-sm font-semibold text-[#075e51] hover:underline disabled:text-[#777682] disabled:no-underline disabled:cursor-not-allowed"
                                     >
                                         {resendLoading
                                             ? 'Sending...'
@@ -588,7 +588,7 @@ export default function Auth() {
                                     <button
                                         type="button"
                                         onClick={() => { setStep('auth'); setIsLoginView(true); setError(''); setSuccessMsg(''); }}
-                                        className="text-xs font-semibold text-[#777682] hover:text-[#222777]"
+                                        className="text-xs font-semibold text-[#777682] hover:text-[#075e51]"
                                     >
                                         Back to Sign In
                                     </button>
@@ -631,13 +631,13 @@ export default function Auth() {
                                             value={forgotEmail}
                                             onChange={(e) => setForgotEmail(e.target.value)}
                                             placeholder="name@company.com"
-                                            className="w-full h-10 px-4 rounded-lg bg-[#f9f9ff] border border-[#c7c5d3] text-[#181c22] focus:outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777] transition-shadow"
+                                            className="w-full h-10 px-4 rounded-lg bg-[#F4F9F8] border border-[#c7c5d3] text-[#181c22] focus:outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] transition-shadow"
                                         />
                                     </div>
                                     <button
                                         type="submit"
                                         disabled={forgotLoading}
-                                        className="w-full h-11 bg-[#222777] text-white rounded-lg text-sm font-bold hover:bg-[#3a3f8f] transition-colors disabled:opacity-70"
+                                        className="w-full h-11 bg-[#075e51] text-white rounded-lg text-sm font-bold hover:bg-[#097969] transition-colors disabled:opacity-70"
                                     >
                                         {forgotLoading ? 'Sending...' : 'Send Reset Code'}
                                     </button>
@@ -656,7 +656,7 @@ export default function Auth() {
                                     </div>
                                 )}
                                 {forgotSuccess && !forgotError && (
-                                    <div className="mb-4 bg-[#e6fbfc] text-[#006e73] p-3 rounded-lg text-sm font-semibold">
+                                    <div className="mb-4 bg-[#FEF9C3] text-[#006e73] p-3 rounded-lg text-sm font-semibold">
                                         {forgotSuccess}
                                     </div>
                                 )}
@@ -672,7 +672,7 @@ export default function Auth() {
                                             value={forgotCode}
                                             onChange={(e) => setForgotCode(e.target.value.replace(/\D/g, ''))}
                                             placeholder="123456"
-                                            className="w-full h-10 px-4 rounded-lg bg-[#f9f9ff] border border-[#c7c5d3] text-[#181c22] tracking-[0.3em] font-bold focus:outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777] transition-shadow"
+                                            className="w-full h-10 px-4 rounded-lg bg-[#F4F9F8] border border-[#c7c5d3] text-[#181c22] tracking-[0.3em] font-bold focus:outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] transition-shadow"
                                         />
                                     </div>
                                     <div>
@@ -684,7 +684,7 @@ export default function Auth() {
                                                 value={forgotNewPassword}
                                                 onChange={(e) => setForgotNewPassword(e.target.value)}
                                                 placeholder="••••••••"
-                                                className="w-full h-10 px-4 rounded-lg bg-[#f9f9ff] border border-[#c7c5d3] text-[#181c22] focus:outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777] transition-shadow pr-10"
+                                                className="w-full h-10 px-4 rounded-lg bg-[#F4F9F8] border border-[#c7c5d3] text-[#181c22] focus:outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] transition-shadow pr-10"
                                             />
                                             <button
                                                 type="button"
@@ -705,20 +705,20 @@ export default function Auth() {
                                             value={forgotConfirmPassword}
                                             onChange={(e) => setForgotConfirmPassword(e.target.value)}
                                             placeholder="••••••••"
-                                            className="w-full h-10 px-4 rounded-lg bg-[#f9f9ff] border border-[#c7c5d3] text-[#181c22] focus:outline-none focus:border-[#222777] focus:ring-1 focus:ring-[#222777] transition-shadow"
+                                            className="w-full h-10 px-4 rounded-lg bg-[#F4F9F8] border border-[#c7c5d3] text-[#181c22] focus:outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] transition-shadow"
                                         />
                                     </div>
                                     <button
                                         type="submit"
                                         disabled={forgotLoading}
-                                        className="w-full h-11 bg-[#222777] text-white rounded-lg text-sm font-bold hover:bg-[#3a3f8f] transition-colors disabled:opacity-70"
+                                        className="w-full h-11 bg-[#075e51] text-white rounded-lg text-sm font-bold hover:bg-[#097969] transition-colors disabled:opacity-70"
                                     >
                                         {forgotLoading ? 'Resetting...' : 'Reset Password'}
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setForgotStep('email')}
-                                        className="w-full text-center text-xs font-semibold text-[#777682] hover:text-[#222777]"
+                                        className="w-full text-center text-xs font-semibold text-[#777682] hover:text-[#075e51]"
                                     >
                                         Use a different email
                                     </button>

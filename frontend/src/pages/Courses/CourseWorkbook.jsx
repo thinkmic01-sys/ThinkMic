@@ -20,7 +20,7 @@ export default function CourseWorkbook() {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-64px)] bg-[#f9f9ff] overflow-y-auto custom-scrollbar font-sans">
+        <div className="w-full h-[calc(100vh-64px)] bg-[#F4F9F8] overflow-y-auto custom-scrollbar font-sans">
             <style>{`
                 .pulse-ring-workbook { box-shadow: 0 0 0 0 rgba(0, 194, 203, 0.7); animation: pulse-wb 1.8s infinite cubic-bezier(0.66, 0, 0, 1); }
                 @keyframes pulse-wb { to { box-shadow: 0 0 0 8px rgba(0, 194, 203, 0); } }
@@ -33,7 +33,7 @@ export default function CourseWorkbook() {
 
                 {/* Top Progress Bar */}
                 <div className="mb-5 sm:mb-6">
-                    <button onClick={() => navigate('/app/courses/my-learning')} className="text-[#777682] hover:text-[#222777] flex items-center gap-1 text-[12px] sm:text-[13px] font-bold mb-3 sm:mb-4 transition-colors w-fit">
+                    <button onClick={() => navigate('/app/courses/my-learning')} className="text-[#777682] hover:text-[#075e51] flex items-center gap-1 text-[12px] sm:text-[13px] font-bold mb-3 sm:mb-4 transition-colors w-fit">
                         <span className="material-symbols-outlined text-[16px] sm:text-[18px]">arrow_back</span> <span className="hidden sm:inline">Back to</span> Learning List
                     </button>
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-2 sm:mb-1 gap-2 sm:gap-0">
@@ -42,11 +42,11 @@ export default function CourseWorkbook() {
                             <p className="text-[14px] sm:text-[16px] text-[#464651] mt-1">Chapter 2: Application in Nuanced Data Sets</p>
                         </div>
                         <div className="text-left sm:text-right">
-                            <span className="font-mono text-[12px] sm:text-[14px] font-medium text-[#222777]">65% Complete</span>
+                            <span className="font-mono text-[12px] sm:text-[14px] font-medium text-[#075e51]">65% Complete</span>
                         </div>
                     </div>
                     <div className="w-full bg-[#e6e8f1] rounded-full h-1.5 sm:h-2">
-                        <div className="bg-[#222777] h-1.5 sm:h-2 rounded-full transition-all duration-500" style={{ width: '65%' }}></div>
+                        <div className="bg-[#075e51] h-1.5 sm:h-2 rounded-full transition-all duration-500" style={{ width: '65%' }}></div>
                     </div>
                 </div>
 
@@ -58,15 +58,15 @@ export default function CourseWorkbook() {
                             <h3 className="text-[20px] sm:text-[24px] font-semibold text-[#181c22] mb-3 sm:mb-4 tracking-tight">Contents</h3>
                             <ul className="space-y-1.5 sm:space-y-2">
                                 <li>
-                                    <div className="flex items-start gap-2 group cursor-pointer p-1.5 -ml-1.5 rounded hover:bg-[#f9f9ff]">
+                                    <div className="flex items-start gap-2 group cursor-pointer p-1.5 -ml-1.5 rounded hover:bg-[#F4F9F8]">
                                         <span className="material-symbols-outlined text-[#00696e] mt-[2px] text-[16px] sm:text-[18px]">check_circle</span>
-                                        <span className="text-[14px] sm:text-[16px] text-[#464651] group-hover:text-[#222777] transition-colors leading-[1.6]">1. Introduction to Heuristics</span>
+                                        <span className="text-[14px] sm:text-[16px] text-[#464651] group-hover:text-[#075e51] transition-colors leading-[1.6]">1. Introduction to Heuristics</span>
                                     </div>
                                 </li>
-                                <li className="bg-[#f1f3fc] -mx-2 sm:-mx-3 p-2 sm:p-2.5 rounded border-l-[3px] border-[#222777]">
+                                <li className="bg-[#f1f3fc] -mx-2 sm:-mx-3 p-2 sm:p-2.5 rounded border-l-[3px] border-[#075e51]">
                                     <div className="flex items-start gap-2 pl-1">
-                                        <span className="material-symbols-outlined text-[#222777] mt-[2px] text-[16px] sm:text-[18px]">radio_button_checked</span>
-                                        <span className="text-[14px] sm:text-[16px] text-[#222777] font-bold leading-[1.6]">3. Nuanced Data Applications</span>
+                                        <span className="material-symbols-outlined text-[#075e51] mt-[2px] text-[16px] sm:text-[18px]">radio_button_checked</span>
+                                        <span className="text-[14px] sm:text-[16px] text-[#075e51] font-bold leading-[1.6]">3. Nuanced Data Applications</span>
                                     </div>
                                 </li>
                                 <li>
@@ -97,13 +97,13 @@ export default function CourseWorkbook() {
                             <h4 className="font-mono text-[13px] sm:text-[14px] font-medium text-[#181c22] mb-3 sm:mb-4 leading-[1.4]">Question 1: Primary Indicator</h4>
                             <p className="text-[14px] sm:text-[16px] text-[#464651] mb-4 leading-[1.6]">Which temporal pattern is most likely to cause an availability cascade in the model?</p>
                             <div className="space-y-2 sm:space-y-3">
-                                <label className="flex items-start sm:items-center gap-3 sm:gap-4 p-3 rounded border border-[#c7c5d3] hover:border-[#222777] hover:bg-[#f1f3fc] cursor-pointer transition-all">
-                                    <input type="radio" name="q1" className="text-[#222777] focus:ring-[#222777] w-4 h-4 border-[#c7c5d3] mt-1 sm:mt-0 shrink-0" />
+                                <label className="flex items-start sm:items-center gap-3 sm:gap-4 p-3 rounded border border-[#c7c5d3] hover:border-[#075e51] hover:bg-[#f1f3fc] cursor-pointer transition-all">
+                                    <input type="radio" name="q1" className="text-[#075e51] focus:ring-[#075e51] w-4 h-4 border-[#c7c5d3] mt-1 sm:mt-0 shrink-0" />
                                     <span className="text-[14px] sm:text-[16px] text-[#181c22] leading-[1.4] sm:leading-[1.6]">Weekend spikes in suburban zones</span>
                                 </label>
-                                <label className="flex items-start sm:items-center gap-3 sm:gap-4 p-3 rounded border border-[#222777] bg-[#f1f3fc] cursor-pointer transition-all">
-                                    <input type="radio" name="q1" defaultChecked className="text-[#222777] focus:ring-[#222777] w-4 h-4 border-[#222777] mt-1 sm:mt-0 shrink-0" />
-                                    <span className="text-[14px] sm:text-[16px] text-[#222777] font-bold leading-[1.4] sm:leading-[1.6]">Rush hour localized congestion</span>
+                                <label className="flex items-start sm:items-center gap-3 sm:gap-4 p-3 rounded border border-[#075e51] bg-[#f1f3fc] cursor-pointer transition-all">
+                                    <input type="radio" name="q1" defaultChecked className="text-[#075e51] focus:ring-[#075e51] w-4 h-4 border-[#075e51] mt-1 sm:mt-0 shrink-0" />
+                                    <span className="text-[14px] sm:text-[16px] text-[#075e51] font-bold leading-[1.4] sm:leading-[1.6]">Rush hour localized congestion</span>
                                 </label>
                             </div>
                         </div>
@@ -119,14 +119,14 @@ export default function CourseWorkbook() {
                             </h4>
                             <p className="text-[14px] sm:text-[16px] text-[#464651] mb-5 sm:mb-6 leading-[1.6]">Explain how 'Confirmation Bias' might manifest in the model's predictive routing during a major sporting event.</p>
 
-                            <div className="border border-[#c7c5d3] rounded-lg p-4 sm:p-5 bg-[#f9f9ff] flex flex-col items-center justify-center min-h-[180px] sm:min-h-[200px] relative">
+                            <div className="border border-[#c7c5d3] rounded-lg p-4 sm:p-5 bg-[#F4F9F8] flex flex-col items-center justify-center min-h-[180px] sm:min-h-[200px] relative">
                                 <div className="flex flex-col items-center gap-3 sm:gap-4 z-10">
                                     <button
                                         onClick={() => setIsRecording(!isRecording)}
                                         className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white border-2 flex items-center justify-center transition-transform group
                                         ${isRecording ? 'border-[#ba1a1a] shadow-[0_0_0_0_rgba(186,26,26,0.7)] animate-[pulse-wb_1.8s_infinite]' : 'border-[#00696e] pulse-ring-workbook hover:scale-105'}`}
                                     >
-                                        <span className={`material-symbols-outlined text-[28px] sm:text-[32px] transition-colors ${isRecording ? 'text-[#ba1a1a]' : 'text-[#00696e] group-hover:text-[#222777]'}`}>{isRecording ? 'stop' : 'mic'}</span>
+                                        <span className={`material-symbols-outlined text-[28px] sm:text-[32px] transition-colors ${isRecording ? 'text-[#ba1a1a]' : 'text-[#00696e] group-hover:text-[#075e51]'}`}>{isRecording ? 'stop' : 'mic'}</span>
                                     </button>
                                     <span className={`font-mono text-[11px] sm:text-[12px] font-bold leading-[1.4] ${isRecording ? 'text-[#ba1a1a]' : 'text-[#00696e]'}`}>
                                         {isRecording ? `Recording... ${formatTime(timer)}` : 'Click to Record'}
@@ -136,7 +136,7 @@ export default function CourseWorkbook() {
                                     <div className="w-full mt-5 sm:mt-6 p-3 sm:p-4 bg-white rounded border border-[#e0e2eb] shadow-sm">
                                         <p className="text-[14px] sm:text-[16px] leading-[1.7] sm:leading-[1.85] text-[#181c22]">
                                             <span className="text-[#181c22]">During a major sporting event, the model might exhibit confirmation bias by heavily weighting historical data that suggests main arterial roads will be gridlocked. </span>
-                                            <span className="text-[#222777] bg-[#e0e0ff]/30 border-b border-[#222777] border-dashed pb-[1px] animate-pulse">It would actively seek out minor traffic anomalies...</span>
+                                            <span className="text-[#075e51] bg-[#e0e0ff]/30 border-b border-[#075e51] border-dashed pb-[1px] animate-pulse">It would actively seek out minor traffic anomalies...</span>
                                         </p>
                                     </div>
                                 )}
@@ -148,7 +148,7 @@ export default function CourseWorkbook() {
                             <button className="w-full sm:w-auto px-6 py-2.5 sm:py-2 rounded border border-[#c7c5d3] text-[#464651] font-mono text-[13px] sm:text-[14px] font-medium hover:bg-[#f1f3fc] transition-colors text-center leading-[1.4]">
                                 Save Draft
                             </button>
-                            <button onClick={() => navigate('/app/courses/my-learning')} className="w-full sm:w-auto px-6 py-2.5 sm:py-2 rounded bg-[#222777] text-white font-mono text-[13px] sm:text-[14px] font-medium hover:bg-[#3a3f8f] shadow-md flex items-center justify-center gap-1.5 transition-colors leading-[1.4]">
+                            <button onClick={() => navigate('/app/courses/my-learning')} className="w-full sm:w-auto px-6 py-2.5 sm:py-2 rounded bg-[#075e51] text-white font-mono text-[13px] sm:text-[14px] font-medium hover:bg-[#097969] shadow-md flex items-center justify-center gap-1.5 transition-colors leading-[1.4]">
                                 Submit Module <span className="material-symbols-outlined text-[16px] sm:text-[18px]">send</span>
                             </button>
                         </div>

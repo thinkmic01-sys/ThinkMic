@@ -79,8 +79,8 @@ export default function StudentRosterPanel({ getEndpoint, patchEndpoint, searchE
 
     return (
         <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] overflow-hidden mb-5">
-            <div className="px-4 sm:px-5 py-3 border-b border-[#e0e2eb] bg-[#f9f9ff] flex items-center justify-between">
-                <h3 className="font-bold text-[13px] sm:text-sm text-[#222777] tracking-wide">{title}</h3>
+            <div className="px-4 sm:px-5 py-3 border-b border-[#e0e2eb] bg-[#F4F9F8] flex items-center justify-between">
+                <h3 className="font-bold text-[13px] sm:text-sm text-[#075e51] tracking-wide">{title}</h3>
                 {!loading && <span className="text-[11px] font-mono text-[#777682]">{students.length}</span>}
             </div>
             <div className="divide-y divide-[#e0e2eb] overflow-y-auto custom-scrollbar" style={{ maxHeight }}>
@@ -94,7 +94,7 @@ export default function StudentRosterPanel({ getEndpoint, patchEndpoint, searchE
                         onBlur={() => setTimeout(() => setIsDropdownOpen(false), 150)}
                         placeholder="Search by name or email..."
                         autoComplete="off"
-                        className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[13px] outline-none focus:border-[#222777]"
+                        className="w-full border border-[#c7c5d3] rounded-md p-2.5 text-[13px] outline-none focus:border-[#075e51]"
                     />
                     {isDropdownOpen && results.length > 0 && (
                         <div className="absolute z-10 mt-1 left-4 right-4 sm:left-5 sm:right-5 bg-white border border-[#c7c5d3] rounded-md shadow-lg max-h-48 overflow-y-auto">

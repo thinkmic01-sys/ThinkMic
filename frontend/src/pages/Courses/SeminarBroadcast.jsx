@@ -183,7 +183,7 @@ export default function SeminarBroadcast() {
 
     if (loadError) {
         return (
-            <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center bg-[#f9f9ff]">
+            <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center bg-[#F4F9F8]">
                 <p className="text-[#464651] font-semibold">{loadError}</p>
             </div>
         );
@@ -191,7 +191,7 @@ export default function SeminarBroadcast() {
 
     if (!seminar) {
         return (
-            <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center bg-[#f9f9ff]">
+            <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center bg-[#F4F9F8]">
                 <p className="text-[#464651]">Loading seminar...</p>
             </div>
         );
@@ -199,7 +199,7 @@ export default function SeminarBroadcast() {
 
     if (user && seminar.hostId !== user.id) {
         return (
-            <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center bg-[#f9f9ff]">
+            <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center bg-[#F4F9F8]">
                 <p className="text-[#464651] font-semibold">Only the host can broadcast this seminar.</p>
             </div>
         );
@@ -212,20 +212,20 @@ export default function SeminarBroadcast() {
     };
 
     return (
-        <div className="w-full h-[calc(100vh-64px)] bg-[#f9f9ff] overflow-y-auto font-sans">
+        <div className="w-full h-[calc(100vh-64px)] bg-[#F4F9F8] overflow-y-auto font-sans">
             <div className="max-w-[900px] mx-auto p-4 sm:p-6 md:p-8">
-                <button onClick={() => navigate('/app/courses')} className="text-[#777682] hover:text-[#222777] flex items-center gap-1 text-[13px] font-bold mb-4 transition-colors">
+                <button onClick={() => navigate('/app/courses')} className="text-[#777682] hover:text-[#075e51] flex items-center gap-1 text-[13px] font-bold mb-4 transition-colors">
                     <span className="material-symbols-outlined text-[18px]">arrow_back</span> Back to Course Library
                 </button>
 
-                <h1 className="text-[24px] sm:text-[32px] font-bold text-[#222777] mb-1">{seminar.title}</h1>
+                <h1 className="text-[24px] sm:text-[32px] font-bold text-[#075e51] mb-1">{seminar.title}</h1>
                 <p className="text-[14px] text-[#464651] mb-6">{seminar.abstract}</p>
 
                 {broadcastState === 'idle' && (
                     <div className="bg-white rounded-xl border border-[#e0e2eb] p-8 text-center shadow-sm">
-                        <span className="material-symbols-outlined text-[48px] text-[#222777] mb-3 block">podcasts</span>
+                        <span className="material-symbols-outlined text-[48px] text-[#075e51] mb-3 block">podcasts</span>
                         <p className="text-[#464651] mb-6">When you're ready, go live - every registered attendee will be notified instantly.</p>
-                        <button onClick={goLive} className="bg-[#222777] text-white font-bold px-8 py-3 rounded-lg hover:bg-[#3a3f8f] transition-colors inline-flex items-center gap-2">
+                        <button onClick={goLive} className="bg-[#075e51] text-white font-bold px-8 py-3 rounded-lg hover:bg-[#097969] transition-colors inline-flex items-center gap-2">
                             <span className="material-symbols-outlined">play_arrow</span> Go Live
                         </button>
                     </div>
@@ -239,7 +239,7 @@ export default function SeminarBroadcast() {
 
                 {(broadcastState === 'live' || broadcastState === 'ending') && (
                     <>
-                        <div className="bg-white rounded-xl border border-[#00c2cb] ring-1 ring-[#00c2cb]/40 p-5 sm:p-6 mb-6 flex items-center justify-between shadow-sm">
+                        <div className="bg-white rounded-xl border border-[#EAB308] ring-1 ring-[#EAB308]/40 p-5 sm:p-6 mb-6 flex items-center justify-between shadow-sm">
                             <div className="flex items-center gap-3">
                                 <span className="w-2.5 h-2.5 rounded-full bg-[#ba1a1a] animate-pulse"></span>
                                 <span className="font-bold text-[#181c22]">LIVE</span>
@@ -259,7 +259,7 @@ export default function SeminarBroadcast() {
                             <h3 className="text-[16px] font-semibold text-[#181c22] mb-3">Live Transcript</h3>
                             <div className="space-y-2 text-[15px] leading-[1.7] text-[#464651]">
                                 {transcripts.map((t, i) => <p key={i}>{t.text}</p>)}
-                                {interimText && <p className="text-[#222777] italic">{interimText}</p>}
+                                {interimText && <p className="text-[#075e51] italic">{interimText}</p>}
                                 {transcripts.length === 0 && !interimText && <p className="text-[#c7c5d3]">Start speaking...</p>}
                             </div>
                         </div>
@@ -268,10 +268,10 @@ export default function SeminarBroadcast() {
 
                 {broadcastState === 'ended' && (
                     <div className="bg-white rounded-xl border border-[#e0e2eb] p-8 text-center shadow-sm">
-                        <span className="material-symbols-outlined text-[48px] text-[#00c2cb] mb-3 block">check_circle</span>
+                        <span className="material-symbols-outlined text-[48px] text-[#EAB308] mb-3 block">check_circle</span>
                         <p className="text-[#181c22] font-semibold mb-2">Broadcast ended.</p>
                         <p className="text-[#464651] mb-6">The summary is being generated and will reach every attendee shortly.</p>
-                        <button onClick={() => navigate('/app/courses')} className="bg-[#222777] text-white font-bold px-6 py-2.5 rounded-lg hover:bg-[#3a3f8f] transition-colors">
+                        <button onClick={() => navigate('/app/courses')} className="bg-[#075e51] text-white font-bold px-6 py-2.5 rounded-lg hover:bg-[#097969] transition-colors">
                             Back to Course Library
                         </button>
                     </div>
@@ -280,7 +280,7 @@ export default function SeminarBroadcast() {
 
             {toast && (
                 <div className="fixed bottom-6 right-6 z-[60]">
-                    <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border ${toast.type === 'error' ? 'bg-[#ba1a1a] text-white border-[#93000a]' : 'bg-[#222777] text-white border-[#070963]'}`}>
+                    <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border ${toast.type === 'error' ? 'bg-[#ba1a1a] text-white border-[#93000a]' : 'bg-[#075e51] text-white border-[#070963]'}`}>
                         <span className="material-symbols-outlined">{toast.type === 'error' ? 'error' : 'check_circle'}</span>
                         <span className="font-bold text-sm">{toast.message}</span>
                     </div>

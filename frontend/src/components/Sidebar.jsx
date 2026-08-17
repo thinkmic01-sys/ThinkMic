@@ -35,7 +35,7 @@ const NavLink = ({ to, icon, label }) => {
             className={`w-full flex items-center gap-4 px-6 py-3.5 text-left transition-all duration-200
                 ${isActive
                 ? 'bg-[#097969] border-l-[4px] border-[#EAB308] text-[#EAB308] shadow-sm'
-                : 'text-[#c7c5d3] border-l-[4px] border-transparent hover:bg-white/5 hover:text-white'
+                : 'text-[#57596b] border-l-[4px] border-transparent hover:bg-[#f1f3fc] hover:text-[#181c22]'
             }`}
         >
             <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}>
@@ -58,7 +58,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     const [isMicModalOpen, setIsMicModalOpen] = useState(false);
 
     return (
-        <aside className={`w-[280px] h-screen bg-[#075e51] flex flex-col fixed left-0 top-0 text-white z-50 border-r border-[#181c22]/20 transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
+        <aside className={`w-[280px] h-screen bg-white flex flex-col fixed left-0 top-0 text-[#181c22] z-50 border-r border-[#e0e2eb] transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
 
             {/* Brand Area */}
             <div className="h-[88px] flex items-center justify-between px-6 mb-2 shrink-0">
@@ -67,11 +67,11 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                         <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>mic</span>
                     </div>
                     <div>
-                        <h1 className="font-bold text-[22px] leading-none tracking-tight text-white">ThinkMic</h1>
-                        <p className="text-[11px] text-[#EAB308] opacity-90 uppercase tracking-widest font-mono mt-1">AI Research Hub</p>
+                        <h1 className="font-bold text-[22px] leading-none tracking-tight text-black">ThinkMic</h1>
+                        <p className="text-[11px] text-[#EAB308] uppercase tracking-widest font-mono mt-1">AI Research Hub</p>
                     </div>
                 </div>
-                <button className="lg:hidden text-[#c7c5d3] hover:text-white transition-colors" onClick={() => setIsOpen(false)}>
+                <button className="lg:hidden text-[#777682] hover:text-[#181c22] transition-colors" onClick={() => setIsOpen(false)}>
                     <span className="material-symbols-outlined">close</span>
                 </button>
             </div>

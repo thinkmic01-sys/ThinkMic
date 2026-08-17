@@ -1041,7 +1041,7 @@ export default function SpeechWorkspace() {
 
                 {/* Left: Input Source & Engine Selector */}
                 <div className="flex items-center gap-3 shrink-0 flex-wrap">
-                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-md flex items-center justify-center text-white bg-[#097969] shadow-sm">
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-md flex items-center justify-center text-[#EAB308] bg-black shadow-sm">
                         <span className="material-symbols-outlined text-[18px] md:text-[22px]">mic</span>
                     </div>
                     <div className="flex flex-col">

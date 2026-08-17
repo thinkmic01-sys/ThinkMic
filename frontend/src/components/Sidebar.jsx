@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import { MANAGEMENT_PAGES } from '../config/managementAccess';
 import ConfigureMicModal from './ConfigureMicModal';
 
-const NavLink = ({ to, icon, label }) => {
+const NavLink = ({ to, icon, label, onNavigate }) => {
     const location = useLocation();
     // Create Seminar's route is still under /app/projects/* for now, but it belongs to
     // the Seminars section (reached from the Seminar Library), not Projects
@@ -32,9 +32,10 @@ const NavLink = ({ to, icon, label }) => {
     return (
         <Link
             to={to}
+            onClick={onNavigate}
             className={`w-full flex items-center gap-4 px-6 py-3.5 text-left transition-all duration-200
                 ${isActive
-                ? 'bg-[#097969] border-l-[4px] border-[#EAB308] text-[#EAB308] shadow-sm'
+                ? 'bg-black border-l-[4px] border-[#EAB308] text-[#EAB308] shadow-sm'
                 : 'text-[#57596b] border-l-[4px] border-transparent hover:bg-black hover:text-white'
             }`}
         >
@@ -78,27 +79,27 @@ export default function Sidebar({ isOpen, setIsOpen }) {
 
             {/* Main Nav Links */}
             <nav className="flex flex-col gap-1 overflow-y-auto custom-scrollbar">
-                <NavLink to="/app/dashboard" icon="dashboard" label="Dashboard" />
+                <NavLink to="/app/dashboard" icon="dashboard" label="Dashboard" onNavigate={() => setIsOpen(false)} />
                 {isAdmin ? (
                     // Admins manage the platform rather than use the product features
                     // themselves (per-user activity is already visible via Users > View Full
                     // Profile), so the sidebar lists every Management page directly instead of
                     // Projects/Reports/Seminars/etc.
                     managementPages.map((page) => (
-                        <NavLink key={page.to} to={page.to} icon={page.icon} label={page.label} />
+                        <NavLink key={page.to} to={page.to} icon={page.icon} label={page.label} onNavigate={() => setIsOpen(false)} />
                     ))
                 ) : (
                     <>
-                        <NavLink to="/app/research" icon="workspaces" label="Projects" />
-                        <NavLink to="/app/projects" icon="folder_open" label="Project Hub" />
-                        <NavLink to="/app/projects/history" icon="history" label="History" />
-                        <NavLink to="/app/reports" icon="summarize" label="Reports" />
-                        <NavLink to="/app/courses" icon="school" label="Seminars" />
-                        <NavLink to="/app/courses/my-learning" icon="bookmark" label="My Learning List" />
-                        <NavLink to="/app/forms" icon="groups" label="Collaboration" />
-                        <NavLink to="/app/achievements" icon="military_tech" label="Achievements" />
+                        <NavLink to="/app/research" icon="workspaces" label="Projects" onNavigate={() => setIsOpen(false)} />
+                        <NavLink to="/app/projects" icon="folder_open" label="Project Hub" onNavigate={() => setIsOpen(false)} />
+                        <NavLink to="/app/projects/history" icon="history" label="History" onNavigate={() => setIsOpen(false)} />
+                        <NavLink to="/app/reports" icon="summarize" label="Reports" onNavigate={() => setIsOpen(false)} />
+                        <NavLink to="/app/courses" icon="school" label="Seminars" onNavigate={() => setIsOpen(false)} />
+                        <NavLink to="/app/courses/my-learning" icon="bookmark" label="My Learning List" onNavigate={() => setIsOpen(false)} />
+                        <NavLink to="/app/forms" icon="groups" label="Collaboration" onNavigate={() => setIsOpen(false)} />
+                        <NavLink to="/app/achievements" icon="military_tech" label="Achievements" onNavigate={() => setIsOpen(false)} />
                         {canManageOwnSchemas && (
-                            <NavLink to="/app/admin/schemas" icon="dynamic_form" label="Schemas" />
+                            <NavLink to="/app/admin/schemas" icon="dynamic_form" label="Schemas" onNavigate={() => setIsOpen(false)} />
                         )}
                     </>
                 )}
@@ -116,11 +117,11 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 </div>
 
                 <nav className="flex flex-col gap-1">
-                    <NavLink to="/app/settings" icon="settings" label="Settings" />
+                    <NavLink to="/app/settings" icon="settings" label="Settings" onNavigate={() => setIsOpen(false)} />
                     {permissions.includes('support.manage_all') ? (
-                        <NavLink to="/app/admin/support" icon="support_agent" label="Support Inbox" />
+                        <NavLink to="/app/admin/support" icon="support_agent" label="Support Inbox" onNavigate={() => setIsOpen(false)} />
                     ) : (
-                        <NavLink to="/app/support" icon="help_outline" label="Support" />
+                        <NavLink to="/app/support" icon="help_outline" label="Support" onNavigate={() => setIsOpen(false)} />
                     )}
                 </nav>
             </div>

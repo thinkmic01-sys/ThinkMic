@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import api from '../../services/api';
 
 const STATUS_CLASSES = {
-    approved: 'bg-[#FEF9C3] text-[#006e73] border-[#6bf6ff]/50',
+    approved: 'bg-[#FEF9C3] text-[#854d0e] border-[#EAB308]/50',
     rejected: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ffb4ab]',
     pending: 'bg-[#fff8e1] text-[#b45309] border-[#ffe082]'
 };
@@ -437,7 +437,7 @@ export default function ReferralCoinManagement() {
                                                 )}
                                                 {canApproveReject && (
                                                     <>
-                                                        <button onClick={() => handleApprove(r._id)} className="bg-[#FEF9C3] text-[#006e73] border border-[#EAB308]/30 text-[11px] font-bold py-1.5 px-3 rounded hover:bg-[#d4f7f9] transition-colors">Approve</button>
+                                                        <button onClick={() => handleApprove(r._id)} className="bg-[#FEF9C3] text-[#854d0e] border border-[#EAB308]/30 text-[11px] font-bold py-1.5 px-3 rounded hover:bg-[#d4f7f9] transition-colors">Approve</button>
                                                         <button onClick={() => handleReject(r._id)} className="bg-[#ffdad6] text-[#ba1a1a] border border-[#ffb4ab] text-[11px] font-bold py-1.5 px-3 rounded hover:bg-[#ffc9c4] transition-colors">Reject</button>
                                                     </>
                                                 )}
@@ -631,7 +631,7 @@ export default function ReferralCoinManagement() {
 
             {/* --- CUSTOM TOAST NOTIFICATION --- */}
             <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#006e73]'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#854d0e]'}`}>
                     <span className="material-symbols-outlined text-[20px]">
                         {toast.type === 'error' ? 'error' : 'check_circle'}
                     </span>

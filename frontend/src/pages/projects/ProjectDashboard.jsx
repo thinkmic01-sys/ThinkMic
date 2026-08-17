@@ -180,7 +180,7 @@ export default function ProjectDashboard() {
                                     onClick={openShareModal}
                                     className={`w-full sm:w-auto px-6 py-2.5 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm transition-colors flex items-center justify-center gap-2 shrink-0 border ${
                                         project.isShared
-                                            ? 'bg-[#FEF9C3] text-[#006e73] border-[#6bf6ff]/50 hover:bg-[#d0f6f8]'
+                                            ? 'bg-[#FEF9C3] text-[#854d0e] border-[#EAB308]/50 hover:bg-[#d0f6f8]'
                                             : 'bg-white text-[#075e51] border-[#e0e2eb] hover:bg-[#f1f3fc]'
                                     }`}
                                 >
@@ -190,7 +190,7 @@ export default function ProjectDashboard() {
                             )}
                             <button
                                 onClick={() => navigate(`/app/research?projectId=${id}`)}
-                                className="w-full sm:w-auto bg-[#EAB308] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm hover:bg-[#00a8b0] transition-colors flex items-center justify-center gap-2 shrink-0"
+                                className="w-full sm:w-auto bg-[#EAB308] text-white px-6 py-2.5 rounded-lg text-[13px] sm:text-[14px] font-bold shadow-sm hover:bg-[#B45309] transition-colors flex items-center justify-center gap-2 shrink-0"
                             >
                                 <span className="material-symbols-outlined text-[18px]">mic</span> Start New Session
                             </button>

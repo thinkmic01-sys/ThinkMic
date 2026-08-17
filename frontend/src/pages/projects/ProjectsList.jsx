@@ -169,7 +169,7 @@ export default function ProjectsList() {
                                                     onClick={() => toggleKeyword(kw._id)}
                                                     className={`text-[12px] font-bold px-3 py-1.5 rounded-full border transition-colors ${
                                                         isSelected
-                                                            ? 'bg-[#FEF9C3] text-[#006e73] border-[#6bf6ff]/50'
+                                                            ? 'bg-[#FEF9C3] text-[#854d0e] border-[#EAB308]/50'
                                                             : 'bg-[#F4F9F8] text-[#464651] border-[#e0e2eb] hover:border-[#c7c5d3]'
                                                     }`}
                                                 >

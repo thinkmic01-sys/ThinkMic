@@ -13,7 +13,7 @@ export default function Courses() {
                     <p className="text-[14px] sm:text-[16px] leading-[1.6] sm:leading-[1.85] text-[#464651] mt-1 max-w-2xl">Track your progress, resume ongoing courses, and review saved materials.</p>
                 </div>
                 <div className="flex items-center justify-center gap-2 bg-[#f1f3fc] px-4 py-2 sm:py-2.5 rounded-lg border border-[#e0e2eb] shadow-sm w-full md:w-auto shrink-0">
-                    <span className="material-symbols-outlined text-[#6bf6ff]" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
+                    <span className="material-symbols-outlined text-[#EAB308]" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
                     <span className="text-[13px] sm:text-[14px] leading-[1.4] font-medium text-[#181c22]">14 Day Streak</span>
                 </div>
             </header>
@@ -42,7 +42,7 @@ export default function Courses() {
                             <div className="p-2 bg-[#e0e0ff] rounded-lg text-[#075e51]">
                                 <span className="material-symbols-outlined">menu_book</span>
                             </div>
-                            <span className="text-[12px] sm:text-[14px] leading-[1.4] font-medium text-[#00696e] bg-[#FEF9C3] px-2 py-[2px] rounded border border-[#61f4fd]/30">Active</span>
+                            <span className="text-[12px] sm:text-[14px] leading-[1.4] font-medium text-[#00696e] bg-[#FEF9C3] px-2 py-[2px] rounded border border-[#CA8A04]/30">Active</span>
                         </div>
                         <div>
                             <p className="text-[28px] sm:text-[32px] leading-[1.2] tracking-[-0.02em] font-bold text-[#075e51]">4</p>
@@ -91,7 +91,7 @@ export default function Courses() {
                                 <p className="text-[12px] leading-[1.2] sm:leading-[1] font-semibold text-[#464651] truncate mb-3 sm:mb-4">Module 3: Transformer Models Deep Dive</p>
                                 <div className="flex items-center gap-3 sm:gap-4 w-full max-w-md">
                                     <div className="flex-1 h-2 bg-[#e6e8f1] rounded-full overflow-hidden">
-                                        <div className="h-full bg-[#6bf6ff] rounded-full w-[65%]"></div>
+                                        <div className="h-full bg-[#EAB308] rounded-full w-[65%]"></div>
                                     </div>
                                     <span className="font-mono text-[11px] sm:text-[12px] leading-[1.4] text-[#464651] w-8 sm:w-10 text-right">65%</span>
                                 </div>
@@ -115,7 +115,7 @@ export default function Courses() {
                                 <p className="text-[12px] leading-[1.2] sm:leading-[1] font-semibold text-[#464651] truncate mb-3 sm:mb-4">Chapter 2: Bias in Machine Learning</p>
                                 <div className="flex items-center gap-3 sm:gap-4 w-full max-w-md">
                                     <div className="flex-1 h-2 bg-[#e6e8f1] rounded-full overflow-hidden">
-                                        <div className="h-full bg-[#6bf6ff] rounded-full w-[20%]"></div>
+                                        <div className="h-full bg-[#EAB308] rounded-full w-[20%]"></div>
                                     </div>
                                     <span className="font-mono text-[11px] sm:text-[12px] leading-[1.4] text-[#464651] w-8 sm:w-10 text-right">20%</span>
                                 </div>
@@ -267,7 +267,7 @@ export default function Courses() {
 
                     {/* Voice Answer Block with Live Transcript */}
                     <div className="shadow-[0_1px_4px_rgba(58,63,143,0.08)] bg-white rounded-lg p-5 sm:p-6 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#6bf6ff] opacity-10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#EAB308] opacity-10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
                         <h4 className="font-mono text-[12px] sm:text-[14px] leading-[1.4] font-medium text-[#181c22] mb-2 sm:mb-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
                             Question 2: Oral Rationale
                             <span className="bg-[#e6e8f1] text-[#464651] px-2 py-1 rounded-full font-mono text-[10px] sm:text-[12px] leading-[1.4] flex items-center gap-1 w-fit">
@@ -279,7 +279,7 @@ export default function Courses() {
                         <div className="border border-[#c7c5d3] rounded-lg p-4 sm:p-5 bg-[#F4F9F8] flex flex-col items-center justify-center min-h-[180px] sm:min-h-[200px] relative">
                             {/* Mini Recorder */}
                             <div className="flex flex-col items-center gap-3 sm:gap-4 z-10">
-                                <button className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white border-2 border-[#00696e] flex items-center justify-center shadow-[0_0_0_0_rgba(0,194,203,0.7)] animate-[pulse_1.8s_infinite_cubic-bezier(0.66,0,0,1)] hover:scale-105 transition-transform group">
+                                <button className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white border-2 border-[#00696e] flex items-center justify-center shadow-[0_0_0_0_rgba(234, 179, 8,0.7)] animate-[pulse_1.8s_infinite_cubic-bezier(0.66,0,0,1)] hover:scale-105 transition-transform group">
                                     <span className="material-symbols-outlined text-[#00696e] text-[28px] sm:text-[32px] group-hover:text-[#075e51] transition-colors">mic</span>
                                 </button>
                                 <span className="font-mono text-[11px] sm:text-[12px] leading-[1.4] text-[#00696e] font-bold">Recording... 00:24</span>
@@ -344,7 +344,7 @@ export default function Courses() {
                     <div className="bg-white border border-[#e0e2eb] rounded-xl p-4 sm:p-5 shadow-sm hover:border-[#075e51] transition-colors cursor-pointer relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-1 h-full bg-[#EAB308]"></div>
                         <div className="flex justify-between items-start mb-2 sm:mb-3">
-                            <span className="bg-[#FEF9C3] text-[#006e73] font-mono text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider flex items-center gap-1">
+                            <span className="bg-[#FEF9C3] text-[#854d0e] font-mono text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider flex items-center gap-1">
                                 <span className="material-symbols-outlined text-[12px] sm:text-[14px]">school</span> Workshop
                             </span>
                             <span className="text-[11px] sm:text-[12px] font-mono font-bold text-[#EAB308] flex items-center gap-1">

@@ -222,7 +222,7 @@ export default function RolesManagement() {
                                                     <button
                                                         type="button"
                                                         onClick={() => toggleCategory(category, keysInCategory)}
-                                                        className="text-[11px] font-bold text-[#00a0a8] hover:text-[#006e73]"
+                                                        className="text-[11px] font-bold text-[#00a0a8] hover:text-[#854d0e]"
                                                     >
                                                         {allSelected ? 'Deselect all' : 'Select all'}
                                                     </button>

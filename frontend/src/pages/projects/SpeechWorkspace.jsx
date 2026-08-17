@@ -996,9 +996,9 @@ export default function SpeechWorkspace() {
         <div className="flex flex-col relative w-full h-[calc(100vh-64px)] bg-[#F4F9F8] overflow-hidden font-sans">
             <style>{`
                 @keyframes cyanPulse {
-                    0% { box-shadow: 0 0 0 0 rgba(0, 194, 203, 0.4); }
-                    70% { box-shadow: 0 0 0 8px rgba(0, 194, 203, 0); }
-                    100% { box-shadow: 0 0 0 0 rgba(0, 194, 203, 0); }
+                    0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); }
+                    70% { box-shadow: 0 0 0 8px rgba(234, 179, 8, 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
                 }
                 .live-pulse {
                     animation: cyanPulse 1.8s infinite;
@@ -1079,7 +1079,7 @@ export default function SpeechWorkspace() {
                         </div>
                         <div className="flex items-center gap-[2px] md:gap-[3px] h-4 md:h-5">
                             {[1, 2, 4, 6, 8, 5, 3, 7, 9, 6, 4, 2].map((bar, i) => (
-                                <div key={i} className="w-[3px] md:w-1 bg-[#61f4fd] rounded-full transition-all duration-150"
+                                <div key={i} className="w-[3px] md:w-1 bg-[#CA8A04] rounded-full transition-all duration-150"
                                      style={{ height: recordingState === 'recording' ? `${Math.max(20, Math.random() * 100)}%` : '4px', opacity: recordingState === 'idle' ? 0.3 : 1 }}></div>
                             ))}
                         </div>
@@ -1153,7 +1153,7 @@ export default function SpeechWorkspace() {
                         <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-[#e0e2eb] flex flex-col sm:flex-row sm:justify-between sm:items-center bg-[#F4F9F8] rounded-t-lg gap-3">
                             <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
                                 <h2 className="text-[20px] sm:text-2xl font-bold text-[#075e51] tracking-tight">Speech to Text</h2>
-                                <span className={`border text-[10px] sm:text-[12px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${recordingState === 'recording' ? 'border-[#61f4fd] text-[#006e73]' : 'border-[#c7c5d3] text-[#777682]'}`}>
+                                <span className={`border text-[10px] sm:text-[12px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${recordingState === 'recording' ? 'border-[#CA8A04] text-[#854d0e]' : 'border-[#c7c5d3] text-[#777682]'}`}>
                                     <span className={`w-1.5 h-1.5 rounded-full ${recordingState === 'recording' ? 'bg-[#EAB308] live-pulse' : 'bg-[#777682]'}`}></span> Live
                                 </span>
                             </div>
@@ -1273,7 +1273,7 @@ export default function SpeechWorkspace() {
                             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
                                 {transcripts.map((t, idx) => (
                                     <div key={idx} className="flex gap-3 sm:gap-4">
-                                        <span className={`font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 ${recordingState === 'recording' ? 'text-[#006e73]' : 'text-[#777682]'}`}>
+                                        <span className={`font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 ${recordingState === 'recording' ? 'text-[#854d0e]' : 'text-[#777682]'}`}>
                                             {formatTime(t.time)}
                                         </span>
                                         <p className={`text-[#181c22] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] ${language === 'ur-PK' ? 'font-urdu' : ''}`} style={transcriptFontStyle} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
@@ -1283,7 +1283,7 @@ export default function SpeechWorkspace() {
                                 ))}
                                 {interimText && (
                                     <div className="flex gap-3 sm:gap-4">
-                                        <span className="font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 text-[#006e73]">
+                                        <span className="font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 text-[#854d0e]">
                                             {formatTime(Math.floor((Date.now() - recordingStartTimeRef.current) / 1000))}
                                         </span>
                                         <p className={`text-[#097969] leading-[1.7] sm:leading-[1.85] text-[14px] sm:text-[16px] italic ${language === 'ur-PK' ? 'font-urdu' : ''}`} style={transcriptFontStyle} dir={language === 'ur-PK' ? 'rtl' : 'ltr'}>
@@ -1293,7 +1293,7 @@ export default function SpeechWorkspace() {
                                 )}
                                 {recordingState === 'recording' && (
                                     <div className="flex gap-3 sm:gap-4">
-                                        <span className="text-[#006e73] font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 opacity-50">
+                                        <span className="text-[#854d0e] font-mono text-[12px] sm:text-[14px] tracking-wide pt-[2px] shrink-0 opacity-50">
                                             {formatTime(timeElapsed)}
                                         </span>
                                         <span className="w-[2px] h-4 sm:h-5 bg-[#EAB308] animate-pulse mt-1 sm:mt-1.5"></span>
@@ -1350,7 +1350,7 @@ export default function SpeechWorkspace() {
                                             onClick={() => handleRunIntentPrompt(promptObj.id)}
                                             disabled={promptObj.isAnswering || !promptObj.text.trim() || !currentTranscriptId}
                                             title="Answers this prompt against the transcript captured so far, without touching the Intelligence Summary."
-                                            className="absolute bottom-2 right-2 bg-[#61f4fd] text-[#004f53] text-[12px] sm:text-[14px] font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-[6px] hover:bg-[#3edae3] transition-colors flex items-center gap-1 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                                            className="absolute bottom-2 right-2 bg-[#CA8A04] text-[#004f53] text-[12px] sm:text-[14px] font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-[6px] hover:bg-[#3edae3] transition-colors flex items-center gap-1 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
                                             <span className={`material-symbols-outlined text-[14px] sm:text-[16px] ${promptObj.isAnswering ? 'animate-spin' : ''}`}>{promptObj.isAnswering ? 'sync' : 'magic_button'}</span> <span className="hidden sm:inline">{promptObj.isAnswering ? 'Running...' : 'Run Prompt'}</span>
                                         </button>
                                     </div>
@@ -1397,7 +1397,7 @@ export default function SpeechWorkspace() {
                                 onClick={handleSummarize}
                                 disabled={isGeneratingSummary || !currentTranscriptId}
                                 title="Summarizes the transcript captured so far - works anytime, even while still recording."
-                                className="text-[#006e73] text-[12px] sm:text-[14px] font-bold flex items-center gap-1 hover:text-[#004f53] transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="text-[#854d0e] text-[12px] sm:text-[14px] font-bold flex items-center gap-1 hover:text-[#004f53] transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <span className={`material-symbols-outlined text-[16px] ${isGeneratingSummary ? 'animate-spin' : ''}`}>{summaryText ? 'refresh' : 'auto_awesome'}</span>
                                 <span className="hidden sm:inline">{isGeneratingSummary ? 'Generating...' : summaryText ? 'Regenerate' : 'Generate Summary'}</span>
@@ -1500,7 +1500,7 @@ export default function SpeechWorkspace() {
                                         {isExpanded && (
                                             <div className="ml-4 sm:ml-5 border-l-[2px] border-[#e0e2eb] pl-3 sm:pl-4 py-1 flex flex-wrap gap-2 mb-1 mt-1">
                                                 {topic.tags.map((tag, idx) => (
-                                                    <span key={idx} className="bg-[#FEF9C3] text-[#006e73] font-bold text-[11px] sm:text-[12px] px-2 py-1 rounded-full flex items-center gap-1">
+                                                    <span key={idx} className="bg-[#FEF9C3] text-[#854d0e] font-bold text-[11px] sm:text-[12px] px-2 py-1 rounded-full flex items-center gap-1">
                                                         {tag}
                                                         <span
                                                             onClick={(e) => { e.stopPropagation(); handleRemoveTopicTag(topic.id, tag); }}
@@ -1547,8 +1547,8 @@ export default function SpeechWorkspace() {
                 <div className="flex items-center gap-1 sm:gap-2 text-[#777682] text-[12px] sm:text-[14px] font-bold shrink-0">
                     {summaryText ? (
                         <>
-                            <span className="material-symbols-outlined text-[16px] sm:text-[18px] text-[#006e73]">check_circle</span>
-                            <span className="hidden sm:inline text-[#006e73]">Saved</span>
+                            <span className="material-symbols-outlined text-[16px] sm:text-[18px] text-[#854d0e]">check_circle</span>
+                            <span className="hidden sm:inline text-[#854d0e]">Saved</span>
                         </>
                     ) : null}
                 </div>
@@ -1564,7 +1564,7 @@ export default function SpeechWorkspace() {
 
             {/* --- CUSTOM TOAST NOTIFICATION --- */}
             <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#006e73]'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#854d0e]'}`}>
                     <span className="material-symbols-outlined text-[20px]">
                         {toast.type === 'error' ? 'error' : 'check_circle'}
                     </span>

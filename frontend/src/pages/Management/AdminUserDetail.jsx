@@ -34,7 +34,7 @@ const EmptyRow = ({ label }) => (
 const Pill = ({ children, tone = 'default' }) => {
     const tones = {
         default: 'bg-[#f1f3fc] text-[#464651] border-[#e0e2eb]',
-        good: 'bg-[#FEF9C3] text-[#006e73] border-[#6bf6ff]/50',
+        good: 'bg-[#FEF9C3] text-[#854d0e] border-[#EAB308]/50',
         warn: 'bg-[#fff8e1] text-[#b45309] border-[#ffe082]',
         bad: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ffb4ab]'
     };
@@ -196,7 +196,7 @@ export default function AdminUserDetail() {
                                 {profile.status === 'inactive' ? (
                                     <button
                                         onClick={() => handleUpdateStatus('active')}
-                                        className="text-[12px] sm:text-[13px] font-bold text-[#006e73] border border-[#6bf6ff]/50 bg-[#FEF9C3] hover:bg-[#d0f6f8] transition-colors px-3 py-2 rounded-md flex items-center gap-1.5"
+                                        className="text-[12px] sm:text-[13px] font-bold text-[#854d0e] border border-[#EAB308]/50 bg-[#FEF9C3] hover:bg-[#d0f6f8] transition-colors px-3 py-2 rounded-md flex items-center gap-1.5"
                                     >
                                         <span className="material-symbols-outlined text-[16px]">settings_backup_restore</span> Restore
                                     </button>
@@ -352,7 +352,7 @@ function OverviewTab({ profile }) {
                 <div className="px-4 sm:px-5 py-3 flex items-center justify-between text-[13px] sm:text-sm">
                     <span className="text-[#777682] font-semibold">ID Document</span>
                     {kyc.idDocumentUrl ? (
-                        <a href={kyc.idDocumentUrl} target="_blank" rel="noreferrer" className="text-[#EAB308] hover:text-[#006e73] font-semibold">
+                        <a href={kyc.idDocumentUrl} target="_blank" rel="noreferrer" className="text-[#EAB308] hover:text-[#854d0e] font-semibold">
                             View document
                         </a>
                     ) : (
@@ -370,7 +370,7 @@ function OverviewTab({ profile }) {
                             <div className="flex items-center justify-between gap-2">
                                 <span className="font-bold text-[13px] sm:text-sm text-[#181c22]">{cert.title}</span>
                                 {cert.certificateUrl && (
-                                    <a href={cert.certificateUrl} target="_blank" rel="noreferrer" className="text-[#EAB308] hover:text-[#006e73] font-semibold text-[12px] shrink-0">
+                                    <a href={cert.certificateUrl} target="_blank" rel="noreferrer" className="text-[#EAB308] hover:text-[#854d0e] font-semibold text-[12px] shrink-0">
                                         View file
                                     </a>
                                 )}
@@ -408,7 +408,7 @@ function ResearchTab({ data }) {
                             <p className={`text-[12px] sm:text-[13px] text-[#464651] mt-2 whitespace-pre-wrap ${isExpanded ? '' : 'line-clamp-2'}`}>{transcriptText}</p>
                         )}
                         {summaryText && (
-                            <p className={`text-[12px] sm:text-[13px] text-[#006e73] mt-1 italic whitespace-pre-wrap ${isExpanded ? '' : 'line-clamp-2'}`}>Summary: {summaryText}</p>
+                            <p className={`text-[12px] sm:text-[13px] text-[#854d0e] mt-1 italic whitespace-pre-wrap ${isExpanded ? '' : 'line-clamp-2'}`}>Summary: {summaryText}</p>
                         )}
                         {(transcriptText || summaryText) && (
                             <button
@@ -537,7 +537,7 @@ function CoinsTab({ data }) {
                             <p className="font-bold text-[13px] sm:text-sm text-[#181c22] truncate">{t.action}</p>
                             <p className="text-[11px] text-[#777682]">{formatDate(t.date || t.createdAt)}</p>
                         </div>
-                        <span className={`font-mono font-bold text-[13px] shrink-0 ${t.amount >= 0 ? 'text-[#006e73]' : 'text-[#ba1a1a]'}`}>
+                        <span className={`font-mono font-bold text-[13px] shrink-0 ${t.amount >= 0 ? 'text-[#854d0e]' : 'text-[#ba1a1a]'}`}>
                             {t.amount >= 0 ? '+' : ''}{t.amount}
                         </span>
                     </div>

@@ -54,7 +54,7 @@ export default function Dashboard() {
                         transcriptId: rec.transcriptId,
                         text: `Recording "${rec.title}" saved.`,
                         time: new Date(rec.createdAt).toLocaleString(),
-                        color: index === 0 ? 'bg-[#6bf6ff]' : 'bg-[#075e51]',
+                        color: index === 0 ? 'bg-[#EAB308]' : 'bg-[#075e51]',
                         pulse: index === 0
                     }));
                     setTimelineActivity(activity);
@@ -87,8 +87,8 @@ export default function Dashboard() {
         <div className="h-[calc(100vh-64px)] overflow-y-auto bg-[#F4F9F8] w-full relative">
             <style>{`
                 .shadow-card { box-shadow: 0 1px 4px rgba(58,63,143,0.08), 0 4px 16px rgba(58,63,143,0.06); }
-                .pulse-ring { animation: pulse 1.8s infinite; box-shadow: 0 0 0 0 rgba(0, 194, 203, 0.7); }
-                @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 194, 203, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(0, 194, 203, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 194, 203, 0); } }
+                .pulse-ring { animation: pulse 1.8s infinite; box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); }
+                @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c7c5d3; border-radius: 10px; }
@@ -106,7 +106,7 @@ export default function Dashboard() {
                         <button onClick={() => navigate('/app/research')} className="bg-[#075e51] text-white font-bold text-[12px] px-4 py-2 rounded-md hover:bg-[#075e51]/90 transition-colors flex items-center gap-2 shadow-sm">
                             <span className="material-symbols-outlined text-[18px]">mic</span> New Session
                         </button>
-                        <button onClick={() => navigate('/app/research')} className="border border-[#6bf6ff] text-[#006e73] bg-[#FEF9C3] font-bold text-[12px] px-4 py-2 rounded-md hover:bg-[#6bf6ff]/20 transition-colors flex items-center gap-2">
+                        <button onClick={() => navigate('/app/research')} className="border border-[#EAB308] text-[#854d0e] bg-[#FEF9C3] font-bold text-[12px] px-4 py-2 rounded-md hover:bg-[#EAB308]/20 transition-colors flex items-center gap-2">
                             <span className="material-symbols-outlined text-[18px]">search</span> New Research
                         </button>
                         <button onClick={() => navigate('/app/reports')} className="text-[#075e51] font-bold text-[12px] px-4 py-2 rounded-md hover:bg-[#e0e2eb] transition-colors flex items-center gap-2 border border-transparent">
@@ -224,7 +224,7 @@ export default function Dashboard() {
                                 <p className="font-mono text-[14px] font-bold text-[#777682]">45GB / 100GB</p>
                             </div>
                             <div className="w-full bg-[#e6e8f1] rounded-full h-3 mb-2 overflow-hidden">
-                                <div className="bg-gradient-to-r from-[#075e51] to-[#6bf6ff] h-3 rounded-full" style={{ width: '45%' }}></div>
+                                <div className="bg-gradient-to-r from-[#075e51] to-[#EAB308] h-3 rounded-full" style={{ width: '45%' }}></div>
                             </div>
                             <p className="font-mono text-[12px] font-bold text-[#464651] text-right">45% Used. Upgrade for more capacity.</p>
                         </div>

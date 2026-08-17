@@ -6,7 +6,7 @@ import api from '../../services/api';
 
 const STATUS_BADGE = {
     draft: { classes: 'bg-[#ffdad6] text-[#93000a] border-[#ffdad6]', dot: 'bg-[#ba1a1a]', label: 'Draft' },
-    active: { classes: 'bg-[#FEF9C3] text-[#006e73] border-[#6bf6ff]/50', dot: 'bg-[#EAB308]', label: 'Active' },
+    active: { classes: 'bg-[#FEF9C3] text-[#854d0e] border-[#EAB308]/50', dot: 'bg-[#EAB308]', label: 'Active' },
     archived: { classes: 'bg-[#f1f3fc] text-[#464651] border-[#e0e2eb]', dot: 'bg-[#777682]', label: 'Archived' }
 };
 
@@ -383,7 +383,7 @@ export default function SchemaBuilder() {
                         <button onClick={() => setIsPaletteOpen(true)} className="flex items-center gap-1 text-[#075e51] font-bold text-[13px] bg-[#f1f3fc] px-3 py-1.5 rounded-lg border border-[#e0e2eb]">
                             <span className="material-symbols-outlined text-[18px]">add</span> Add Field
                         </button>
-                        <button onClick={() => setIsPropertiesOpen(true)} className="flex items-center gap-1 text-[#006e73] font-bold text-[13px] bg-[#FEF9C3] px-3 py-1.5 rounded-lg border border-[#6bf6ff]/50">
+                        <button onClick={() => setIsPropertiesOpen(true)} className="flex items-center gap-1 text-[#854d0e] font-bold text-[13px] bg-[#FEF9C3] px-3 py-1.5 rounded-lg border border-[#EAB308]/50">
                             Properties <span className="material-symbols-outlined text-[18px]">tune</span>
                         </button>
                     </div>
@@ -603,7 +603,7 @@ export default function SchemaBuilder() {
                     </button>
                     <button
                         onClick={handlePreview}
-                        className="flex-1 md:flex-none px-3 sm:px-5 py-2 border border-[#EAB308] rounded-md font-bold text-[12px] sm:text-[13px] text-[#006e73] bg-[#FEF9C3] hover:bg-[#EAB308] hover:text-white transition-colors text-center"
+                        className="flex-1 md:flex-none px-3 sm:px-5 py-2 border border-[#EAB308] rounded-md font-bold text-[12px] sm:text-[13px] text-[#854d0e] bg-[#FEF9C3] hover:bg-[#EAB308] hover:text-white transition-colors text-center"
                     >
                         Preview
                     </button>

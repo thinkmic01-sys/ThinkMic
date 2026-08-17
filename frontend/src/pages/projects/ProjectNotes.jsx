@@ -317,7 +317,7 @@ export default function ProjectNotes({ projectId }) {
             {/* Custom Toast */}
             {toast.show && (
                 <div className="fixed bottom-6 right-6 bg-[#075e51] text-white px-6 py-3 rounded-lg shadow-xl font-bold text-[14px] z-[100] animate-fade-in-up flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[#61f4fd]">info</span>
+                    <span className="material-symbols-outlined text-[#CA8A04]">info</span>
                     {toast.message}
                 </div>
             )}
@@ -383,9 +383,9 @@ export default function ProjectNotes({ projectId }) {
             <style>{`
                 .pulse-ring { animation: pulse-ring-animation 1.8s infinite; }
                 @keyframes pulse-ring-animation {
-                    0% { box-shadow: 0 0 0 0 rgba(0, 194, 203, 0.4); }
-                    70% { box-shadow: 0 0 0 8px rgba(0, 194, 203, 0); }
-                    100% { box-shadow: 0 0 0 0 rgba(0, 194, 203, 0); }
+                    0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); }
+                    70% { box-shadow: 0 0 0 8px rgba(234, 179, 8, 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
                 }
                 
                 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }

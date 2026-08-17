@@ -570,7 +570,7 @@ export default function ResearchResults() {
                 {/* Sticky Bottom Bar */}
                 <div className="absolute bottom-0 w-full bg-white border-t border-gray-200 p-3 sm:p-4 flex justify-between items-center shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
                     <div className="flex items-center gap-3 sm:gap-4">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-cyan/10 flex items-center justify-center shadow-[0_0_15px_rgba(0,194,203,0.3)] shrink-0">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-cyan/10 flex items-center justify-center shadow-[0_0_15px_rgba(234, 179, 8,0.3)] shrink-0">
                             <span className="material-symbols-outlined text-cyan text-[18px] sm:text-[20px]">auto_awesome</span>
                         </div>
                         <div>

@@ -258,7 +258,7 @@ export default function UserManagement() {
                     {/* Bulk Actions Banner */}
                     {selectedUserIds.length > 0 && (
                         <div className="absolute top-0 left-0 w-full bg-[#FEF9C3] px-4 sm:px-6 py-2.5 sm:py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between z-20 border-b border-[#EAB308]/30 backdrop-blur-sm animate-in fade-in slide-in-from-top-2 gap-3 sm:gap-0">
-                            <span className="text-[13px] sm:text-sm font-bold text-[#006e73]">{selectedUserIds.length} users selected</span>
+                            <span className="text-[13px] sm:text-sm font-bold text-[#854d0e]">{selectedUserIds.length} users selected</span>
                             <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
                                 <select
                                     onChange={(e) => handleBulkRoleChange(e.target.value)}
@@ -338,7 +338,7 @@ export default function UserManagement() {
                                             {/* Role Badges */}
                                             <span className={`inline-flex items-center gap-1 text-[9px] sm:text-[10px] px-2 py-1 rounded-full uppercase tracking-wider font-bold border
                                                     ${user.role === 'admin' ? 'bg-[#075e51] text-white border-[#075e51]' : ''}
-                                                    ${user.role === 'manager' ? 'bg-[#FEF9C3] text-[#006e73] border-[#EAB308]/30' : ''}
+                                                    ${user.role === 'manager' ? 'bg-[#FEF9C3] text-[#854d0e] border-[#EAB308]/30' : ''}
                                                     ${user.role === 'user' ? 'bg-white text-[#464651] border-[#c7c5d3]' : ''}
                                                     ${!['admin', 'manager', 'user'].includes(user.role) ? 'bg-[#f1f3fc] text-[#075e51] border-[#c7c5d3]' : ''}`}
                                             >
@@ -352,7 +352,7 @@ export default function UserManagement() {
                                         <td className="py-3 px-4 whitespace-nowrap">
                                             {/* Status Badges */}
                                             <span className={`inline-flex items-center gap-1.5 font-mono text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full border
-                                                    ${user.status === 'active' ? 'bg-[#FEF9C3] text-[#006e73] border-[#6bf6ff]/50' : ''}
+                                                    ${user.status === 'active' ? 'bg-[#FEF9C3] text-[#854d0e] border-[#EAB308]/50' : ''}
                                                     ${user.status === 'invited' ? 'bg-[#fff8e1] text-[#b45309] border-[#ffe082]' : ''}
                                                     ${user.status === 'inactive' ? 'bg-[#f1f3fc] text-[#777682] border-[#e0e2eb]' : ''}`}
                                             >
@@ -594,7 +594,7 @@ export default function UserManagement() {
 
             {/* --- CUSTOM TOAST NOTIFICATION --- */}
             <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#006e73]'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#854d0e]'}`}>
                     <span className="material-symbols-outlined text-[20px]">
                         {toast.type === 'error' ? 'error' : 'check_circle'}
                     </span>

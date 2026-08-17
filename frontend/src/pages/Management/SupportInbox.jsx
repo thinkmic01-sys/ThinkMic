@@ -145,7 +145,7 @@ export default function SupportInbox() {
                                 >
                                     <div className="flex justify-between items-start mb-1">
                                         <span className="font-bold text-[#181c22] text-[14px] truncate pr-2">{t.user?.fullName || 'Unknown User'}</span>
-                                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${t.status === 'open' ? 'bg-[#FEF9C3] text-[#006e73]' : 'bg-[#e0e2eb] text-[#464651]'}`}>
+                                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${t.status === 'open' ? 'bg-[#FEF9C3] text-[#854d0e]' : 'bg-[#e0e2eb] text-[#464651]'}`}>
                                             {t.status}
                                         </span>
                                     </div>

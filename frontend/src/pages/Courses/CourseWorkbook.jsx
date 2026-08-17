@@ -22,8 +22,8 @@ export default function CourseWorkbook() {
     return (
         <div className="w-full h-[calc(100vh-64px)] bg-[#F4F9F8] overflow-y-auto custom-scrollbar font-sans">
             <style>{`
-                .pulse-ring-workbook { box-shadow: 0 0 0 0 rgba(0, 194, 203, 0.7); animation: pulse-wb 1.8s infinite cubic-bezier(0.66, 0, 0, 1); }
-                @keyframes pulse-wb { to { box-shadow: 0 0 0 8px rgba(0, 194, 203, 0); } }
+                .pulse-ring-workbook { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); animation: pulse-wb 1.8s infinite cubic-bezier(0.66, 0, 0, 1); }
+                @keyframes pulse-wb { to { box-shadow: 0 0 0 8px rgba(234, 179, 8, 0); } }
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c7c5d3; border-radius: 10px; }
@@ -110,7 +110,7 @@ export default function CourseWorkbook() {
 
                         {/* Voice Rationale Block */}
                         <div className="bg-white shadow-[0_1px_4px_rgba(58,63,143,0.08)] rounded-lg p-5 sm:p-6 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-[#6bf6ff] opacity-10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-[#EAB308] opacity-10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
                             <h4 className="font-mono text-[12px] sm:text-[14px] font-medium text-[#181c22] mb-2 sm:mb-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 leading-[1.4]">
                                 Question 2: Oral Rationale
                                 <span className="bg-[#e6e8f1] text-[#464651] px-2 py-1 rounded-full font-mono text-[10px] sm:text-[12px] flex items-center gap-1 w-fit">

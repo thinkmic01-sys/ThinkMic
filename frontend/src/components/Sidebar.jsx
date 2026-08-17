@@ -34,7 +34,7 @@ const NavLink = ({ to, icon, label }) => {
             to={to}
             className={`w-full flex items-center gap-4 px-6 py-3.5 text-left transition-all duration-200
                 ${isActive
-                ? 'bg-[#097969] border-l-[4px] border-[#6bf6ff] text-[#6bf6ff] shadow-sm'
+                ? 'bg-[#097969] border-l-[4px] border-[#EAB308] text-[#EAB308] shadow-sm'
                 : 'text-[#c7c5d3] border-l-[4px] border-transparent hover:bg-white/5 hover:text-white'
             }`}
         >
@@ -63,12 +63,12 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             {/* Brand Area */}
             <div className="h-[88px] flex items-center justify-between px-6 mb-2 shrink-0">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#6bf6ff] rounded-full flex items-center justify-center text-[#075e51] font-bold shadow-[0_0_15px_rgba(107,246,255,0.3)]">
+                    <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-[#EAB308] font-bold shadow-[0_0_15px_rgba(234,179,8,0.3)]">
                         <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>mic</span>
                     </div>
                     <div>
                         <h1 className="font-bold text-[22px] leading-none tracking-tight text-white">ThinkMic</h1>
-                        <p className="text-[11px] text-[#6bf6ff] opacity-90 uppercase tracking-widest font-mono mt-1">AI Research Hub</p>
+                        <p className="text-[11px] text-[#EAB308] opacity-90 uppercase tracking-widest font-mono mt-1">AI Research Hub</p>
                     </div>
                 </div>
                 <button className="lg:hidden text-[#c7c5d3] hover:text-white transition-colors" onClick={() => setIsOpen(false)}>
@@ -109,7 +109,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 <div className="px-6 mb-4">
                     <button
                         onClick={() => setIsMicModalOpen(true)}
-                        className="w-full bg-[#6bf6ff] text-[#002022] font-bold text-[14px] py-3 rounded-md hover:bg-[#61f4fd] transition-colors shadow-sm"
+                        className="w-full bg-[#EAB308] text-[#002022] font-bold text-[14px] py-3 rounded-md hover:bg-[#CA8A04] transition-colors shadow-sm"
                     >
                         Configure Mic
                     </button>

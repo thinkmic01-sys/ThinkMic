@@ -5,7 +5,7 @@ import VoiceRecorder from '../../components/VoiceRecorder';
 import api from '../../services/api';
 
 const NETWORK_STATUS_CLASSES = {
-    approved: 'bg-[#FEF9C3] text-[#006e73]',
+    approved: 'bg-[#FEF9C3] text-[#854d0e]',
     rejected: 'bg-[#ffdad6] text-[#ba1a1a]',
     pending: '!border-[#c7c5d3] text-[#777682] bg-white'
 };
@@ -136,7 +136,7 @@ export default function Collaboration() {
     }, [token]);
 
     const statusBadgeClasses = (status) => {
-        if (status === 'approved') return 'bg-[#FEF9C3] text-[#006e73]';
+        if (status === 'approved') return 'bg-[#FEF9C3] text-[#854d0e]';
         if (status === 'rejected') return 'bg-[#ffdad6] text-[#ba1a1a]';
         return '!border-[#c7c5d3] text-[#777682] bg-white'; // pending
     };
@@ -283,7 +283,7 @@ export default function Collaboration() {
                             </button>
                         </div>
                     </div>
-                    <div className="shrink-0 text-[#6bf6ff] hidden md:block">
+                    <div className="shrink-0 text-[#EAB308] hidden md:block">
                         <span className="material-symbols-outlined text-[80px] lg:text-[100px]" style={{ fontVariationSettings: "'wght' 200" }}>pie_chart</span>
                     </div>
                 </div>
@@ -544,7 +544,7 @@ export default function Collaboration() {
 
                                 {/* Dynamic Fields Render */}
                                 {selectedSchema?.fields?.map((field) => (
-                                    <div key={field.id} className={`bg-white rounded-lg border border-[#e0e2eb] p-4 sm:p-6 shadow-sm ${field.type.toLowerCase() === 'voice' ? 'border-l-[3px] border-l-[#6bf6ff]' : ''}`}>
+                                    <div key={field.id} className={`bg-white rounded-lg border border-[#e0e2eb] p-4 sm:p-6 shadow-sm ${field.type.toLowerCase() === 'voice' ? 'border-l-[3px] border-l-[#EAB308]' : ''}`}>
                                         <label className="block font-mono text-[11px] font-bold text-[#181c22] mb-2 uppercase tracking-wider">
                                             {field.label} {field.required && <span className="text-[#ba1a1a] font-sans">*</span>}
                                         </label>
@@ -617,7 +617,7 @@ export default function Collaboration() {
             
             {/* --- CUSTOM TOAST NOTIFICATION --- */}
             <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#006e73]'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#854d0e]'}`}>
                     <span className="material-symbols-outlined text-[20px]">
                         {toast.type === 'error' ? 'error' : 'check_circle'}
                     </span>

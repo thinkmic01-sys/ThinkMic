@@ -124,7 +124,7 @@ export default function CourseLibrary() {
         // recorded-view button everyone (including the host) sees below.
         if (isHost && (course.status === 'UPCOMING' || course.status === 'DRAFT')) {
             return (
-                <button onClick={(e) => { e.stopPropagation(); navigate(`/app/courses/broadcast/${course.id}`); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-[#006e73] text-white hover:bg-[#EAB308]">
+                <button onClick={(e) => { e.stopPropagation(); navigate(`/app/courses/broadcast/${course.id}`); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-[#854d0e] text-white hover:bg-[#EAB308]">
                     <span className="material-symbols-outlined text-[14px] sm:text-[16px]">podcasts</span>
                     Start Broadcast
                 </button>
@@ -142,7 +142,7 @@ export default function CourseLibrary() {
 
         if (course.status === 'LIVE' || course.status === 'LIVE NOW') {
             return (
-                <button onClick={(e) => { e.stopPropagation(); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-[#61f4fd] text-[#002022] hover:bg-[#6bf6ff]">
+                <button onClick={(e) => { e.stopPropagation(); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-[#CA8A04] text-[#002022] hover:bg-[#EAB308]">
                     Join Broadcast
                 </button>
             );
@@ -158,7 +158,7 @@ export default function CourseLibrary() {
 
         if (isRegistered) {
             return (
-                <button onClick={(e) => { e.stopPropagation(); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-white text-[#006e73] border border-[#EAB308] cursor-default">
+                <button onClick={(e) => { e.stopPropagation(); }} className="w-full sm:w-auto justify-center font-bold text-[12px] px-3 sm:px-4 py-1.5 sm:py-2 rounded flex items-center gap-1 transition-colors bg-white text-[#854d0e] border border-[#EAB308] cursor-default">
                     <span className="material-symbols-outlined text-[14px] sm:text-[16px]">check_circle</span> Registered
                 </button>
             );
@@ -199,7 +199,7 @@ export default function CourseLibrary() {
                         </button>
                         <button
                             onClick={() => navigate('/app/courses/seminars')}
-                            className="bg-[#FEF9C3] text-[#006e73] border border-[#6bf6ff]/50 px-4 py-2.5 sm:py-2 rounded-lg font-bold text-[13px] hover:bg-[#6bf6ff]/20 transition-colors flex items-center justify-center gap-2 shadow-sm shrink-0 whitespace-nowrap"
+                            className="bg-[#FEF9C3] text-[#854d0e] border border-[#EAB308]/50 px-4 py-2.5 sm:py-2 rounded-lg font-bold text-[13px] hover:bg-[#EAB308]/20 transition-colors flex items-center justify-center gap-2 shadow-sm shrink-0 whitespace-nowrap"
                         >
                             <span className="material-symbols-outlined text-[18px]">location_on</span> Nearby Seminars
                         </button>
@@ -222,7 +222,7 @@ export default function CourseLibrary() {
                                         <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> LIVE NOW
                                     </span>
                                 </div>
-                                <h2 className="text-[24px] sm:text-[32px] md:text-[40px] font-bold mb-2 sm:mb-3 text-white group-hover:text-[#6bf6ff] transition-colors leading-tight">
+                                <h2 className="text-[24px] sm:text-[32px] md:text-[40px] font-bold mb-2 sm:mb-3 text-white group-hover:text-[#EAB308] transition-colors leading-tight">
                                     {featuredLive.title}
                                 </h2>
                                 <p className="text-[#bfc2ff] text-[14px] sm:text-[16px] mb-6 sm:mb-8 max-w-xl leading-relaxed line-clamp-3 sm:line-clamp-none">
@@ -230,7 +230,7 @@ export default function CourseLibrary() {
                                 </p>
 
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-                                    <button className="w-full sm:w-auto justify-center bg-[#61f4fd] text-[#002022] font-bold px-6 py-3 sm:py-2.5 rounded-lg hover:bg-[#6bf6ff] transition-colors flex items-center gap-2 shadow-sm">
+                                    <button className="w-full sm:w-auto justify-center bg-[#CA8A04] text-[#002022] font-bold px-6 py-3 sm:py-2.5 rounded-lg hover:bg-[#EAB308] transition-colors flex items-center gap-2 shadow-sm">
                                         <span className="material-symbols-outlined">play_arrow</span> Join Broadcast
                                     </button>
                                     <div className="flex items-center gap-3">
@@ -405,9 +405,9 @@ export default function CourseLibrary() {
                             Completion Rewards
                         </h4>
                         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center">
-                            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#FEF9C3] border border-[#61f4fd] w-fit">
-                                <span className="material-symbols-outlined text-[#006e73] text-[14px] sm:text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>generating_tokens</span>
-                                <span className="font-bold text-[11px] sm:text-[12px] text-[#006e73]">+500 Tokens</span>
+                            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#FEF9C3] border border-[#CA8A04] w-fit">
+                                <span className="material-symbols-outlined text-[#854d0e] text-[14px] sm:text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>generating_tokens</span>
+                                <span className="font-bold text-[11px] sm:text-[12px] text-[#854d0e]">+500 Tokens</span>
                             </div>
                             <span className="font-mono text-[11px] sm:text-[12px] text-[#464651]">Awarded upon completion.</span>
                         </div>
@@ -428,7 +428,7 @@ export default function CourseLibrary() {
                         if (isHost && (selectedCourse.status === 'UPCOMING' || selectedCourse.status === 'DRAFT')) {
                             btnText = 'Start Broadcast';
                             icon = 'podcasts';
-                            btnStyle = 'bg-[#006e73] text-white border-[#006e73] hover:bg-[#EAB308]';
+                            btnStyle = 'bg-[#854d0e] text-white border-[#854d0e] hover:bg-[#EAB308]';
                             onClick = (e) => { e.stopPropagation(); navigate(`/app/courses/broadcast/${selectedCourse.id}`); };
                         } else if (isHost && selectedCourse.status === 'LIVE') {
                             btnText = 'Manage Broadcast';
@@ -438,7 +438,7 @@ export default function CourseLibrary() {
                         } else if (selectedCourse.status === 'LIVE' || selectedCourse.status === 'LIVE NOW') {
                             btnText = 'Join Broadcast';
                             icon = 'play_arrow';
-                            btnStyle = 'bg-[#61f4fd] text-[#002022] border-[#00696e] hover:bg-[#6bf6ff]';
+                            btnStyle = 'bg-[#CA8A04] text-[#002022] border-[#00696e] hover:bg-[#EAB308]';
                         } else if (selectedCourse.status === 'RECORDED') {
                             if (selectedCourse.playbackUrl) {
                                 btnText = 'Download Audio';
@@ -453,7 +453,7 @@ export default function CourseLibrary() {
                             if (isRegistered) {
                                 btnText = 'Registered';
                                 icon = 'check_circle';
-                                btnStyle = 'bg-white text-[#006e73] border-[#EAB308] cursor-default';
+                                btnStyle = 'bg-white text-[#854d0e] border-[#EAB308] cursor-default';
                             } else {
                                 btnText = 'Register for Seminar';
                                 icon = 'event_available';

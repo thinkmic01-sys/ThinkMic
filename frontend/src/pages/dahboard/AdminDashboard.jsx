@@ -112,7 +112,7 @@ export default function AdminDashboard() {
         return (
             <div className="flex items-end gap-1 h-6 sm:h-8 mt-1 sm:mt-2">
                 {bars.map((v, i) => (
-                    <div key={i} className="flex-1 bg-[#61f4fd] rounded-t-sm" style={{ height: `${Math.max((v / max) * 100, 4)}%` }}></div>
+                    <div key={i} className="flex-1 bg-[#CA8A04] rounded-t-sm" style={{ height: `${Math.max((v / max) * 100, 4)}%` }}></div>
                 ))}
             </div>
         );
@@ -226,8 +226,8 @@ export default function AdminDashboard() {
                                     <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
                                         <defs>
                                             <linearGradient id="areaGradient2" x1="0%" x2="0%" y1="0%" y2="100%">
-                                                <stop offset="0%" stopColor="#61f4fd" stopOpacity="0.4"></stop>
-                                                <stop offset="100%" stopColor="#61f4fd" stopOpacity="0"></stop>
+                                                <stop offset="0%" stopColor="#CA8A04" stopOpacity="0.4"></stop>
+                                                <stop offset="100%" stopColor="#CA8A04" stopOpacity="0"></stop>
                                             </linearGradient>
                                         </defs>
                                         <path d={trendAreaPath} fill="url(#areaGradient2)"></path>
@@ -313,7 +313,7 @@ export default function AdminDashboard() {
                                             <span>{field.percentage}%</span>
                                         </div>
                                         <div className="w-full h-1.5 sm:h-2 bg-[#e0e2eb] rounded-full overflow-hidden">
-                                            <div className="h-full bg-[#61f4fd] rounded-full" style={{ width: `${field.percentage}%` }}></div>
+                                            <div className="h-full bg-[#CA8A04] rounded-full" style={{ width: `${field.percentage}%` }}></div>
                                         </div>
                                     </div>
                                 ))}
@@ -370,7 +370,7 @@ export default function AdminDashboard() {
                                     <td className="p-3 sm:p-4 font-mono text-[11px] sm:text-[12px] font-bold text-[#777682] whitespace-nowrap">{new Date(activity.submittedAt).toLocaleString()}</td>
                                     <td className="p-3 sm:p-4 whitespace-nowrap">
                                             <span className={`px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 w-fit border
-                                                ${activity.status === 'Submitted' ? 'bg-[#FEF9C3] text-[#006e73] border-[#b2f0f4]' : ''}
+                                                ${activity.status === 'Submitted' ? 'bg-[#FEF9C3] text-[#854d0e] border-[#b2f0f4]' : ''}
                                                 ${activity.status === 'Draft' ? 'bg-[#fff8e1] text-[#b45309] border-[#ffe082]' : ''}
                                                 ${activity.status === 'Overdue' ? 'bg-[#ffdad6] text-[#ba1a1a] border-[#ffb4ab]' : ''}
                                             `}>

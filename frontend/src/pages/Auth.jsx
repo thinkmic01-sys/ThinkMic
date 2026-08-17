@@ -316,7 +316,7 @@ export default function Auth() {
 
                 <div className="z-10 mt-12">
                     <div className="flex items-center gap-2 mb-12">
-                        <div className="w-8 h-8 rounded-full bg-[#EAB308] ring-2 ring-[#6bf6ff]/50 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-full bg-[#EAB308] ring-2 ring-[#EAB308]/50 flex items-center justify-center">
                             <span className="material-symbols-outlined text-[#075e51] text-sm font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>mic</span>
                         </div>
                         <h1 className="font-bold text-3xl tracking-tight">ThinkMic</h1>
@@ -324,7 +324,7 @@ export default function Auth() {
 
                     <h2 className="font-bold text-5xl max-w-md mt-12 leading-tight">
                         Think it. <br/>
-                        <span className="text-[#6bf6ff]">Mic it.</span> <br/>
+                        <span className="text-[#EAB308]">Mic it.</span> <br/>
                         Know it.
                     </h2>
                     <p className="text-lg text-[#bfc2ff] mt-6 max-w-md">
@@ -395,7 +395,7 @@ export default function Auth() {
                                 )}
 
                                 {successMsg && (
-                                    <div className="mb-6 bg-[#FEF9C3] text-[#006e73] p-3 rounded-lg text-sm font-semibold flex items-center gap-2 border border-[#b2f0f4]">
+                                    <div className="mb-6 bg-[#FEF9C3] text-[#854d0e] p-3 rounded-lg text-sm font-semibold flex items-center gap-2 border border-[#b2f0f4]">
                                         <span className="material-symbols-outlined text-[18px]">check_circle</span>
                                         {successMsg}
                                     </div>
@@ -538,7 +538,7 @@ export default function Auth() {
                             )}
 
                             {successMsg && (
-                                <div className="mb-6 bg-[#FEF9C3] text-[#006e73] p-3 rounded-lg text-sm font-semibold flex items-center gap-2 border border-[#b2f0f4]">
+                                <div className="mb-6 bg-[#FEF9C3] text-[#854d0e] p-3 rounded-lg text-sm font-semibold flex items-center gap-2 border border-[#b2f0f4]">
                                     <span className="material-symbols-outlined text-[18px]">check_circle</span>
                                     {successMsg}
                                 </div>
@@ -656,7 +656,7 @@ export default function Auth() {
                                     </div>
                                 )}
                                 {forgotSuccess && !forgotError && (
-                                    <div className="mb-4 bg-[#FEF9C3] text-[#006e73] p-3 rounded-lg text-sm font-semibold">
+                                    <div className="mb-4 bg-[#FEF9C3] text-[#854d0e] p-3 rounded-lg text-sm font-semibold">
                                         {forgotSuccess}
                                     </div>
                                 )}

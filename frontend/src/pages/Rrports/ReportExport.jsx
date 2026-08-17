@@ -231,7 +231,7 @@ export default function ReportExport() {
                                 <h1 className="text-[24px] sm:text-[28px] md:text-[36px] font-bold text-[#181c22] mb-3 sm:mb-4 leading-tight tracking-tight">{title || "Untitled Document"}</h1>
                                 <div className="font-mono text-[12px] sm:text-[14px] font-bold text-[#777682] mb-4 sm:mb-5">{subtitle || "Prepared by ThinkMic AI"}</div>
                                 <div className="flex flex-wrap items-center justify-center gap-2">
-                                    <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#FEF9C3] text-[#006e73] border border-[#6bf6ff]/50">
+                                    <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#FEF9C3] text-[#854d0e] border border-[#EAB308]/50">
                                         {TEMPLATE_LABEL[template] || template}
                                     </span>
                                     {sections.execSummary && <span className="text-[10px] sm:text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#eef0f9] text-[#075e51] border border-[#c7c5d3]">Executive Summary</span>}
@@ -321,7 +321,7 @@ export default function ReportExport() {
                             <button
                                 onClick={handleRegenerate}
                                 disabled={report?.status !== 'completed'}
-                                className={`mt-6 w-full text-white text-[13px] sm:text-[14px] font-bold py-2 sm:py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99] ${report?.status === 'completed' ? 'bg-[#EAB308] hover:bg-[#00a8b0] cursor-pointer' : 'bg-[#e0e2eb] text-[#c7c5d3] cursor-not-allowed'}`}
+                                className={`mt-6 w-full text-white text-[13px] sm:text-[14px] font-bold py-2 sm:py-2.5 rounded-lg flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99] ${report?.status === 'completed' ? 'bg-[#EAB308] hover:bg-[#B45309] cursor-pointer' : 'bg-[#e0e2eb] text-[#c7c5d3] cursor-not-allowed'}`}
                             >
                                 <span className={`material-symbols-outlined text-[18px] sm:text-[20px] ${report?.status !== 'completed' ? 'animate-spin' : ''}`}>
                                     {report?.status === 'completed' ? 'refresh' : 'sync'}
@@ -381,7 +381,7 @@ export default function ReportExport() {
                                     </div>
                                 )}
                                 {emailSuccessMsg && (
-                                    <div className="bg-[#FEF9C3] text-[#006e73] p-3 rounded-lg text-[12px] sm:text-[13px] font-semibold flex items-center gap-2 border border-[#b2f0f4]">
+                                    <div className="bg-[#FEF9C3] text-[#854d0e] p-3 rounded-lg text-[12px] sm:text-[13px] font-semibold flex items-center gap-2 border border-[#b2f0f4]">
                                         <span className="material-symbols-outlined text-[16px]">check_circle</span>
                                         {emailSuccessMsg}
                                     </div>

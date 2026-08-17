@@ -12,7 +12,7 @@ const userLocationIcon = L.divIcon({
     html: `
         <div class="flex flex-col items-center" style="transform: translate(-50%, -100%); margin-top: 8px;">
             <span class="bg-white text-[#464651] font-mono font-bold text-[10px] px-2 py-0.5 rounded shadow-sm mb-1 whitespace-nowrap">You are here</span>
-            <div class="w-4 h-4 bg-[#EAB308] rounded-full border-2 border-white" style="box-shadow: 0 0 0 4px rgba(0,194,203,0.2)"></div>
+            <div class="w-4 h-4 bg-[#EAB308] rounded-full border-2 border-white" style="box-shadow: 0 0 0 4px rgba(234, 179, 8,0.2)"></div>
         </div>
     `,
     iconSize: [0, 0]
@@ -27,7 +27,7 @@ const seminarMarkerIcon = (title, distanceLabel) => L.divIcon({
                 <p class="text-[14px] font-bold text-[#075e51] mb-0.5">${title}</p>
                 ${distanceLabel ? `<p class="text-[10px] font-mono text-[#777682] font-semibold tracking-wide">${distanceLabel}</p>` : ''}
             </div>
-            <div class="w-5 h-5 bg-[#61f4fd] rounded-full border-2 border-white shadow-md"></div>
+            <div class="w-5 h-5 bg-[#CA8A04] rounded-full border-2 border-white shadow-md"></div>
         </div>
     `,
     iconSize: [0, 0]
@@ -253,7 +253,7 @@ export default function NearbySeminars() {
                             <div key={seminar._id || idx} className="bg-white border border-[#e0e2eb] rounded-lg p-4 sm:p-5 hover:border-[#075e51] transition-colors cursor-pointer relative shadow-sm">
                                 {idx === 0 && <div className="absolute top-0 left-0 w-1 h-full bg-[#EAB308] rounded-l-lg"></div>}
                                 <div className="flex justify-between items-start mb-2 sm:mb-3 pl-2">
-                                    <span className="bg-[#FEF9C3] text-[#006e73] font-mono text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 uppercase">
+                                    <span className="bg-[#FEF9C3] text-[#854d0e] font-mono text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 uppercase">
                                         <span className="material-symbols-outlined text-[12px] sm:text-[14px]">{seminar.format === 'Live Broadcast' ? 'sensors' : seminar.format === 'In-Person' ? 'location_on' : 'videocam'}</span> {seminar.format}
                                     </span>
                                     {seminar.distanceKm !== null && (
@@ -279,7 +279,7 @@ export default function NearbySeminars() {
                                     <button
                                         onClick={() => handleRegister(seminar)}
                                         disabled={registeredIds.has(seminar._id) || registeringId === seminar._id}
-                                        className={`w-full sm:w-auto px-5 py-2 sm:py-1.5 rounded text-[12px] font-bold transition-colors text-center disabled:opacity-70 disabled:cursor-not-allowed ${registeredIds.has(seminar._id) ? 'bg-[#FEF9C3] border border-[#EAB308] text-[#006e73]' : idx === 0 ? 'bg-[#075e51] text-white hover:bg-[#097969] shadow-sm' : 'bg-white border border-[#075e51] text-[#075e51] hover:bg-[#f1f3fc]'}`}
+                                        className={`w-full sm:w-auto px-5 py-2 sm:py-1.5 rounded text-[12px] font-bold transition-colors text-center disabled:opacity-70 disabled:cursor-not-allowed ${registeredIds.has(seminar._id) ? 'bg-[#FEF9C3] border border-[#EAB308] text-[#854d0e]' : idx === 0 ? 'bg-[#075e51] text-white hover:bg-[#097969] shadow-sm' : 'bg-white border border-[#075e51] text-[#075e51] hover:bg-[#f1f3fc]'}`}
                                     >
                                         {registeredIds.has(seminar._id)
                                             ? 'Registered'
@@ -328,7 +328,7 @@ export default function NearbySeminars() {
                         <div className="flex items-end gap-1 sm:gap-1.5 h-10 sm:h-16 mb-2 sm:mb-4">
                             <div className="flex-1 bg-[#e0e0ff] rounded-sm" style={{ height: '30%' }}></div>
                             <div className="flex-1 bg-[#bfc2ff] rounded-sm" style={{ height: '60%' }}></div>
-                            <div className="flex-1 bg-[#6bf6ff] rounded-sm" style={{ height: '100%' }}></div>
+                            <div className="flex-1 bg-[#EAB308] rounded-sm" style={{ height: '100%' }}></div>
                             <div className="flex-1 bg-[#e0e0ff] rounded-sm" style={{ height: '40%' }}></div>
                             <div className="flex-1 bg-[#e0e0ff] rounded-sm" style={{ height: '20%' }}></div>
                         </div>
@@ -339,7 +339,7 @@ export default function NearbySeminars() {
 
             {/* --- CUSTOM TOAST NOTIFICATION --- */}
             <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#006e73]'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#854d0e]'}`}>
                     <span className="material-symbols-outlined text-[20px]">
                         {toast.type === 'error' ? 'error' : 'check_circle'}
                     </span>

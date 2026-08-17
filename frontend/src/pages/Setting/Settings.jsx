@@ -191,14 +191,14 @@ const NOTIFICATION_META = {
     system: { icon: 'info', color: 'text-[#464651] bg-[#f1f3fc]', title: 'System' },
     update: { icon: 'campaign', color: 'text-[#075e51] bg-[#eef0f9]', title: 'Update' },
     referral_pending: { icon: 'hourglass_empty', color: 'text-[#b45309] bg-[#fff8e1]', title: 'Referral Pending' },
-    referral_approved: { icon: 'check_circle', color: 'text-[#006e73] bg-[#FEF9C3]', title: 'Referral Approved' },
+    referral_approved: { icon: 'check_circle', color: 'text-[#854d0e] bg-[#FEF9C3]', title: 'Referral Approved' },
     referral_rejected: { icon: 'cancel', color: 'text-[#ba1a1a] bg-[#ffdad6]', title: 'Referral Rejected' },
-    seminar_reward_received: { icon: 'redeem', color: 'text-[#006e73] bg-[#FEF9C3]', title: 'Reward Received' },
+    seminar_reward_received: { icon: 'redeem', color: 'text-[#854d0e] bg-[#FEF9C3]', title: 'Reward Received' },
     seminar_coins_reserved: { icon: 'lock_clock', color: 'text-[#075e51] bg-[#eef0f9]', title: 'Coins Reserved' },
-    seminar_coins_refunded: { icon: 'replay', color: 'text-[#006e73] bg-[#FEF9C3]', title: 'Coins Refunded' },
+    seminar_coins_refunded: { icon: 'replay', color: 'text-[#854d0e] bg-[#FEF9C3]', title: 'Coins Refunded' },
     form_published: { icon: 'assignment', color: 'text-[#075e51] bg-[#eef0f9]', title: 'New Form' },
     keyword_seminar_match: { icon: 'bookmark', color: 'text-[#EAB308] bg-[#FEF9C3]', title: 'Followed Topic' },
-    project_unlocked: { icon: 'toll', color: 'text-[#006e73] bg-[#FEF9C3]', title: 'Project Unlocked' }
+    project_unlocked: { icon: 'toll', color: 'text-[#854d0e] bg-[#FEF9C3]', title: 'Project Unlocked' }
 };
 const DEFAULT_NOTIFICATION_META = { icon: 'notifications', color: 'text-[#777682] bg-[#f1f3fc]', title: 'Notification' };
 
@@ -561,7 +561,7 @@ export default function Settings() {
                                 onClick={() => setActiveTab(tabId)}
                                 className={`text-left px-4 py-2 sm:py-2.5 rounded-md text-[13px] sm:text-sm font-semibold transition-colors flex items-center justify-between group whitespace-nowrap shrink-0 md:shrink
                                     ${isActive
-                                    ? 'bg-[#FEF9C3] text-[#006e73] border border-[#EAB308]/30 shadow-sm'
+                                    ? 'bg-[#FEF9C3] text-[#854d0e] border border-[#EAB308]/30 shadow-sm'
                                     : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 border border-transparent'
                                 }`}
                             >
@@ -777,7 +777,7 @@ export default function Settings() {
                                             {isUploadingIdDoc ? 'Uploading...' : 'Upload Scan'}
                                         </button>
                                         {identityData.idDocumentUrl && (
-                                            <a href={identityData.idDocumentUrl} target="_blank" rel="noreferrer" className="text-[#EAB308] hover:text-[#006e73] font-semibold text-[13px] flex items-center gap-1">
+                                            <a href={identityData.idDocumentUrl} target="_blank" rel="noreferrer" className="text-[#EAB308] hover:text-[#854d0e] font-semibold text-[13px] flex items-center gap-1">
                                                 <span className="material-symbols-outlined text-[16px]">visibility</span>
                                                 View current document
                                             </a>
@@ -810,7 +810,7 @@ export default function Settings() {
                                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Certifications</h3>
                                 <button
                                     type="button" onClick={handleAddCertification}
-                                    className="text-[#EAB308] hover:text-[#006e73] font-semibold text-[13px] transition-colors flex items-center gap-1 whitespace-nowrap"
+                                    className="text-[#EAB308] hover:text-[#854d0e] font-semibold text-[13px] transition-colors flex items-center gap-1 whitespace-nowrap"
                                 >
                                     <span className="material-symbols-outlined text-[18px]">add_circle</span>
                                     Add Certification
@@ -871,7 +871,7 @@ export default function Settings() {
                                                             {uploadingCertIndex === index ? 'Uploading...' : 'Upload'}
                                                         </button>
                                                         {cert.certificateUrl && (
-                                                            <a href={cert.certificateUrl} target="_blank" rel="noreferrer" className="text-[#EAB308] hover:text-[#006e73] font-semibold text-[12px]">
+                                                            <a href={cert.certificateUrl} target="_blank" rel="noreferrer" className="text-[#EAB308] hover:text-[#854d0e] font-semibold text-[12px]">
                                                                 View file
                                                             </a>
                                                         )}
@@ -1025,7 +1025,7 @@ export default function Settings() {
                                 <button
                                     onClick={handleMarkAllRead}
                                     disabled={isMarkingRead || !notifications.some(n => !n.isRead)}
-                                    className="text-[#EAB308] hover:text-[#006e73] font-semibold text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                                    className="text-[#EAB308] hover:text-[#854d0e] font-semibold text-[13px] transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
                                 >
                                     Mark all as read
                                 </button>
@@ -1060,7 +1060,7 @@ export default function Settings() {
 
             {/* --- CUSTOM TOAST NOTIFICATION --- */}
             <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#006e73]'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#854d0e]'}`}>
                     <span className="material-symbols-outlined text-[20px]">
                         {toast.type === 'error' ? 'error' : 'check_circle'}
                     </span>

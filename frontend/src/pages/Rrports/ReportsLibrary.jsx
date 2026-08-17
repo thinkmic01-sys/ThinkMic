@@ -7,10 +7,10 @@ const TEMPLATE_LABELS = { academic: 'Standard Academic', executive: 'Executive B
 
 // completed/ready both mean "done" (workers write 'completed'; kept 'ready' too for forward-compat)
 const STATUS_META = {
-    completed: { label: 'Completed', className: 'bg-[#FEF9C3] text-[#006e73] border-[#6bf6ff]/50', icon: 'check_circle', pulse: false },
-    ready: { label: 'Completed', className: 'bg-[#FEF9C3] text-[#006e73] border-[#6bf6ff]/50', icon: 'check_circle', pulse: false },
-    generating: { label: 'Generating', className: 'bg-[#FEF9C3] text-[#00a8b0] border-[#6bf6ff]/50', icon: 'sync', pulse: true },
-    pending: { label: 'Pending', className: 'bg-[#FEF9C3] text-[#00a8b0] border-[#6bf6ff]/50', icon: 'schedule', pulse: true },
+    completed: { label: 'Completed', className: 'bg-[#FEF9C3] text-[#854d0e] border-[#EAB308]/50', icon: 'check_circle', pulse: false },
+    ready: { label: 'Completed', className: 'bg-[#FEF9C3] text-[#854d0e] border-[#EAB308]/50', icon: 'check_circle', pulse: false },
+    generating: { label: 'Generating', className: 'bg-[#FEF9C3] text-[#B45309] border-[#EAB308]/50', icon: 'sync', pulse: true },
+    pending: { label: 'Pending', className: 'bg-[#FEF9C3] text-[#B45309] border-[#EAB308]/50', icon: 'schedule', pulse: true },
     failed: { label: 'Failed', className: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ffb4ab]', icon: 'error', pulse: false }
 };
 
@@ -123,7 +123,7 @@ export default function ReportsLibrary() {
                                     >
                                         <td className="py-3 px-4 sm:py-4 sm:px-6">
                                             <div className="flex items-center gap-3">
-                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${(report.status === 'ready' || report.status === 'completed') ? 'bg-[#FEF9C3] text-[#006e73]' : 'bg-[#f1f3fc] text-[#777682]'}`}>
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${(report.status === 'ready' || report.status === 'completed') ? 'bg-[#FEF9C3] text-[#854d0e]' : 'bg-[#f1f3fc] text-[#777682]'}`}>
                                                     <span className="material-symbols-outlined text-[18px]">description</span>
                                                 </div>
                                                 <span className="font-bold text-[#181c22] text-[13px] sm:text-[14px] group-hover:text-[#075e51] transition-colors line-clamp-1">{report.title}</span>

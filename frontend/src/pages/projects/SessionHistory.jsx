@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import api from '../../services/api';
 
 const STATUS_META = {
-    transcribed: { label: 'Transcribed', className: 'bg-[#FEF9C3] text-[#006e73] border-[#6bf6ff]/50' },
+    transcribed: { label: 'Transcribed', className: 'bg-[#FEF9C3] text-[#854d0e] border-[#EAB308]/50' },
     processing: { label: 'Processing', className: 'bg-[#fff8e1] text-[#b45309] border-[#ffe082]' },
     uploaded: { label: 'Uploaded', className: 'bg-[#f1f3fc] text-[#464651] border-[#e0e2eb]' },
     failed: { label: 'Failed', className: 'bg-[#ffdad6] text-[#ba1a1a] border-[#ffb4ab]' }
@@ -119,7 +119,7 @@ export default function SessionHistory() {
                                         </p>
                                     )}
                                     {session.summarySnippet && (
-                                        <p className="text-[13px] text-[#006e73] leading-relaxed mb-3 line-clamp-2 italic">
+                                        <p className="text-[13px] text-[#854d0e] leading-relaxed mb-3 line-clamp-2 italic">
                                             <span className="font-bold not-italic">Summary: </span>{session.summarySnippet}
                                         </p>
                                     )}
@@ -132,7 +132,7 @@ export default function SessionHistory() {
                                                 </span>
                                             ))}
                                             {session.queries?.map((q, i) => (
-                                                <span key={i} className="inline-flex items-center gap-1 bg-[#FEF9C3] text-[#006e73] text-[11px] font-semibold px-2 py-0.5 rounded-full border border-[#6bf6ff]/50">
+                                                <span key={i} className="inline-flex items-center gap-1 bg-[#FEF9C3] text-[#854d0e] text-[11px] font-semibold px-2 py-0.5 rounded-full border border-[#EAB308]/50">
                                                     <span className="material-symbols-outlined text-[12px]">search</span>{q}
                                                 </span>
                                             ))}

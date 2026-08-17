@@ -10,14 +10,14 @@ const NOTIFICATION_META = {
     system: { icon: 'info', color: 'text-[#464651] bg-[#f1f3fc]', title: 'System' },
     update: { icon: 'auto_awesome', color: 'text-[#EAB308] bg-[#FEF9C3]', title: 'Update' },
     referral_pending: { icon: 'hourglass_empty', color: 'text-[#b45309] bg-[#fff8e1]', title: 'Referral Pending' },
-    referral_approved: { icon: 'check_circle', color: 'text-[#006e73] bg-[#FEF9C3]', title: 'Referral Approved' },
+    referral_approved: { icon: 'check_circle', color: 'text-[#854d0e] bg-[#FEF9C3]', title: 'Referral Approved' },
     referral_rejected: { icon: 'cancel', color: 'text-[#ba1a1a] bg-[#ffdad6]', title: 'Referral Rejected' },
-    seminar_reward_received: { icon: 'redeem', color: 'text-[#006e73] bg-[#FEF9C3]', title: 'Reward Received' },
+    seminar_reward_received: { icon: 'redeem', color: 'text-[#854d0e] bg-[#FEF9C3]', title: 'Reward Received' },
     seminar_coins_reserved: { icon: 'lock_clock', color: 'text-[#075e51] bg-[#eef0f9]', title: 'Coins Reserved' },
-    seminar_coins_refunded: { icon: 'replay', color: 'text-[#006e73] bg-[#FEF9C3]', title: 'Coins Refunded' },
+    seminar_coins_refunded: { icon: 'replay', color: 'text-[#854d0e] bg-[#FEF9C3]', title: 'Coins Refunded' },
     form_published: { icon: 'assignment', color: 'text-[#075e51] bg-[#eef0f9]', title: 'New Form' },
     keyword_seminar_match: { icon: 'bookmark', color: 'text-[#EAB308] bg-[#FEF9C3]', title: 'Followed Topic' },
-    project_unlocked: { icon: 'toll', color: 'text-[#006e73] bg-[#FEF9C3]', title: 'Project Unlocked' }
+    project_unlocked: { icon: 'toll', color: 'text-[#854d0e] bg-[#FEF9C3]', title: 'Project Unlocked' }
 };
 const DEFAULT_NOTIFICATION_META = { icon: 'notifications', color: 'text-[#777682] bg-[#f1f3fc]', title: 'Notification' };
 
@@ -176,9 +176,9 @@ export default function Navbar({ onMenuClick }) {
                 <div className="flex items-center gap-3 sm:gap-4 md:gap-6 shrink-0 pl-2">
 
                     {isAuthenticated && user && (
-                        <div className="hidden md:flex items-center gap-2 bg-[#FEF9C3] px-3 py-1.5 rounded-full border border-[#6bf6ff]/50 cursor-default shrink-0">
-                            <span className="material-symbols-outlined text-[#006e73] text-[16px]">toll</span>
-                            <span className="text-[#006e73] font-mono text-[13px] font-bold">+{user.coins.toLocaleString()}</span>
+                        <div className="hidden md:flex items-center gap-2 bg-[#FEF9C3] px-3 py-1.5 rounded-full border border-[#EAB308]/50 cursor-default shrink-0">
+                            <span className="material-symbols-outlined text-[#854d0e] text-[16px]">toll</span>
+                            <span className="text-[#854d0e] font-mono text-[13px] font-bold">+{user.coins.toLocaleString()}</span>
                         </div>
                     )}
 
@@ -232,7 +232,7 @@ export default function Navbar({ onMenuClick }) {
                                 <span className="text-[14px] font-bold text-[#181c22] leading-none">{user.name}</span>
                                 <span className="text-[12px] text-[#777682] font-semibold">{user.roleName || user.role}</span>
                             </div>
-                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#f1f3fc] overflow-hidden ring-2 ring-[#6bf6ff] ring-offset-1 sm:ring-offset-2 shrink-0">
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#f1f3fc] overflow-hidden ring-2 ring-[#EAB308] ring-offset-1 sm:ring-offset-2 shrink-0">
                                 <img src={user.avatar} alt="User profile" className="w-full h-full object-cover" />
                             </div>
                         </div>

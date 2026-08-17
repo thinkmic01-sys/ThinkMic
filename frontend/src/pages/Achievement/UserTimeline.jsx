@@ -44,9 +44,9 @@ export default function UserTimeline() {
             <style>{`
                 .pulse-ring { animation: pulse 1.8s infinite cubic-bezier(0.4, 0, 0.2, 1); }
                 @keyframes pulse {
-                    0% { box-shadow: 0 0 0 0 rgba(0, 194, 203, 0.4); }
-                    70% { box-shadow: 0 0 0 8px rgba(0, 194, 203, 0); }
-                    100% { box-shadow: 0 0 0 0 rgba(0, 194, 203, 0); }
+                    0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); }
+                    70% { box-shadow: 0 0 0 8px rgba(234, 179, 8, 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
                 }
                 .shadow-card { box-shadow: 0 1px 4px rgba(58,63,143,0.08), 0 4px 16px rgba(58,63,143,0.06); }
                 .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -116,7 +116,7 @@ export default function UserTimeline() {
                                         </div>
 
                                         {event.coinReward && (
-                                            <div className="bg-[#FEF9C3] text-[#006e73] px-3 py-1 rounded-full flex items-center gap-1 w-fit mb-3 border border-[#6bf6ff]/50 shadow-sm">
+                                            <div className="bg-[#FEF9C3] text-[#854d0e] px-3 py-1 rounded-full flex items-center gap-1 w-fit mb-3 border border-[#EAB308]/50 shadow-sm">
                                                 <span className="material-symbols-outlined text-[14px]">toll</span>
                                                 <span className="text-[12px] font-bold">{event.coinReward}</span>
                                             </div>
@@ -192,7 +192,7 @@ export default function UserTimeline() {
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="font-mono text-[11px] sm:text-[12px] font-bold text-[#777682]">Coins Earned</span>
-                                <span className="font-mono text-[13px] sm:text-[14px] font-bold text-[#006e73] bg-[#FEF9C3] px-2 py-0.5 rounded border border-[#6bf6ff]/50">+{stats.weekEarned}</span>
+                                <span className="font-mono text-[13px] sm:text-[14px] font-bold text-[#854d0e] bg-[#FEF9C3] px-2 py-0.5 rounded border border-[#EAB308]/50">+{stats.weekEarned}</span>
                             </div>
                         </div>
                     </div>

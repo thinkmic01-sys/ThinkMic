@@ -155,7 +155,7 @@ export default function SchemaLibrary() {
                                 </td>
                                 <td className="p-3 sm:p-4 whitespace-nowrap">
                                         <span className={`inline-flex px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider
-                                            ${schema.status === 'Active' ? 'bg-[#FEF9C3] text-[#006e73]' : ''}
+                                            ${schema.status === 'Active' ? 'bg-[#FEF9C3] text-[#854d0e]' : ''}
                                             ${schema.status === 'Draft' ? 'bg-[#ffdad6] text-[#93000a]' : ''}
                                             ${schema.status === 'Archived' ? 'bg-[#e0e2eb] text-[#464651]' : ''}
                                         `}>
@@ -231,7 +231,7 @@ export default function SchemaLibrary() {
                                             </div>
                                             <div className="flex items-center gap-2 shrink-0">
                                                 <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider
-                                                    ${sub.status === 'submitted' ? 'bg-[#FEF9C3] text-[#006e73]' : 'bg-[#ffdad6] text-[#93000a]'}`}>
+                                                    ${sub.status === 'submitted' ? 'bg-[#FEF9C3] text-[#854d0e]' : 'bg-[#ffdad6] text-[#93000a]'}`}>
                                                     {sub.status}
                                                 </span>
                                                 <span className="material-symbols-outlined text-[18px] text-[#777682]">

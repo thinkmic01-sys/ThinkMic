@@ -88,9 +88,9 @@ export default function Achievements() {
 
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full lg:w-auto">
                             {/* Coin Badge */}
-                            <div className={`w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center border-4 shadow-[0_0_15px_rgba(0,194,203,0.4)] animate-pulse relative shrink-0 ${stats.levelInfo.isMaxLevel ? 'bg-[#3a2f00] border-[#FFD700]' : 'bg-[#064D43] border-[#EAB308]'}`}>
+                            <div className={`w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center border-4 shadow-[0_0_15px_rgba(234, 179, 8,0.4)] animate-pulse relative shrink-0 ${stats.levelInfo.isMaxLevel ? 'bg-[#3a2f00] border-[#FFD700]' : 'bg-[#064D43] border-[#EAB308]'}`}>
                                 <span className={`material-symbols-outlined text-[32px] sm:text-[40px] md:text-[48px] ${stats.levelInfo.isMaxLevel ? 'text-[#FFD700]' : 'text-[#EAB308]'}`} style={{ fontVariationSettings: "'FILL' 1" }}>{stats.levelInfo.isMaxLevel ? 'military_tech' : 'toll'}</span>
-                                <div className={`absolute -bottom-2 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] uppercase tracking-wider font-bold border whitespace-nowrap ${stats.levelInfo.isMaxLevel ? 'bg-[#fff8e1] text-[#8a6d00] border-[#FFD700]' : 'bg-[#FEF9C3] text-[#006e73] border-[#EAB308]'}`}>
+                                <div className={`absolute -bottom-2 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] uppercase tracking-wider font-bold border whitespace-nowrap ${stats.levelInfo.isMaxLevel ? 'bg-[#fff8e1] text-[#8a6d00] border-[#FFD700]' : 'bg-[#FEF9C3] text-[#854d0e] border-[#EAB308]'}`}>
                                     {stats.levelInfo.isMaxLevel ? 'MAX' : `Lvl ${stats.levelInfo.currentLevel}`}
                                 </div>
                             </div>
@@ -204,7 +204,7 @@ export default function Achievements() {
                                                     <span className="material-symbols-outlined text-[16px] sm:text-[18px] text-[#c7c5d3] shrink-0">{tx.icon}</span>
                                                     <span className="truncate">{tx.action}</span>
                                                 </td>
-                                                <td className={`py-3 sm:py-4 px-3 sm:px-4 text-right font-bold font-mono text-[12px] sm:text-[13px] whitespace-nowrap ${tx.amount > 0 ? 'text-[#006e73]' : 'text-[#ba1a1a]'}`}>
+                                                <td className={`py-3 sm:py-4 px-3 sm:px-4 text-right font-bold font-mono text-[12px] sm:text-[13px] whitespace-nowrap ${tx.amount > 0 ? 'text-[#854d0e]' : 'text-[#ba1a1a]'}`}>
                                                     {tx.amount > 0 ? `+${tx.amount}` : tx.amount}
                                                 </td>
                                             </tr>
@@ -232,7 +232,7 @@ export default function Achievements() {
                                                     <img src={u.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName)}&background=222777&color=fff`} className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border border-[#c7c5d3] object-cover" alt="Avatar"/>
                                                     <span className="truncate">{u.fullName} {u._id === user?.id && <span className="ml-2 text-[10px] bg-[#EAB308] text-white px-2 py-0.5 rounded-full">You</span>}</span>
                                                 </td>
-                                                <td className="py-3 sm:py-4 px-3 sm:px-4 text-right font-bold font-mono text-[12px] sm:text-[13px] whitespace-nowrap text-[#006e73]">
+                                                <td className="py-3 sm:py-4 px-3 sm:px-4 text-right font-bold font-mono text-[12px] sm:text-[13px] whitespace-nowrap text-[#854d0e]">
                                                     {u.lifetimeCoins?.toLocaleString() || 0}
                                                 </td>
                                             </tr>

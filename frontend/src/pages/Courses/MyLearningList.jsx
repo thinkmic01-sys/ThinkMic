@@ -123,7 +123,7 @@ export default function MyLearningList() {
                                     key={keyword._id}
                                     onClick={() => toggleKeyword(keyword._id)}
                                     disabled={savingId === keyword._id}
-                                    className="inline-flex items-center gap-2 bg-[#FEF9C3] text-[#006e73] border border-[#6bf6ff]/50 rounded-full pl-3.5 pr-2 py-1.5 text-[13px] font-bold hover:bg-[#6bf6ff]/20 transition-colors disabled:opacity-60"
+                                    className="inline-flex items-center gap-2 bg-[#FEF9C3] text-[#854d0e] border border-[#EAB308]/50 rounded-full pl-3.5 pr-2 py-1.5 text-[13px] font-bold hover:bg-[#EAB308]/20 transition-colors disabled:opacity-60"
                                 >
                                     {keyword.text}
                                     <span className="material-symbols-outlined text-[15px]">{savingId === keyword._id ? 'hourglass_empty' : 'close'}</span>
@@ -186,7 +186,7 @@ export default function MyLearningList() {
                                         disabled={unlockingId === project._id}
                                         className={`shrink-0 inline-flex items-center gap-1.5 text-[12px] font-bold px-3.5 py-2 rounded-full transition-colors disabled:opacity-60 ${
                                             project.hasUnlocked
-                                                ? 'bg-[#FEF9C3] text-[#006e73] border border-[#6bf6ff]/50 hover:bg-[#d0f6f8]'
+                                                ? 'bg-[#FEF9C3] text-[#854d0e] border border-[#EAB308]/50 hover:bg-[#d0f6f8]'
                                                 : 'bg-[#075e51] text-white hover:bg-[#097969]'
                                         }`}
                                     >

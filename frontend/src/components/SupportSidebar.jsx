@@ -282,7 +282,7 @@ export default function SupportSidebar({ isOpen, onClose }) {
                                                             )}
                                                         </div>
                                                         <span className="text-[10px] font-bold text-[#464651]">{msg.isBot ? 'ThinkMic AI' : (msg.sender?.fullName || 'Support')}</span>
-                                                        {msg.isBot && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#FEF9C3] text-[#006e73]">AI · Instant</span>}
+                                                        {msg.isBot && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#FEF9C3] text-[#854d0e]">AI · Instant</span>}
                                                         {staffRole && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#eef0f9] text-[#075e51]">{staffRole}</span>}
                                                     </div>
                                                 )}
@@ -305,7 +305,7 @@ export default function SupportSidebar({ isOpen, onClose }) {
                                 {/* Resolution & Satisfaction Rating */}
                                 {ticket && ticket.status === 'closed' && (
                                     <div className="bg-white border border-[#e0e2eb] rounded-xl p-4 sm:p-5 shadow-sm flex flex-col items-center text-center gap-3">
-                                        <span className="material-symbols-outlined text-[#006e73] text-[32px]">check_circle</span>
+                                        <span className="material-symbols-outlined text-[#854d0e] text-[32px]">check_circle</span>
                                         <div>
                                             <p className="font-bold text-[#181c22] text-[14px]">Conversation Resolved</p>
                                             <p className="text-[12px] text-[#777682] mt-1">

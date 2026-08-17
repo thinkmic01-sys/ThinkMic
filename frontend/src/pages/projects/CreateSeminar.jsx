@@ -517,14 +517,14 @@ export default function CreateSeminar() {
                                         onClick={() => setFormat(opt.id)}
                                         className={`border rounded-lg p-4 sm:p-5 flex sm:flex-col items-center sm:justify-center gap-3 cursor-pointer transition-all
                                             ${format === opt.id
-                                            ? 'border-2 border-[#EAB308] bg-[#FEF9C3] text-[#006e73]'
+                                            ? 'border-2 border-[#EAB308] bg-[#FEF9C3] text-[#854d0e]'
                                             : 'border-[#c7c5d3] bg-white text-[#777682] hover:border-[#075e51] hover:text-[#075e51]'
                                         }`}
                                     >
                                         <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0 ${format === opt.id ? 'bg-[#EAB308]/20' : 'bg-[#f1f3fc]'}`}>
                                             <span className="material-symbols-outlined text-[20px] sm:text-[24px]">{opt.icon}</span>
                                         </div>
-                                        <span className={`text-[13px] font-bold ${format === opt.id ? 'text-[#006e73]' : 'text-[#181c22]'}`}>{opt.id}</span>
+                                        <span className={`text-[13px] font-bold ${format === opt.id ? 'text-[#854d0e]' : 'text-[#181c22]'}`}>{opt.id}</span>
                                     </div>
                                 ))}
                             </div>
@@ -601,8 +601,8 @@ export default function CreateSeminar() {
                                 {!imageUrl && <span className="material-symbols-outlined text-[48px] sm:text-[64px] text-white/10">biotech</span>}
 
                                 {format === 'Live Broadcast' && (
-                                    <div className="absolute top-3 right-3 bg-[#00696e] text-[#6bf6ff] text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded flex items-center gap-1 border border-[#EAB308]">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-[#6bf6ff] animate-pulse"></span> LIVE
+                                    <div className="absolute top-3 right-3 bg-[#00696e] text-[#EAB308] text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded flex items-center gap-1 border border-[#EAB308]">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[#EAB308] animate-pulse"></span> LIVE
                                     </div>
                                 )}
                             </div>
@@ -631,7 +631,7 @@ export default function CreateSeminar() {
                                         <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#075e51] text-white flex items-center justify-center text-[10px] font-bold shrink-0">{userInitials}</div>
                                         <span className="text-[12px] sm:text-[13px] font-semibold text-[#464651] truncate">{userName}</span>
                                     </div>
-                                    <div className="bg-[#FEF9C3] text-[#006e73] px-2 py-1 rounded-full flex items-center gap-1 border border-[#6bf6ff]/50 shrink-0">
+                                    <div className="bg-[#FEF9C3] text-[#854d0e] px-2 py-1 rounded-full flex items-center gap-1 border border-[#EAB308]/50 shrink-0">
                                         <span className="material-symbols-outlined text-[14px]">toll</span>
                                         <span className="text-[11px] sm:text-[12px] font-bold">+50</span>
                                     </div>
@@ -658,7 +658,7 @@ export default function CreateSeminar() {
 
             {/* --- CUSTOM TOAST NOTIFICATION --- */}
             <div className={`fixed bottom-24 right-6 z-50 transition-all duration-300 transform ${toast.show ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'}`}>
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#006e73]'}`}>
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${toast.type === 'error' ? 'bg-[#ffdad6] border-[#ba1a1a] text-[#ba1a1a]' : 'bg-[#FEF9C3] border-[#EAB308] text-[#854d0e]'}`}>
                     <span className="material-symbols-outlined text-[20px]">
                         {toast.type === 'error' ? 'error' : 'check_circle'}
                     </span>

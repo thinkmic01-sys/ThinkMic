@@ -65,7 +65,7 @@ export default function SessionHistory() {
                 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c7c5d3; border-radius: 10px; }
             `}</style>
 
-            <div className="w-full max-w-4xl mx-auto p-4 sm:p-6 md:p-8 pb-12">
+            <div className="w-full p-4 sm:p-6 md:p-8 pb-12">
                 <header className="mb-6 sm:mb-8">
                     <h1 className="text-[28px] sm:text-[32px] md:text-[40px] font-bold text-[#075e51] leading-[1.2] tracking-tight">Session History</h1>
                     <p className="text-[14px] sm:text-[16px] text-[#464651] mt-1 sm:mt-2 max-w-2xl">Every past recording, its transcript, summary, and the research queries it generated - pick one up where you left off.</p>

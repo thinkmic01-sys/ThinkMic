@@ -94,7 +94,7 @@ export default function Dashboard() {
                 .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c7c5d3; border-radius: 10px; }
             `}</style>
 
-            <div className="flex flex-col gap-8 w-full p-6 md:p-8 max-w-[1280px] mx-auto pb-12">
+            <div className="flex flex-col gap-8 w-full p-6 md:p-8 pb-12">
 
                 {/* Welcome Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end">

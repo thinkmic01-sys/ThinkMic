@@ -3,7 +3,7 @@ const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const {
     listProjects, createProject, getProject, updateProject, deleteProject,
-    shareProject, unshareProject, unlockProject, getSharedProjectsForMe
+    shareProject, unshareProject, unlockProject, getSharedProjectsForMe, listSharedProjectsLibrary
 } = require('../controllers/projectsController');
 
 router.use(protect);
@@ -11,8 +11,9 @@ router.use(protect);
 router.get('/', listProjects);
 router.post('/', createProject);
 
-// Shared-projects listing (for My Learning List) - must come before the /:id catch-all below
+// Shared-projects listings - must come before the /:id catch-all below
 router.get('/shared', getSharedProjectsForMe);
+router.get('/library', listSharedProjectsLibrary);
 
 router.get('/:id', getProject);
 router.put('/:id', updateProject);

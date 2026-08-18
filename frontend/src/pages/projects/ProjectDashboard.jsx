@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import api from '../../services/api';
 import ProjectNotes from './ProjectNotes';
+import RequestKeywordModal from '../../components/RequestKeywordModal';
 
 export default function ProjectDashboard() {
     const { id } = useParams();
@@ -24,6 +25,15 @@ export default function ProjectDashboard() {
     const [sharePriceInput, setSharePriceInput] = useState('');
     const [isSharing, setIsSharing] = useState(false);
     const [shareError, setShareError] = useState('');
+
+    // Optional keyword tagging (Main Topic -> Sub Topic -> Keyword, same hierarchy admins
+    // add keywords under) - narrows which keywords are shown to pick from, but the actual
+    // "tagged" set can include keywords picked across more than one topic.
+    const [allKeywords, setAllKeywords] = useState([]);
+    const [shareMainTopic, setShareMainTopic] = useState('All Topics');
+    const [shareSubTopic, setShareSubTopic] = useState('All Sub Topics');
+    const [selectedShareKeywordIds, setSelectedShareKeywordIds] = useState([]);
+    const [isRequestKeywordOpen, setIsRequestKeywordOpen] = useState(false);
 
     // Unlocking (non-owner, locked view) - pay the project's coin price for full access
     const [isUnlocking, setIsUnlocking] = useState(false);
@@ -47,8 +57,32 @@ export default function ProjectDashboard() {
     useEffect(() => {
         if (!token) return;
         fetchProject();
+        api.get('/keywords').then((res) => setAllKeywords(res.data.keywords || [])).catch(() => {});
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token, id]);
+
+    const mainTopicOptions = useMemo(() => (
+        [...new Set(allKeywords.map((k) => k.mainTopic))].sort((a, b) => a.localeCompare(b))
+    ), [allKeywords]);
+
+    const subTopicOptions = useMemo(() => (
+        [...new Set(
+            allKeywords
+                .filter((k) => shareMainTopic === 'All Topics' || k.mainTopic === shareMainTopic)
+                .map((k) => k.subTopic)
+                .filter(Boolean)
+        )].sort((a, b) => a.localeCompare(b))
+    ), [allKeywords, shareMainTopic]);
+
+    const shareKeywordOptions = useMemo(() => (
+        allKeywords
+            .filter((k) => shareMainTopic === 'All Topics' || k.mainTopic === shareMainTopic)
+            .filter((k) => shareSubTopic === 'All Sub Topics' || k.subTopic === shareSubTopic)
+    ), [allKeywords, shareMainTopic, shareSubTopic]);
+
+    const toggleShareKeyword = (keywordId) => {
+        setSelectedShareKeywordIds((prev) => prev.includes(keywordId) ? prev.filter((k) => k !== keywordId) : [...prev, keywordId]);
+    };
 
     const handleSaveNotes = async () => {
         setIsSavingNotes(true);
@@ -64,6 +98,9 @@ export default function ProjectDashboard() {
 
     const openShareModal = () => {
         setSharePriceInput(project.sharePriceCoins ? String(project.sharePriceCoins) : '');
+        setSelectedShareKeywordIds((project.keywords || []).map((k) => k._id));
+        setShareMainTopic('All Topics');
+        setShareSubTopic('All Sub Topics');
         setShareError('');
         setIsShareModalOpen(true);
     };
@@ -77,8 +114,8 @@ export default function ProjectDashboard() {
         setIsSharing(true);
         setShareError('');
         try {
-            const res = await api.post(`/projects/${id}/share`, { priceCoins: price });
-            setProject((prev) => ({ ...prev, isShared: true, sharePriceCoins: res.data.project.sharePriceCoins }));
+            const res = await api.post(`/projects/${id}/share`, { priceCoins: price, keywords: selectedShareKeywordIds });
+            setProject((prev) => ({ ...prev, isShared: true, sharePriceCoins: res.data.project.sharePriceCoins, keywords: res.data.project.keywords }));
             setIsShareModalOpen(false);
         } catch (err) {
             setShareError(err.response?.data?.message || 'Failed to share project.');
@@ -305,17 +342,17 @@ export default function ProjectDashboard() {
 
             {isShareModalOpen && (
                 <div className="fixed inset-0 bg-[#181c22]/50 flex items-center justify-center z-[100] backdrop-blur-sm px-4">
-                    <div className="bg-white rounded-xl shadow-lg w-full max-w-sm overflow-hidden">
-                        <div className="px-6 py-5 border-b border-[#e0e2eb] flex items-center justify-between">
+                    <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden max-h-[90vh] flex flex-col">
+                        <div className="px-6 py-5 border-b border-[#e0e2eb] flex items-center justify-between shrink-0">
                             <h3 className="text-[16px] font-bold text-[#181c22]">Share My Project</h3>
                             <button type="button" onClick={() => setIsShareModalOpen(false)} className="text-[#777682] hover:text-[#181c22]">
                                 <span className="material-symbols-outlined">close</span>
                             </button>
                         </div>
-                        <div className="px-6 py-5 space-y-3">
+                        <div className="px-6 py-5 space-y-4 overflow-y-auto">
                             <p className="text-[13px] text-[#464651]">
                                 {project.isShared
-                                    ? 'This project is visible to users following one of its keywords on My Learning List. Update the price, or stop sharing.'
+                                    ? 'This project is visible to users following one of its keywords on My Learning List. Update the price/keywords, or stop sharing.'
                                     : 'Set a coin price - users following one of this project\'s keywords will see it on My Learning List and can pay to unlock full access.'}
                             </p>
                             <div>
@@ -329,6 +366,69 @@ export default function ProjectDashboard() {
                                     placeholder="e.g. 50"
                                 />
                             </div>
+
+                            <div>
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className="block text-[13px] font-bold text-[#181c22]">Keywords <span className="font-normal text-[#777682]">(optional)</span></label>
+                                    <button type="button" onClick={() => setIsRequestKeywordOpen(true)} className="text-[11px] font-bold text-[#075e51] hover:underline">
+                                        Can't find your topic? Request one
+                                    </button>
+                                </div>
+                                <p className="text-[11px] text-[#777682] mb-2">Users following one of these keywords will see this project and be notified.</p>
+
+                                {allKeywords.length > 0 && (
+                                    <div className="flex flex-col sm:flex-row gap-2 mb-2.5">
+                                        <div className="relative flex-1">
+                                            <select
+                                                value={shareMainTopic}
+                                                onChange={(e) => { setShareMainTopic(e.target.value); setShareSubTopic('All Sub Topics'); }}
+                                                className="w-full appearance-none border border-[#c7c5d3] rounded-md py-2 px-3 pr-8 text-[12px] font-semibold text-[#181c22] outline-none focus:border-[#075e51] cursor-pointer"
+                                            >
+                                                <option>All Topics</option>
+                                                {mainTopicOptions.map((t) => <option key={t} value={t}>{t}</option>)}
+                                            </select>
+                                            <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none text-[16px]">expand_more</span>
+                                        </div>
+                                        <div className="relative flex-1">
+                                            <select
+                                                value={shareSubTopic}
+                                                onChange={(e) => setShareSubTopic(e.target.value)}
+                                                disabled={subTopicOptions.length === 0}
+                                                className="w-full appearance-none border border-[#c7c5d3] rounded-md py-2 px-3 pr-8 text-[12px] font-semibold text-[#181c22] outline-none focus:border-[#075e51] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <option>All Sub Topics</option>
+                                                {subTopicOptions.map((t) => <option key={t} value={t}>{t}</option>)}
+                                            </select>
+                                            <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none text-[16px]">expand_more</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {allKeywords.length === 0 ? (
+                                    <p className="text-[12px] text-[#c7c5d3] italic">No keywords exist yet - request one above, or share without tagging.</p>
+                                ) : (
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {shareKeywordOptions.map((kw) => {
+                                            const isSelected = selectedShareKeywordIds.includes(kw._id);
+                                            return (
+                                                <button
+                                                    key={kw._id}
+                                                    type="button"
+                                                    onClick={() => toggleShareKeyword(kw._id)}
+                                                    className={`text-[12px] font-bold px-3 py-1.5 rounded-full border transition-colors ${
+                                                        isSelected
+                                                            ? 'bg-[#FEF9C3] text-[#854d0e] border-[#EAB308]/50'
+                                                            : 'bg-[#F4F9F8] text-[#464651] border-[#e0e2eb] hover:border-[#c7c5d3]'
+                                                    }`}
+                                                >
+                                                    {kw.text}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+
                             {shareError && <p className="text-[12px] text-[#ba1a1a] font-semibold">{shareError}</p>}
                         </div>
                         <div className="px-6 py-4 bg-[#F4F9F8] flex justify-end gap-3 border-t border-[#e0e2eb]">
@@ -354,6 +454,8 @@ export default function ProjectDashboard() {
                     </div>
                 </div>
             )}
+
+            <RequestKeywordModal isOpen={isRequestKeywordOpen} onClose={() => setIsRequestKeywordOpen(false)} contextLabel={project?.name ? `for project "${project.name}"` : 'for a shared project'} />
         </div>
     );
 }

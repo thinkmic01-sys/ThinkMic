@@ -21,6 +21,7 @@ import RolesManagement from "./pages/Management/RolesManagement.jsx";
 import KeywordsManagement from "./pages/Management/KeywordsManagement.jsx";
 import PromptSettings from "./pages/Management/PromptSettings.jsx";
 import Collaboration from "./pages/Collaboration/Collaboration.jsx";
+import Library from "./pages/Library/Library.jsx";
 import ResearchResults from "./pages/projects/ResearchResults.jsx";
 import SchemaBuilder from "./pages/Management/SchemaBuilder.jsx";
 import SchemaLibrary from "./pages/Management/SchemaLibrary.jsx";
@@ -146,6 +147,7 @@ function AppRoutes() {
                             <Route path="courses/broadcast/:seminarId" element={<SeminarBroadcast />} />
 
                             <Route path="forms" element={<Collaboration />} />
+                            <Route path="library" element={<Library />} />
 
                             <Route path="achievements" element={<Achievements />} />
                             <Route path="achievements/timeline" element={<UserTimeline />} />

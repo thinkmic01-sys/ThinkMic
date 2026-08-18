@@ -10,12 +10,7 @@ export default function ProjectsList() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newProjectName, setNewProjectName] = useState('');
     const [newProjectDesc, setNewProjectDesc] = useState('');
-    // Required (whenever at least one exists to pick from) - same admin-curated keywords as
-    // My Learning List, tagging a project is what lets it later be shared and found by other
-    // users following the same keyword.
-    const [availableKeywords, setAvailableKeywords] = useState([]);
-    const [selectedKeywordIds, setSelectedKeywordIds] = useState([]);
-    const [keywordError, setKeywordError] = useState('');
+    const [createError, setCreateError] = useState('');
 
     useEffect(() => {
         if (!token) return;
@@ -28,33 +23,22 @@ export default function ProjectsList() {
             }
         };
         fetchProjects();
-        api.get('/keywords').then((res) => setAvailableKeywords(res.data.keywords || [])).catch(() => {});
     }, [token]);
-
-    const toggleKeyword = (keywordId) => {
-        setSelectedKeywordIds((prev) => prev.includes(keywordId) ? prev.filter((id) => id !== keywordId) : [...prev, keywordId]);
-        setKeywordError('');
-    };
 
     const handleCreateProject = async (e) => {
         e.preventDefault();
-        // Can't require picking a keyword that doesn't exist yet - only enforced once an
-        // admin has actually added at least one (mirrors the same exception the backend checks).
-        if (availableKeywords.length > 0 && selectedKeywordIds.length === 0) {
-            setKeywordError('Select at least one keyword.');
-            return;
-        }
+        // Keywords are no longer picked here - they're optional and only relevant once this
+        // project is shared (see ProjectDashboard.jsx's "Share My Project").
         try {
-            const res = await api.post('/projects', { name: newProjectName, description: newProjectDesc, keywords: selectedKeywordIds });
+            const res = await api.post('/projects', { name: newProjectName, description: newProjectDesc });
             setProjects([res.data.project, ...projects]);
             setIsCreateModalOpen(false);
             setNewProjectName('');
             setNewProjectDesc('');
-            setSelectedKeywordIds([]);
-            setKeywordError('');
+            setCreateError('');
             navigate(`/app/projects/${res.data.project._id}`);
         } catch (err) {
-            setKeywordError(err.response?.data?.message || '');
+            setCreateError(err.response?.data?.message || 'Failed to create project.');
             console.error("Failed to create project", err);
         }
     };
@@ -155,32 +139,7 @@ export default function ProjectsList() {
                                     placeholder="Brief details about this initiative..."
                                 />
                             </div>
-                            {availableKeywords.length > 0 && (
-                                <div>
-                                    <label className="block text-[13px] font-bold text-[#181c22] mb-1.5">Keywords</label>
-                                    <p className="text-[11px] text-[#777682] mb-2">Required - lets you later share this project with users following the same keyword on My Learning List.</p>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {availableKeywords.map((kw) => {
-                                            const isSelected = selectedKeywordIds.includes(kw._id);
-                                            return (
-                                                <button
-                                                    key={kw._id}
-                                                    type="button"
-                                                    onClick={() => toggleKeyword(kw._id)}
-                                                    className={`text-[12px] font-bold px-3 py-1.5 rounded-full border transition-colors ${
-                                                        isSelected
-                                                            ? 'bg-[#FEF9C3] text-[#854d0e] border-[#EAB308]/50'
-                                                            : 'bg-[#F4F9F8] text-[#464651] border-[#e0e2eb] hover:border-[#c7c5d3]'
-                                                    }`}
-                                                >
-                                                    {kw.text}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                    {keywordError && <p className="text-[11px] text-[#ba1a1a] font-semibold mt-2">{keywordError}</p>}
-                                </div>
-                            )}
+                            {createError && <p className="text-[11px] text-[#ba1a1a] font-semibold">{createError}</p>}
                         </div>
                         <div className="px-6 py-4 bg-[#F4F9F8] flex justify-end gap-3 border-t border-[#e0e2eb]">
                             <button

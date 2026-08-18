@@ -93,6 +93,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                         <NavLink to="/app/research" icon="workspaces" label="Projects" onNavigate={() => setIsOpen(false)} />
                         <NavLink to="/app/projects" icon="folder_open" label="Project Hub" onNavigate={() => setIsOpen(false)} />
                         <NavLink to="/app/projects/history" icon="history" label="History" onNavigate={() => setIsOpen(false)} />
+                        <NavLink to="/app/library" icon="auto_stories" label="Library" onNavigate={() => setIsOpen(false)} />
                         <NavLink to="/app/reports" icon="summarize" label="Reports" onNavigate={() => setIsOpen(false)} />
                         <NavLink to="/app/courses" icon="school" label="Seminars" onNavigate={() => setIsOpen(false)} />
                         <NavLink to="/app/courses/my-learning" icon="bookmark" label="My Learning List" onNavigate={() => setIsOpen(false)} />

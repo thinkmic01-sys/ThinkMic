@@ -52,15 +52,8 @@ exports.createProject = async (req, res) => {
     try {
         const { name, description, keywords } = req.body;
 
-        // Required, but only enforceable once at least one keyword actually exists to pick
-        // from - mirrors the same exception ProjectsList.jsx's client-side check makes.
-        if (!Array.isArray(keywords) || keywords.length === 0) {
-            const anyKeywordExists = await Keyword.exists({});
-            if (anyKeywordExists) {
-                return res.status(400).json({ message: 'Select at least one keyword.' });
-            }
-        }
-
+        // Keywords are entirely optional at creation time - a project only needs them once
+        // its owner decides to share it (see shareProject below), not before.
         const project = new Project({
             userId: req.user._id,
             name: name || 'Untitled Project',
@@ -121,7 +114,40 @@ exports.getProject = async (req, res) => {
     }
 };
 
-// @desc    Turn on sharing for a project the caller owns, at a coin price they set
+// Notifies everyone following one of this project's keywords (My Learning List) that it's
+// now shared - skips the owner. Mirrors seminarsController.notifyKeywordFollowers. Only
+// called when the project actually has at least one keyword attached; best-effort (a
+// failure here should never fail the share request itself).
+async function notifyProjectKeywordFollowers(project) {
+    if (!project.keywords || project.keywords.length === 0) return;
+    try {
+        const followers = await User.find({
+            learningKeywords: { $in: project.keywords },
+            _id: { $ne: project.userId }
+        }).select('_id');
+        if (followers.length === 0) return;
+
+        const link = '/app/library';
+        const message = `A new project "${project.name}" was shared in a topic you're following!`;
+        const notifDocs = await Notification.insertMany(followers.map((f) => ({
+            userId: f._id,
+            type: 'keyword_project_match',
+            message,
+            link
+        })));
+
+        const io = socket.getIO();
+        followers.forEach((f, i) => {
+            io.to(f._id.toString()).emit('new_notification', { notification: notifDocs[i] });
+        });
+    } catch (error) {
+        console.error('notifyProjectKeywordFollowers error:', error.message);
+    }
+}
+
+// @desc    Turn on sharing for a project the caller owns, at a coin price they set, with an
+//          optional set of keywords (Main Topic -> Sub Topic -> Keyword, same hierarchy as
+//          everywhere else) - notifies anyone following one of those keywords.
 // @route   POST /api/v1/projects/:id/share
 exports.shareProject = async (req, res) => {
     try {
@@ -130,12 +156,24 @@ exports.shareProject = async (req, res) => {
             return res.status(400).json({ message: 'priceCoins must be a positive number.' });
         }
 
+        const keywords = Array.isArray(req.body.keywords) ? req.body.keywords : undefined;
+        const wasShared = await Project.exists({ _id: req.params.id, userId: req.user._id, isShared: true });
+
+        const update = { isShared: true, sharePriceCoins: Math.round(priceCoins), sharedAt: new Date() };
+        if (keywords !== undefined) update.keywords = keywords;
+
         const project = await Project.findOneAndUpdate(
             { _id: req.params.id, userId: req.user._id },
-            { $set: { isShared: true, sharePriceCoins: Math.round(priceCoins), sharedAt: new Date() } },
+            { $set: update },
             { new: true }
-        ).populate('keywords', 'text');
+        ).populate('keywords', 'text mainTopic subTopic');
         if (!project) return res.status(404).json({ message: 'Project not found' });
+
+        // Only notify on the transition into being shared (or when it wasn't shared before) -
+        // re-saving a price/keyword update on an already-shared project doesn't re-notify.
+        if (!wasShared) {
+            notifyProjectKeywordFollowers(project).catch(() => {});
+        }
 
         res.status(200).json({ project });
     } catch (error) {
@@ -190,6 +228,54 @@ exports.getSharedProjectsForMe = async (req, res) => {
             sharePriceCoins: p.sharePriceCoins,
             ownerName: p.userId.fullName,
             hasUnlocked: p.unlockedBy.some((id) => id.toString() === req.user._id.toString())
+        }));
+
+        res.status(200).json({ projects: shaped });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+// @desc    The full Library catalog of every shared project (not just ones matching the
+//          caller's followed keywords, unlike getSharedProjectsForMe) - searchable by name
+//          and filterable by the same Main Topic -> Sub Topic -> Keyword hierarchy used
+//          everywhere else. Includes the caller's own shared projects too, so Library is a
+//          complete browse of everything that's been shared, not a personalized feed.
+// @route   GET /api/v1/projects/library?search=&mainTopic=&subTopic=&keyword=
+exports.listSharedProjectsLibrary = async (req, res) => {
+    try {
+        const { search, mainTopic, subTopic, keyword } = req.query;
+        const query = { isShared: true };
+
+        if (search && search.trim()) {
+            query.name = { $regex: search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
+        }
+
+        if (keyword) {
+            query.keywords = keyword;
+        } else if (mainTopic || subTopic) {
+            const keywordQuery = {};
+            if (mainTopic) keywordQuery.mainTopic = mainTopic;
+            if (subTopic) keywordQuery.subTopic = subTopic;
+            const matchingKeywordIds = await Keyword.find(keywordQuery).select('_id');
+            query.keywords = { $in: matchingKeywordIds.map((k) => k._id) };
+        }
+
+        const projects = await Project.find(query)
+            .select('name description keywords sharePriceCoins sharedAt userId unlockedBy')
+            .populate('keywords', 'text mainTopic subTopic')
+            .populate('userId', 'fullName')
+            .sort({ sharedAt: -1 });
+
+        const shaped = projects.map((p) => ({
+            _id: p._id,
+            name: p.name,
+            description: p.description,
+            keywords: p.keywords,
+            sharePriceCoins: p.sharePriceCoins,
+            ownerName: p.userId.fullName,
+            isOwn: p.userId._id.toString() === req.user._id.toString(),
+            hasUnlocked: p.userId._id.toString() === req.user._id.toString() || p.unlockedBy.some((id) => id.toString() === req.user._id.toString())
         }));
 
         res.status(200).json({ projects: shaped });

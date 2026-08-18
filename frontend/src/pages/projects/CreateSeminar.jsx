@@ -5,6 +5,7 @@ import api from '../../services/api';
 import { MapContainer, TileLayer, Marker, useMapEvents, ZoomControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import RequestKeywordModal from '../../components/RequestKeywordModal';
 
 // Use the beautiful custom marker from NearbySeminars
 const customMarkerIcon = L.divIcon({
@@ -143,6 +144,7 @@ export default function CreateSeminar() {
     const [allKeywords, setAllKeywords] = useState([]);
     const [categoryMainTopic, setCategoryMainTopic] = useState('');
     const [categorySubTopic, setCategorySubTopic] = useState('');
+    const [isRequestKeywordOpen, setIsRequestKeywordOpen] = useState(false);
     const [tags, setTags] = useState('');
     const [imageUrl, setImageUrl] = useState('');
     const [locationInput, setLocationInput] = useState('');
@@ -344,7 +346,12 @@ export default function CreateSeminar() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[11px] sm:text-[12px] font-bold text-[#464651] mb-2 uppercase tracking-wider">Category</label>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="block text-[11px] sm:text-[12px] font-bold text-[#464651] uppercase tracking-wider">Category</label>
+                                        <button type="button" onClick={() => setIsRequestKeywordOpen(true)} className="text-[11px] sm:text-[12px] font-bold text-[#075e51] hover:underline">
+                                            Can't find your topic? Request one
+                                        </button>
+                                    </div>
                                     <div className="flex flex-col sm:flex-row gap-3">
                                         <div className="relative flex-1">
                                             <select
@@ -722,6 +729,8 @@ export default function CreateSeminar() {
                     </button>
                 </div>
             </div>
+
+            <RequestKeywordModal isOpen={isRequestKeywordOpen} onClose={() => setIsRequestKeywordOpen(false)} contextLabel={title ? `for seminar "${title}"` : 'for a new seminar'} />
         </div>
     );
 }

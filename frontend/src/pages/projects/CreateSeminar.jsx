@@ -140,7 +140,9 @@ export default function CreateSeminar() {
     const [title, setTitle] = useState('');
     const [abstract, setAbstract] = useState('');
     const [category, setCategory] = useState('');
-    const [categoryOptions, setCategoryOptions] = useState([]);
+    const [allKeywords, setAllKeywords] = useState([]);
+    const [categoryMainTopic, setCategoryMainTopic] = useState('');
+    const [categorySubTopic, setCategorySubTopic] = useState('');
     const [tags, setTags] = useState('');
     const [imageUrl, setImageUrl] = useState('');
     const [locationInput, setLocationInput] = useState('');
@@ -168,15 +170,38 @@ export default function CreateSeminar() {
     const [isUploading, setIsUploading] = useState(false);
     const [isUploadingHost, setIsUploadingHost] = useState(false);
 
-    // Category is one of the admin-curated keywords (Management > Keywords) - picking one
-    // here is what notifies users following that keyword (see seminarsController).
+    // Category is one of the admin-curated keywords (Management > Keywords), organized as
+    // Main Topic -> Sub Topic (optional) -> Keyword - picking the final keyword here is
+    // what notifies users following it (see seminarsController). The three selects below
+    // cascade through that same hierarchy rather than a single flat dropdown.
     useEffect(() => {
         api.get('/keywords').then(res => {
-            const options = (res.data.keywords || []).map(k => k.text);
-            setCategoryOptions(options);
-            setCategory(prev => prev || options[0] || '');
+            const kws = res.data.keywords || [];
+            setAllKeywords(kws);
+            if (kws.length > 0) {
+                setCategoryMainTopic(kws[0].mainTopic);
+            }
         }).catch(err => console.error('Failed to load keywords', err));
     }, []);
+
+    const mainTopicOptions = [...new Set(allKeywords.map(k => k.mainTopic))].sort((a, b) => a.localeCompare(b));
+    const subTopicOptions = [...new Set(
+        allKeywords.filter(k => k.mainTopic === categoryMainTopic).map(k => k.subTopic).filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b));
+    const keywordOptions = allKeywords.filter(k =>
+        k.mainTopic === categoryMainTopic && (categorySubTopic ? k.subTopic === categorySubTopic : true)
+    );
+
+    // Keep `category` (the actual value submitted as Seminar.category) pointed at a keyword
+    // that's still valid for whatever Main Topic / Sub Topic is currently selected.
+    useEffect(() => {
+        if (keywordOptions.length === 0) {
+            setCategory('');
+        } else if (!keywordOptions.some(k => k.text === category)) {
+            setCategory(keywordOptions[0].text);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [categoryMainTopic, categorySubTopic, allKeywords]);
 
     const handleImageUpload = async (e, isHost = false) => {
         const file = e.target.files[0];
@@ -318,35 +343,62 @@ export default function CreateSeminar() {
                                         className="w-full h-24 sm:h-32 border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none resize-none transition-shadow"
                                     />
                                 </div>
-                                <div className="flex flex-col sm:flex-row gap-4 sm:gap-5">
-                                    <div className="flex-1">
-                                        <label className="block text-[11px] sm:text-[12px] font-bold text-[#464651] mb-2 uppercase tracking-wider">Category</label>
-                                        <div className="relative">
+                                <div>
+                                    <label className="block text-[11px] sm:text-[12px] font-bold text-[#464651] mb-2 uppercase tracking-wider">Category</label>
+                                    <div className="flex flex-col sm:flex-row gap-3">
+                                        <div className="relative flex-1">
+                                            <select
+                                                value={categoryMainTopic}
+                                                onChange={(e) => { setCategoryMainTopic(e.target.value); setCategorySubTopic(''); }}
+                                                disabled={mainTopicOptions.length === 0}
+                                                className="w-full appearance-none border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 pr-10 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {mainTopicOptions.length === 0 ? (
+                                                    <option value="">No keywords available yet</option>
+                                                ) : (
+                                                    mainTopicOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)
+                                                )}
+                                            </select>
+                                            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none">expand_more</span>
+                                        </div>
+                                        <div className="relative flex-1">
+                                            <select
+                                                value={categorySubTopic}
+                                                onChange={(e) => setCategorySubTopic(e.target.value)}
+                                                disabled={subTopicOptions.length === 0}
+                                                className="w-full appearance-none border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 pr-10 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <option value="">{subTopicOptions.length === 0 ? 'No sub topics' : 'Any Sub Topic'}</option>
+                                                {subTopicOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                            </select>
+                                            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none">expand_more</span>
+                                        </div>
+                                        <div className="relative flex-1">
                                             <select
                                                 value={category}
                                                 onChange={(e) => setCategory(e.target.value)}
-                                                disabled={categoryOptions.length === 0}
+                                                disabled={keywordOptions.length === 0}
                                                 className="w-full appearance-none border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 pr-10 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
-                                                {categoryOptions.length === 0 ? (
-                                                    <option value="">No keywords available yet</option>
+                                                {keywordOptions.length === 0 ? (
+                                                    <option value="">No keywords under this topic</option>
                                                 ) : (
-                                                    categoryOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)
+                                                    keywordOptions.map(opt => <option key={opt._id} value={opt.text}>{opt.text}</option>)
                                                 )}
                                             </select>
                                             <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none">expand_more</span>
                                         </div>
                                     </div>
-                                    <div className="flex-1">
-                                        <label className="block text-[11px] sm:text-[12px] font-bold text-[#464651] mb-2 uppercase tracking-wider">Tags</label>
-                                        <input
-                                            type="text"
-                                            value={tags}
-                                            onChange={(e) => setTags(e.target.value)}
-                                            placeholder="Add tags separated by commas"
-                                            className="w-full border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none"
-                                        />
-                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] sm:text-[12px] font-bold text-[#464651] mb-2 uppercase tracking-wider">Tags</label>
+                                    <input
+                                        type="text"
+                                        value={tags}
+                                        onChange={(e) => setTags(e.target.value)}
+                                        placeholder="Add tags separated by commas"
+                                        className="w-full border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none"
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-[11px] sm:text-[12px] font-bold text-[#464651] mb-2 uppercase tracking-wider">

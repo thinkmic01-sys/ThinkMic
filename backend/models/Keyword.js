@@ -1,9 +1,24 @@
 const mongoose = require('mongoose');
 
-// Admin-curated topic tags. Shown to users on My Learning List (follow to get notified),
-// and used as the seminar creation "Category" dropdown's options - a seminar's category
-// matching a followed keyword is what triggers the notification in seminarsController.
+// Admin-curated topic tags, organized as Main Topic -> Sub Topic (optional) -> Keyword.
+// Each document is one leaf-level Keyword; mainTopic/subTopic are just its place in the
+// hierarchy, used to group and cascade-filter on both the admin (KeywordsManagement.jsx)
+// and user-facing (MyLearningList.jsx, CreateSeminar.jsx, NearbySeminars.jsx) sides.
+// `text` (the leaf keyword itself) is what actually gets followed/matched/tagged
+// everywhere downstream - kept globally unique so the existing plain-string matching in
+// seminarsController.notifyKeywordFollowers (seminar.category === keyword.text) still
+// works unambiguously without needing mainTopic/subTopic context.
 const KeywordSchema = new mongoose.Schema({
+    mainTopic: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    subTopic: {
+        type: String,
+        trim: true,
+        default: ''
+    },
     text: {
         type: String,
         required: true,

@@ -6,19 +6,25 @@ const Keyword = require('../models/Keyword');
 // @access  Private
 exports.listKeywords = async (req, res) => {
     try {
-        const keywords = await Keyword.find().sort({ text: 1 });
+        const keywords = await Keyword.find().sort({ mainTopic: 1, subTopic: 1, text: 1 });
         res.status(200).json({ keywords });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };
 
-// @desc    Create a new keyword
+// @desc    Create a new keyword under a Main Topic and optional Sub Topic
 // @route   POST /api/v1/admin/keywords
 // @access  Private (keywords.manage)
 exports.createKeyword = async (req, res) => {
     try {
+        const mainTopic = (req.body.mainTopic || '').trim();
+        const subTopic = (req.body.subTopic || '').trim();
         const text = (req.body.text || '').trim();
+
+        if (!mainTopic) {
+            return res.status(400).json({ message: 'Main Topic is required.' });
+        }
         if (!text) {
             return res.status(400).json({ message: 'Keyword text is required.' });
         }
@@ -28,7 +34,7 @@ exports.createKeyword = async (req, res) => {
             return res.status(409).json({ message: 'This keyword already exists.' });
         }
 
-        const keyword = await Keyword.create({ text, createdBy: req.user._id });
+        const keyword = await Keyword.create({ mainTopic, subTopic, text, createdBy: req.user._id });
         res.status(201).json({ keyword });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });

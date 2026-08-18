@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
@@ -95,8 +95,46 @@ export default function NearbySeminars() {
     const navigate = useNavigate();
     const token = useSelector(state => state.auth?.accessToken);
     const [seminars, setSeminars] = useState([]);
-    const [topicFilter, setTopicFilter] = useState('All Topics');
     const [distanceFilter, setDistanceFilter] = useState('Any Distance');
+
+    // Same Main Topic -> Sub Topic (optional) -> Keyword hierarchy admins add keywords under
+    // (Management > Keywords) - a seminar's `category` is always one leaf keyword's text.
+    const [allKeywords, setAllKeywords] = useState([]);
+    const [mainTopicFilter, setMainTopicFilter] = useState('All Topics');
+    const [subTopicFilter, setSubTopicFilter] = useState('All Sub Topics');
+    const [keywordFilter, setKeywordFilter] = useState('All Keywords');
+
+    useEffect(() => {
+        api.get('/keywords').then(res => setAllKeywords(res.data.keywords || [])).catch(() => {});
+    }, []);
+
+    const mainTopicOptions = useMemo(() => (
+        [...new Set(allKeywords.map(k => k.mainTopic))].sort((a, b) => a.localeCompare(b))
+    ), [allKeywords]);
+
+    const subTopicOptions = useMemo(() => (
+        [...new Set(
+            allKeywords
+                .filter(k => mainTopicFilter === 'All Topics' || k.mainTopic === mainTopicFilter)
+                .map(k => k.subTopic)
+                .filter(Boolean)
+        )].sort((a, b) => a.localeCompare(b))
+    ), [allKeywords, mainTopicFilter]);
+
+    const keywordFilterOptions = useMemo(() => (
+        allKeywords
+            .filter(k => mainTopicFilter === 'All Topics' || k.mainTopic === mainTopicFilter)
+            .filter(k => subTopicFilter === 'All Sub Topics' || k.subTopic === subTopicFilter)
+    ), [allKeywords, mainTopicFilter, subTopicFilter]);
+
+    // The set of leaf keyword texts a seminar's `category` must be in to pass the current
+    // Main Topic / Sub Topic / Keyword selection.
+    const matchingCategoryTexts = useMemo(() => {
+        if (keywordFilter !== 'All Keywords') return new Set([keywordFilter]);
+        return new Set(keywordFilterOptions.map(k => k.text));
+    }, [keywordFilter, keywordFilterOptions]);
+
+    const isTopicFilterActive = mainTopicFilter !== 'All Topics' || subTopicFilter !== 'All Sub Topics' || keywordFilter !== 'All Keywords';
     const [registeredIds, setRegisteredIds] = useState(new Set());
     const [registeringId, setRegisteringId] = useState(null);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -179,7 +217,7 @@ export default function NearbySeminars() {
     const distanceThresholdKm = distanceFilter === '< 5 km' ? 5 : distanceFilter === '< 10 km' ? 10 : null;
 
     const filteredSeminars = enrichedSeminars
-        .filter((s) => topicFilter === 'All Topics' || s.category === topicFilter)
+        .filter((s) => !isTopicFilterActive || matchingCategoryTexts.has(s.category))
         .filter((s) => distanceThresholdKm === null || (s.distanceKm !== null && s.distanceKm < distanceThresholdKm))
         .sort((a, b) => {
             if (a.distanceKm === null && b.distanceKm === null) return 0;
@@ -188,7 +226,10 @@ export default function NearbySeminars() {
             return a.distanceKm - b.distanceKm;
         });
 
-    const seminarsWithCoords = enrichedSeminars.filter((s) => s.coords);
+    // Map pins should honor the same topic/sub topic/keyword/distance filters as the card
+    // list beside it - previously this derived from the unfiltered `enrichedSeminars`, so a
+    // pin stayed on the map for a seminar the filters had already hidden from the list.
+    const seminarsWithCoords = filteredSeminars.filter((s) => s.coords);
 
     return (
         <div className="flex flex-col h-[calc(100vh-64px)] w-full bg-[#F4F9F8] font-sans">
@@ -207,18 +248,43 @@ export default function NearbySeminars() {
                     </button>
                     <h1 className="text-[20px] sm:text-[24px] md:text-[28px] font-bold text-[#075e51] truncate">Nearby Seminars</h1>
                 </div>
-                <div className="flex gap-2 sm:gap-4 w-full sm:w-auto pl-11 sm:pl-0">
-                    <div className="relative flex-1 sm:flex-none">
-                        <select value={topicFilter} onChange={(e) => setTopicFilter(e.target.value)} className="w-full appearance-none bg-[#F4F9F8] sm:bg-white border border-[#e0e2eb] sm:border-[#c7c5d3] rounded text-[#181c22] px-3 sm:px-4 py-2 pr-8 sm:pr-10 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#075e51] cursor-pointer">
+                <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto pl-11 sm:pl-0">
+                    <div className="relative flex-1 sm:flex-none min-w-[120px]">
+                        <select
+                            value={mainTopicFilter}
+                            onChange={(e) => { setMainTopicFilter(e.target.value); setSubTopicFilter('All Sub Topics'); setKeywordFilter('All Keywords'); }}
+                            className="w-full appearance-none bg-[#F4F9F8] sm:bg-white border border-[#e0e2eb] sm:border-[#c7c5d3] rounded text-[#181c22] px-3 sm:px-4 py-2 pr-8 sm:pr-10 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#075e51] cursor-pointer"
+                        >
                             <option>All Topics</option>
-                            <option>Machine Learning</option>
-                            <option>Quantum Computing</option>
-                            <option>Bioinformatics</option>
-                            <option>Ethics in AI</option>
+                            {mainTopicOptions.map((t) => <option key={t} value={t}>{t}</option>)}
                         </select>
                         <span className="material-symbols-outlined absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none text-[18px]">expand_more</span>
                     </div>
-                    <div className="relative flex-1 sm:flex-none">
+                    <div className="relative flex-1 sm:flex-none min-w-[120px]">
+                        <select
+                            value={subTopicFilter}
+                            onChange={(e) => { setSubTopicFilter(e.target.value); setKeywordFilter('All Keywords'); }}
+                            disabled={subTopicOptions.length === 0}
+                            className="w-full appearance-none bg-[#F4F9F8] sm:bg-white border border-[#e0e2eb] sm:border-[#c7c5d3] rounded text-[#181c22] px-3 sm:px-4 py-2 pr-8 sm:pr-10 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#075e51] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <option>All Sub Topics</option>
+                            {subTopicOptions.map((t) => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                        <span className="material-symbols-outlined absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none text-[18px]">expand_more</span>
+                    </div>
+                    <div className="relative flex-1 sm:flex-none min-w-[120px]">
+                        <select
+                            value={keywordFilter}
+                            onChange={(e) => setKeywordFilter(e.target.value)}
+                            disabled={keywordFilterOptions.length === 0}
+                            className="w-full appearance-none bg-[#F4F9F8] sm:bg-white border border-[#e0e2eb] sm:border-[#c7c5d3] rounded text-[#181c22] px-3 sm:px-4 py-2 pr-8 sm:pr-10 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#075e51] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <option>All Keywords</option>
+                            {keywordFilterOptions.map((k) => <option key={k._id} value={k.text}>{k.text}</option>)}
+                        </select>
+                        <span className="material-symbols-outlined absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none text-[18px]">expand_more</span>
+                    </div>
+                    <div className="relative flex-1 sm:flex-none min-w-[120px]">
                         <select value={distanceFilter} onChange={(e) => setDistanceFilter(e.target.value)} className="w-full appearance-none bg-[#F4F9F8] sm:bg-white border border-[#e0e2eb] sm:border-[#c7c5d3] rounded text-[#181c22] px-3 sm:px-4 py-2 pr-8 sm:pr-10 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#075e51] cursor-pointer">
                             <option>Any Distance</option>
                             <option>&lt; 5 km</option>

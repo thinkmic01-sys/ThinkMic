@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 
@@ -91,6 +91,29 @@ export default function MyLearningList() {
     const myKeywords = allKeywords.filter((k) => myKeywordIds.includes(k._id));
     const suggestedKeywords = allKeywords.filter((k) => !myKeywordIds.includes(k._id));
 
+    // Same Main Topic -> Sub Topic hierarchy the admin adds keywords under (Management >
+    // Keywords) - lets a user narrow "Discover Keywords" down the same way instead of
+    // scanning one long flat list.
+    const [topicFilter, setTopicFilter] = useState('All Topics');
+    const [subTopicFilter, setSubTopicFilter] = useState('All Sub Topics');
+
+    const topicOptions = useMemo(() => (
+        [...new Set(allKeywords.map((k) => k.mainTopic))].sort((a, b) => a.localeCompare(b))
+    ), [allKeywords]);
+
+    const subTopicOptions = useMemo(() => (
+        [...new Set(
+            allKeywords
+                .filter((k) => topicFilter === 'All Topics' || k.mainTopic === topicFilter)
+                .map((k) => k.subTopic)
+                .filter(Boolean)
+        )].sort((a, b) => a.localeCompare(b))
+    ), [allKeywords, topicFilter]);
+
+    const filteredSuggestedKeywords = suggestedKeywords
+        .filter((k) => topicFilter === 'All Topics' || k.mainTopic === topicFilter)
+        .filter((k) => subTopicFilter === 'All Sub Topics' || k.subTopic === subTopicFilter);
+
     return (
         <div className="w-full h-[calc(100vh-64px)] bg-[#F4F9F8] overflow-y-auto custom-scrollbar font-sans">
 
@@ -139,13 +162,43 @@ export default function MyLearningList() {
                     </h3>
                     <p className="text-[13px] sm:text-[14px] text-[#777682] mb-4">Add a topic to start getting notified about it.</p>
 
+                    {!isLoading && allKeywords.length > 0 && (
+                        <div className="flex flex-col sm:flex-row gap-2.5 mb-4">
+                            <div className="relative flex-1">
+                                <select
+                                    value={topicFilter}
+                                    onChange={(e) => { setTopicFilter(e.target.value); setSubTopicFilter('All Sub Topics'); }}
+                                    className="w-full appearance-none border border-[#c7c5d3] rounded-md py-2 px-3 pr-8 text-[13px] font-semibold text-[#181c22] outline-none focus:border-[#075e51] cursor-pointer"
+                                >
+                                    <option>All Topics</option>
+                                    {topicOptions.map((t) => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                                <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none text-[16px]">expand_more</span>
+                            </div>
+                            <div className="relative flex-1">
+                                <select
+                                    value={subTopicFilter}
+                                    onChange={(e) => setSubTopicFilter(e.target.value)}
+                                    disabled={subTopicOptions.length === 0}
+                                    className="w-full appearance-none border border-[#c7c5d3] rounded-md py-2 px-3 pr-8 text-[13px] font-semibold text-[#181c22] outline-none focus:border-[#075e51] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <option>All Sub Topics</option>
+                                    {subTopicOptions.map((t) => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                                <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none text-[16px]">expand_more</span>
+                            </div>
+                        </div>
+                    )}
+
                     {isLoading ? (
                         <p className="text-[13px] text-[#777682]">Loading...</p>
                     ) : suggestedKeywords.length === 0 ? (
                         <p className="text-[13px] text-[#c7c5d3] italic">{allKeywords.length === 0 ? 'No keywords have been added yet - check back soon.' : "You're following every available keyword."}</p>
+                    ) : filteredSuggestedKeywords.length === 0 ? (
+                        <p className="text-[13px] text-[#c7c5d3] italic">No keywords match this filter.</p>
                     ) : (
                         <div className="flex flex-wrap gap-2.5">
-                            {suggestedKeywords.map((keyword) => (
+                            {filteredSuggestedKeywords.map((keyword) => (
                                 <button
                                     key={keyword._id}
                                     onClick={() => toggleKeyword(keyword._id)}

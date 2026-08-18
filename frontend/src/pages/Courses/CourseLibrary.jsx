@@ -11,6 +11,7 @@ export default function CourseLibrary() {
     const navigate = useNavigate();
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [activeFilter, setActiveFilter] = useState('All');
+    const [searchInput, setSearchInput] = useState('');
     const [selectedCourse, setSelectedCourse] = useState(emptyCourse);
     const [toast, setToast] = useState(null);
 
@@ -73,7 +74,9 @@ export default function CourseLibrary() {
     const featuredLive = courses.find((c) => c.status === 'LIVE') || null;
 
     // Filter Logic
+    const searchQuery = searchInput.trim().toLowerCase();
     const filteredCourses = courses.filter(course => {
+        if (searchQuery && !course.title?.toLowerCase().includes(searchQuery) && !course.desc?.toLowerCase().includes(searchQuery)) return false;
         if (activeFilter === 'Mine') return isMine(course);
         if (activeFilter !== 'All' && course.status !== activeFilter.toUpperCase()) return false;
         return true;
@@ -265,6 +268,16 @@ export default function CourseLibrary() {
                             <span className="material-symbols-outlined text-[16px] sm:text-[18px]">tune</span> <span className="hidden sm:inline">Filters</span>
                         </button>
                     </div>
+                    <div className="relative w-full md:w-64 shrink-0">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#777682] text-[18px]">search</span>
+                        <input
+                            type="text"
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            placeholder="Search seminars by name..."
+                            className="w-full border border-[#c7c5d3] rounded-md py-2 pl-9 pr-3 text-[13px] sm:text-[14px] outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51]"
+                        />
+                    </div>
                 </div>
 
                 {/* Grid Layout for Courses */}
@@ -315,7 +328,7 @@ export default function CourseLibrary() {
                     {/* Empty State Fallback */}
                     {filteredCourses.length === 0 && (
                         <div className="col-span-full py-12 text-center text-[#464651] font-bold text-[13px] sm:text-sm">
-                            No courses found for the "{activeFilter}" filter.
+                            {searchQuery ? `No seminars match "${searchInput}".` : `No courses found for the "${activeFilter}" filter.`}
                         </div>
                     )}
                 </div>

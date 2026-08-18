@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import api from '../../services/api';
 import StudentRosterPanel from '../../components/StudentRosterPanel';
 
@@ -43,6 +44,7 @@ const Pill = ({ children, tone = 'default' }) => {
 
 export default function AdminUserDetail() {
     const { userId } = useParams();
+    const canMessageUsers = (useSelector((state) => state.auth?.user?.permissions) || []).includes('support.manage_all');
 
     const [profile, setProfile] = useState(null);
     const [loadingProfile, setLoadingProfile] = useState(true);
@@ -64,6 +66,29 @@ export default function AdminUserDetail() {
     const showToast = (message, type = 'success') => {
         setToast({ show: true, message, type });
         setTimeout(() => setToast({ show: false, message: '', type }), 4000);
+    };
+
+    // Private admin -> user message (Ticket/Support Inbox under the hood - see
+    // backend/controllers/supportController.js sendMessage's targetUserId branch). The user
+    // receives both a live push and a durable Notification, and can reply from their own
+    // Support widget like any other support conversation.
+    const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+    const [messageText, setMessageText] = useState('');
+    const [isSendingMessage, setIsSendingMessage] = useState(false);
+
+    const handleSendMessage = async () => {
+        if (!messageText.trim()) return;
+        setIsSendingMessage(true);
+        try {
+            await api.post('/support', { text: messageText.trim(), targetUserId: userId });
+            showToast(`Message sent to ${extractedName}.`, 'success');
+            setMessageText('');
+            setIsMessageModalOpen(false);
+        } catch (err) {
+            showToast(err.response?.data?.message || 'Failed to send message.', 'error');
+        } finally {
+            setIsSendingMessage(false);
+        }
     };
 
     useEffect(() => {
@@ -185,6 +210,14 @@ export default function AdminUserDetail() {
                         <p className="text-[#777682] text-[13px] sm:text-sm font-mono truncate">{profile.email}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
+                        {canMessageUsers && (
+                            <button
+                                onClick={() => setIsMessageModalOpen(true)}
+                                className="text-[12px] sm:text-[13px] font-bold text-white bg-[#075e51] hover:bg-[#097969] transition-colors px-3 py-2 rounded-md flex items-center gap-1.5"
+                            >
+                                <span className="material-symbols-outlined text-[16px]">forum</span> Message User
+                            </button>
+                        )}
                         {profile.role !== 'admin' && (
                             <>
                                 <button
@@ -288,6 +321,42 @@ export default function AdminUserDetail() {
             {toast.show && (
                 <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-[13px] font-bold ${toast.type === 'error' ? 'bg-[#ba1a1a]' : 'bg-[#075e51]'}`}>
                     {toast.message}
+                </div>
+            )}
+
+            {isMessageModalOpen && (
+                <div className="fixed inset-0 bg-[#181c22]/50 flex items-center justify-center z-[100] backdrop-blur-sm px-4" onClick={() => setIsMessageModalOpen(false)}>
+                    <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                        <div className="px-6 py-5 border-b border-[#e0e2eb] flex items-center justify-between">
+                            <h3 className="text-[16px] font-bold text-[#181c22]">Message {extractedName}</h3>
+                            <button type="button" onClick={() => setIsMessageModalOpen(false)} className="text-[#777682] hover:text-[#181c22]">
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div className="px-6 py-5 space-y-3">
+                            <p className="text-[13px] text-[#464651]">This starts a private support conversation - {extractedName} gets notified and can reply from their own Support chat.</p>
+                            <textarea
+                                value={messageText}
+                                onChange={(e) => setMessageText(e.target.value)}
+                                placeholder="Type your message..."
+                                autoFocus
+                                className="w-full bg-[#F4F9F8] border border-[#c7c5d3] rounded-md px-3 py-2 text-[14px] text-[#181c22] focus:ring-1 focus:ring-[#075e51] focus:border-[#075e51] outline-none min-h-[120px]"
+                            />
+                        </div>
+                        <div className="px-6 py-4 bg-[#F4F9F8] flex justify-end gap-3 border-t border-[#e0e2eb]">
+                            <button type="button" onClick={() => setIsMessageModalOpen(false)} className="px-4 py-2 rounded-lg text-[13px] font-bold text-[#464651] hover:bg-[#e0e2eb] transition-colors">
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleSendMessage}
+                                disabled={isSendingMessage || !messageText.trim()}
+                                className="bg-[#075e51] text-white px-5 py-2 rounded-lg text-[13px] font-bold shadow-sm hover:bg-[#097969] transition-colors disabled:opacity-60"
+                            >
+                                {isSendingMessage ? 'Sending...' : 'Send Message'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

@@ -1,4 +1,6 @@
 const Ticket = require('../models/Ticket');
+const User = require('../models/User');
+const Notification = require('../models/Notification');
 const socket = require('../utils/socket');
 const openaiService = require('../services/openaiService');
 
@@ -24,7 +26,7 @@ exports.getTicket = async (req, res) => {
 
 exports.sendMessage = async (req, res) => {
     try {
-        const { text, ticketId, category } = req.body;
+        const { text, ticketId, category, targetUserId } = req.body;
 
         if (!text || text.trim() === '') {
             return res.status(400).json({ message: 'Message text is required' });
@@ -41,6 +43,24 @@ exports.sendMessage = async (req, res) => {
                 return res.status(403).json({ message: 'Not authorized to reply to this ticket' });
             }
             if (category) ticket.category = category;
+        } else if (targetUserId) {
+            // Staff privately messaging a specific user from their profile (Admin > Users >
+            // user detail "Message User") - reuses the same open-ticket-per-user model the
+            // normal support widget uses, so the target user just sees it as a support
+            // conversation they can reply to, and it shows up in the admin Support Inbox
+            // like any other ticket.
+            if (!isSupportStaff(req)) {
+                return res.status(403).json({ message: 'Not authorized to message users directly' });
+            }
+            const targetUser = await User.exists({ _id: targetUserId });
+            if (!targetUser) return res.status(404).json({ message: 'User not found' });
+
+            ticket = await Ticket.findOne({ user: targetUserId, status: 'open' });
+            if (!ticket) {
+                ticket = new Ticket({ user: targetUserId, status: 'open', messages: [], category: category || 'General' });
+            } else if (category) {
+                ticket.category = category;
+            }
         } else {
             // Check if user already has an open ticket
             ticket = await Ticket.findOne({ user: req.user._id, status: 'open' });
@@ -86,6 +106,21 @@ exports.sendMessage = async (req, res) => {
         }
 
         res.status(201).json({ ticket, message: populatedMessage });
+
+        // A staff reply (whether from the ordinary Support Inbox or the "Message User" DM
+        // flow above) gets a durable Notification, not just the live socket push - so the
+        // recipient still sees it in their notification bell if they weren't online/didn't
+        // have the support widget open at the time.
+        if (senderIsStaff) {
+            Notification.create({
+                userId: ticket.user,
+                type: 'admin_message',
+                message: `${req.user.fullName} sent you a message: "${text.length > 80 ? text.slice(0, 80) + '...' : text}"`,
+                link: '/app/support'
+            }).then((notification) => {
+                if (io) io.to(ticket.user.toString()).emit('new_notification', { notification });
+            }).catch((err) => console.error('Failed to create admin_message notification:', err));
+        }
 
         // Fire-and-forget: the AI reply can take a second or two, so it's generated after the
         // response above (keeps the user's own message send snappy) and delivered over the

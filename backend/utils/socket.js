@@ -12,7 +12,10 @@ module.exports = {
     init: (httpServer) => {
         const { Server } = require('socket.io');
         const jwt = require('jsonwebtoken');
+        const mongoose = require('mongoose');
         const User = require('../models/User');
+        const Seminar = require('../models/Seminar');
+        const Registration = require('../models/Registration');
 
         io = new Server(httpServer, {
             cors: {
@@ -57,7 +60,8 @@ module.exports = {
             socket.join(socket.userId);
 
             // Client 'join' calls (legacy/no-op for the personal room, and the gate for
-            // the shared admin_support room) - any other requested room is silently ignored.
+            // the shared admin_support room) - any other requested room is silently ignored,
+            // except the seminar_<id> pattern handled below.
             socket.on('join', async (room) => {
                 if (!room || room === socket.userId) return;
                 if (room === 'admin_support') {
@@ -65,7 +69,34 @@ module.exports = {
                     if (user?.roleId?.permissions?.includes('support.manage_all')) {
                         socket.join('admin_support');
                     }
+                    return;
                 }
+                // Live seminar room - only the host or a registered attendee may join, so
+                // the live transcript relay below never leaks to anyone else.
+                if (typeof room === 'string' && room.startsWith('seminar_')) {
+                    const seminarId = room.slice('seminar_'.length);
+                    if (!mongoose.isValidObjectId(seminarId)) return;
+                    const seminar = await Seminar.findById(seminarId).select('hostId');
+                    if (!seminar) return;
+                    const isHost = seminar.hostId.toString() === socket.userId;
+                    const isRegistered = isHost || !!(await Registration.exists({ userId: socket.userId, seminarId }));
+                    if (!isRegistered) return;
+                    socket.join(room);
+                    if (isHost) {
+                        socket.data.hostedSeminarRooms = socket.data.hostedSeminarRooms || new Set();
+                        socket.data.hostedSeminarRooms.add(room);
+                    }
+                }
+            });
+
+            // Host's browser relays each Deepgram transcript chunk here while broadcasting
+            // live (see SeminarBroadcast.jsx) - only relayed onward if this socket actually
+            // joined that seminar's room as its verified host (set above), so no other client
+            // can forge transcript content into a seminar it doesn't own.
+            socket.on('seminar_transcript_chunk', ({ seminarId, text, isFinal } = {}) => {
+                const room = `seminar_${seminarId}`;
+                if (!socket.data.hostedSeminarRooms?.has(room)) return;
+                socket.to(room).emit('seminar_transcript_chunk', { text, isFinal });
             });
 
             socket.on('disconnect', () => {

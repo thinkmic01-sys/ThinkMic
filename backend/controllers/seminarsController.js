@@ -334,15 +334,25 @@ exports.registerForSeminar = async (req, res) => {
 
         const isHost = seminar.hostId.toString() === userId;
 
+        // Host-set cap (chosen when going live) on how long after starting new attendees
+        // may still join - only applies while the broadcast is actually live.
+        if (!isHost && seminar.status === 'live' && seminar.joinWindowClosesAt && Date.now() > seminar.joinWindowClosesAt.getTime()) {
+            return res.status(403).json({ message: 'The join window for this seminar has closed.' });
+        }
+
+        // Once the seminar has ended, replayPriceCoins (set by the host at end time, separate
+        // from registrationPriceCoins) governs post-hoc access instead - 0 means free replay.
+        const priceToCharge = seminar.status === 'completed' ? seminar.replayPriceCoins : seminar.registrationPriceCoins;
+
         // Registration price is separate from (and independent of) the rewardEnabled
         // campaign below - a host is never charged to "register" for their own seminar.
         // Charged and the registration record created atomically: if the debit/credit fails
         // (insufficient balance), no Registration is created at all.
-        if (!isHost && seminar.registrationPriceCoins > 0) {
+        if (!isHost && priceToCharge > 0) {
             const paySession = await mongoose.startSession();
             try {
                 await paySession.withTransaction(async () => {
-                    await coinWalletService.debitCoins(userId, seminar.registrationPriceCoins, {
+                    await coinWalletService.debitCoins(userId, priceToCharge, {
                         type: 'seminar_registration_paid',
                         action: `Registered for "${seminar.title}"`,
                         relatedUserId: seminar.hostId,
@@ -353,7 +363,7 @@ exports.registerForSeminar = async (req, res) => {
                         auditAction: 'seminar_registration_paid'
                     }, paySession);
 
-                    await coinWalletService.creditCoins(seminar.hostId, seminar.registrationPriceCoins, {
+                    await coinWalletService.creditCoins(seminar.hostId, priceToCharge, {
                         type: 'seminar_registration_received',
                         action: `${req.user.fullName} registered for "${seminar.title}"`,
                         relatedUserId: userId,
@@ -461,8 +471,11 @@ exports.startSeminar = async (req, res) => {
             return res.status(400).json({ message: 'This seminar has already ended' });
         }
 
+        const joinWindowMinutes = Math.max(0, Number(req.body.joinWindowMinutes) || 0);
         seminar.status = 'live';
         seminar.actualStartTime = new Date();
+        seminar.joinWindowMinutes = joinWindowMinutes;
+        seminar.joinWindowClosesAt = joinWindowMinutes > 0 ? new Date(Date.now() + joinWindowMinutes * 60000) : undefined;
         await seminar.save();
 
         const registrations = await Registration.find({ seminarId: seminar._id }).select('userId');
@@ -508,6 +521,11 @@ exports.endSeminar = async (req, res) => {
         }
 
         const { rawText, r2Key, mimeType, fileSizeBytes } = req.body;
+        // Optional, set only if the host chooses to charge for replay access - independent
+        // of registrationPriceCoins, and purely opt-in (defaults to free replay otherwise).
+        if (req.body.replayPriceCoins !== undefined) {
+            seminar.replayPriceCoins = Math.max(0, Number(req.body.replayPriceCoins) || 0);
+        }
 
         const recording = await Recording.create({
             userId: req.user.id,
@@ -548,6 +566,10 @@ exports.endSeminar = async (req, res) => {
             seminarId: seminar._id,
             language: 'English'
         });
+
+        // Immediate signal for anyone with the live-transcript view open (SeminarDetail.jsx) -
+        // the summarization worker's attendee notifications land later, asynchronously.
+        socket.getIO().to(`seminar_${seminar._id}`).emit('seminar_ended', { seminarId: seminar._id.toString() });
 
         res.status(200).json(seminar);
     } catch (err) {

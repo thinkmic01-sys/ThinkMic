@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { io } from 'socket.io-client';
 import api from '../../services/api';
 import axios from 'axios';
 import deepgramService from '../../services/deepgramService';
 import { getMicStream } from '../../services/micDevice';
+import { API_BASE_URL } from '../../config';
 
 // Mirrors SpeechWorkspace.jsx's codec probing - Safari/iOS don't support audio/webm at all
 const getSupportedAudioMimeType = () => {
@@ -27,6 +29,8 @@ export default function SeminarBroadcast() {
     const [transcripts, setTranscripts] = useState([]);
     const [interimText, setInterimText] = useState('');
     const [toast, setToast] = useState(null);
+    const [joinWindowMinutes, setJoinWindowMinutes] = useState('');
+    const [replayPriceCoins, setReplayPriceCoins] = useState('');
 
     const streamRef = useRef(null);
     const mediaRecorderRef = useRef(null);
@@ -34,6 +38,7 @@ export default function SeminarBroadcast() {
     const recordingStartTimeRef = useRef(null);
     const interimTextRef = useRef('');
     const timerIntervalRef = useRef(null);
+    const socketRef = useRef(null);
 
     const showToast = (message, type = 'error') => {
         setToast({ message, type });
@@ -57,16 +62,23 @@ export default function SeminarBroadcast() {
             clearInterval(timerIntervalRef.current);
             if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
             deepgramService.disconnect();
+            if (socketRef.current) socketRef.current.disconnect();
         };
     }, []);
 
     const goLive = async () => {
         try {
-            await api.post(`/seminars/${seminarId}/start`);
+            await api.post(`/seminars/${seminarId}/start`, {
+                joinWindowMinutes: joinWindowMinutes === '' ? 0 : Number(joinWindowMinutes)
+            });
         } catch (err) {
             showToast(err.response?.data?.message || 'Could not start the broadcast.', 'error');
             return;
         }
+
+        const socket = io(API_BASE_URL, { withCredentials: true });
+        socket.on('connect', () => socket.emit('join', `seminar_${seminarId}`));
+        socketRef.current = socket;
 
         try {
             const stream = await getMicStream();
@@ -87,9 +99,11 @@ export default function SeminarBroadcast() {
                     });
                     setInterimText('');
                     interimTextRef.current = '';
+                    socketRef.current?.emit('seminar_transcript_chunk', { seminarId, text: transcript.trim(), isFinal: true });
                 } else if (!isFinal) {
                     setInterimText(transcript);
                     interimTextRef.current = transcript;
+                    socketRef.current?.emit('seminar_transcript_chunk', { seminarId, text: transcript, isFinal: false });
                 }
             };
             deepgramService.onError = (err) => showToast(err.message || 'Live transcription error', 'error');
@@ -172,12 +186,21 @@ export default function SeminarBroadcast() {
         }
 
         try {
-            await api.post(`/seminars/${seminarId}/end`, { rawText, r2Key, mimeType, fileSizeBytes });
+            await api.post(`/seminars/${seminarId}/end`, {
+                rawText, r2Key, mimeType, fileSizeBytes,
+                replayPriceCoins: replayPriceCoins === '' ? 0 : Number(replayPriceCoins)
+            });
             setBroadcastState('ended');
             showToast('Broadcast ended. Generating the summary for attendees now.', 'success');
         } catch (err) {
             showToast(err.response?.data?.message || 'Could not finalize the broadcast.', 'error');
             setBroadcastState('live');
+            return;
+        }
+
+        if (socketRef.current) {
+            socketRef.current.disconnect();
+            socketRef.current = null;
         }
     };
 
@@ -224,7 +247,19 @@ export default function SeminarBroadcast() {
                 {broadcastState === 'idle' && (
                     <div className="bg-white rounded-xl border border-[#e0e2eb] p-8 text-center shadow-sm">
                         <span className="material-symbols-outlined text-[48px] text-[#075e51] mb-3 block">podcasts</span>
-                        <p className="text-[#464651] mb-6">When you're ready, go live - every registered attendee will be notified instantly.</p>
+                        <p className="text-[#464651] mb-4">When you're ready, go live - every registered attendee will be notified instantly.</p>
+                        <div className="max-w-[320px] mx-auto mb-6 text-left">
+                            <label className="text-[12px] font-bold text-[#464651] block mb-1">Allow joins for (minutes, optional)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={joinWindowMinutes}
+                                onChange={(e) => setJoinWindowMinutes(e.target.value)}
+                                placeholder="Leave blank for unlimited"
+                                className="w-full border border-[#e0e2eb] rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:border-[#075e51]"
+                            />
+                            <p className="text-[11px] text-[#777682] mt-1">After this many minutes from going live, no new attendees can join. Already-registered attendees are unaffected.</p>
+                        </div>
                         <button onClick={goLive} className="bg-[#075e51] text-white font-bold px-8 py-3 rounded-lg hover:bg-[#097969] transition-colors inline-flex items-center gap-2">
                             <span className="material-symbols-outlined">play_arrow</span> Go Live
                         </button>
@@ -239,20 +274,34 @@ export default function SeminarBroadcast() {
 
                 {(broadcastState === 'live' || broadcastState === 'ending') && (
                     <>
-                        <div className="bg-white rounded-xl border border-[#EAB308] ring-1 ring-[#EAB308]/40 p-5 sm:p-6 mb-6 flex items-center justify-between shadow-sm">
-                            <div className="flex items-center gap-3">
-                                <span className="w-2.5 h-2.5 rounded-full bg-[#ba1a1a] animate-pulse"></span>
-                                <span className="font-bold text-[#181c22]">LIVE</span>
-                                <span className="font-mono text-[#464651]">{formatTime(timeElapsed)}</span>
+                        <div className="bg-white rounded-xl border border-[#EAB308] ring-1 ring-[#EAB308]/40 p-5 sm:p-6 mb-6 shadow-sm">
+                            <div className="flex items-center justify-between flex-wrap gap-3">
+                                <div className="flex items-center gap-3">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-[#ba1a1a] animate-pulse"></span>
+                                    <span className="font-bold text-[#181c22]">LIVE</span>
+                                    <span className="font-mono text-[#464651]">{formatTime(timeElapsed)}</span>
+                                </div>
+                                <button
+                                    onClick={endBroadcast}
+                                    disabled={broadcastState === 'ending'}
+                                    className="bg-[#ba1a1a] text-white font-bold px-6 py-2.5 rounded-lg hover:bg-[#93000a] transition-colors disabled:opacity-60 flex items-center gap-2"
+                                >
+                                    <span className="material-symbols-outlined text-[18px]">stop_circle</span>
+                                    {broadcastState === 'ending' ? 'Ending...' : 'End Broadcast'}
+                                </button>
                             </div>
-                            <button
-                                onClick={endBroadcast}
-                                disabled={broadcastState === 'ending'}
-                                className="bg-[#ba1a1a] text-white font-bold px-6 py-2.5 rounded-lg hover:bg-[#93000a] transition-colors disabled:opacity-60 flex items-center gap-2"
-                            >
-                                <span className="material-symbols-outlined text-[18px]">stop_circle</span>
-                                {broadcastState === 'ending' ? 'Ending...' : 'End Broadcast'}
-                            </button>
+                            <div className="mt-4 pt-4 border-t border-[#EAB308]/30 max-w-[320px]">
+                                <label className="text-[12px] font-bold text-[#464651] block mb-1">Charge coins for replay access? (optional)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={replayPriceCoins}
+                                    onChange={(e) => setReplayPriceCoins(e.target.value)}
+                                    placeholder="0 = free replay for everyone"
+                                    className="w-full border border-[#e0e2eb] rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:border-[#075e51]"
+                                />
+                                <p className="text-[11px] text-[#777682] mt-1">Only applies to users who didn't attend or register - set right before you end the broadcast.</p>
+                            </div>
                         </div>
 
                         <div className="bg-white rounded-xl border border-[#e0e2eb] p-5 sm:p-6 shadow-sm min-h-[240px]">

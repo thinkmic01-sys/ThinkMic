@@ -88,6 +88,25 @@ const seminarSchema = new mongoose.Schema({
         default: 0,
         min: 0
     },
+    // Optional cap the host sets when going live (POST /seminars/:id/start) on how long
+    // after starting new attendees may still join - 0/unset means unlimited (current
+    // behavior, unchanged). joinWindowClosesAt is the actual deadline computed at start time.
+    joinWindowMinutes: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+    joinWindowClosesAt: {
+        type: Date
+    },
+    // Optional, separate from registrationPriceCoins: the host may set this when ending
+    // the broadcast (POST /seminars/:id/end) to charge coins for post-hoc replay access to
+    // users who didn't attend/register. 0 = free replay (default, opt-in only).
+    replayPriceCoins: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
     // Optional supporting file (slides, notes, any document) the host attaches at creation -
     // stored locally under /uploads like seminar cover images, but any file type rather than
     // images only. Visible only to the host and registered attendees (see getSeminarById).

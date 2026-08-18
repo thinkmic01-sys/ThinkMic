@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
 import api from '../../services/api';
+import { API_BASE_URL } from '../../config';
 
 // Full seminar detail - registration (including the optional coin price), and, once
 // registered (or for the host), the supporting document download and the pre-recorded/
@@ -12,6 +14,10 @@ export default function SeminarDetail() {
     const [isLoading, setIsLoading] = useState(true);
     const [isRegistering, setIsRegistering] = useState(false);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+    const [isLive, setIsLive] = useState(false);
+    const [liveTranscripts, setLiveTranscripts] = useState([]);
+    const [liveInterim, setLiveInterim] = useState('');
+    const socketRef = useRef(null);
     const showToast = (message, type = 'success') => {
         setToast({ show: true, message, type });
         setTimeout(() => setToast({ show: false, message: '', type }), 4000);
@@ -21,6 +27,7 @@ export default function SeminarDetail() {
         try {
             const res = await api.get(`/seminars/${id}`);
             setSeminar(res.data);
+            setIsLive(res.data.status === 'live');
         } catch (err) {
             showToast(err.response?.data?.message || 'Failed to load seminar.', 'error');
         } finally {
@@ -29,6 +36,40 @@ export default function SeminarDetail() {
     };
 
     useEffect(() => { fetchSeminar(); }, [id]);
+
+    // Live transcript relay - only connects once we know the user has access (host or a
+    // registered attendee); the server independently re-verifies this before allowing the
+    // socket to join the seminar's room, so no one else can listen in.
+    useEffect(() => {
+        if (!seminar || !(seminar.isHost || seminar.isRegistered)) return;
+
+        const socket = io(API_BASE_URL, { withCredentials: true });
+        socketRef.current = socket;
+        socket.on('connect', () => socket.emit('join', `seminar_${id}`));
+
+        socket.on('seminar_live', () => setIsLive(true));
+
+        socket.on('seminar_transcript_chunk', ({ text, isFinal }) => {
+            if (!text) return;
+            if (isFinal) {
+                setLiveTranscripts((prev) => [...prev, text]);
+                setLiveInterim('');
+            } else {
+                setLiveInterim(text);
+            }
+        });
+
+        socket.on('seminar_ended', () => {
+            setIsLive(false);
+            setLiveTranscripts([]);
+            setLiveInterim('');
+            fetchSeminar();
+        });
+
+        return () => socket.disconnect();
+    }, [seminar?.isHost, seminar?.isRegistered, id]);
+
+    const joinWindowClosed = seminar?.status === 'live' && seminar?.joinWindowClosesAt && Date.now() > new Date(seminar.joinWindowClosesAt).getTime();
 
     const handleRegister = async () => {
         setIsRegistering(true);
@@ -105,6 +146,10 @@ export default function SeminarDetail() {
                                     <div className="bg-[#FEF9C3] border border-[#EAB308]/50 text-[#854d0e] rounded-lg px-4 py-3 text-[13px] font-bold flex items-center gap-2">
                                         <span className="material-symbols-outlined text-[18px]">check_circle</span> You're registered for this seminar.
                                     </div>
+                                ) : joinWindowClosed ? (
+                                    <div className="bg-[#f1f3fc] border border-[#e0e2eb] text-[#777682] rounded-lg px-4 py-3 text-[13px] font-bold flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-[18px]">lock_clock</span> The join window for this seminar has closed.
+                                    </div>
                                 ) : (
                                     <button
                                         onClick={handleRegister}
@@ -112,9 +157,27 @@ export default function SeminarDetail() {
                                         className="bg-[#075e51] text-white px-6 py-3 rounded-lg text-[14px] font-bold shadow-sm hover:bg-[#097969] transition-colors disabled:opacity-60 flex items-center gap-2"
                                     >
                                         <span className="material-symbols-outlined text-[18px]">{isRegistering ? 'hourglass_empty' : 'how_to_reg'}</span>
-                                        {isRegistering ? 'Registering...' : seminar.registrationPriceCoins > 0 ? `Register · ${seminar.registrationPriceCoins} coins` : 'Register (Free)'}
+                                        {isRegistering
+                                            ? 'Registering...'
+                                            : seminar.status === 'completed'
+                                                ? (seminar.replayPriceCoins > 0 ? `Unlock Replay · ${seminar.replayPriceCoins} coins` : 'Unlock Replay (Free)')
+                                                : (seminar.registrationPriceCoins > 0 ? `Register · ${seminar.registrationPriceCoins} coins` : 'Register (Free)')}
                                     </button>
                                 )}
+                            </div>
+                        )}
+
+                        {isLive && (seminar.isHost || seminar.isRegistered) && (
+                            <div className="bg-white rounded-xl border border-[#EAB308] ring-1 ring-[#EAB308]/40 p-5 sm:p-6 mb-6 shadow-sm">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-[#ba1a1a] animate-pulse"></span>
+                                    <span className="font-bold text-[#181c22]">LIVE - Streaming Transcript</span>
+                                </div>
+                                <div className="space-y-2 text-[15px] leading-[1.7] text-[#464651] max-h-64 overflow-y-auto custom-scrollbar">
+                                    {liveTranscripts.map((t, i) => <p key={i}>{t}</p>)}
+                                    {liveInterim && <p className="text-[#075e51] italic">{liveInterim}</p>}
+                                    {liveTranscripts.length === 0 && !liveInterim && <p className="text-[#c7c5d3]">Waiting for the host to start speaking...</p>}
+                                </div>
                             </div>
                         )}
 

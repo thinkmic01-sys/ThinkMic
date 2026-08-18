@@ -38,6 +38,7 @@ import CourseLibrary from "./pages/Courses/CourseLibrary.jsx";
 import MyLearningList from "./pages/Courses/MyLearningList.jsx";
 import CourseWorkbook from "./pages/Courses/CourseWorkbook.jsx";
 import NearbySeminars from "./pages/Courses/NearbySeminars.jsx";
+import SeminarDetail from "./pages/Courses/SeminarDetail.jsx";
 import SeminarBroadcast from "./pages/Courses/SeminarBroadcast.jsx";
 import { isManagementUser } from "./config/managementAccess";
 
@@ -144,6 +145,7 @@ function AppRoutes() {
                             <Route path="courses/my-learning" element={<MyLearningList />} />
                             <Route path="courses/workbook" element={<CourseWorkbook />} />
                             <Route path="courses/seminars" element={<NearbySeminars />} />
+                            <Route path="courses/seminars/:id" element={<SeminarDetail />} />
                             <Route path="courses/broadcast/:seminarId" element={<SeminarBroadcast />} />
 
                             <Route path="forms" element={<Collaboration />} />

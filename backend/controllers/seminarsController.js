@@ -112,6 +112,7 @@ exports.createSeminar = async (req, res) => {
         const rewardEnabled = !!req.body.rewardEnabled;
         const rewardPerUser = Math.max(0, Number(req.body.rewardPerUser) || 0);
         const rewardMaxRecipients = Math.max(0, Number(req.body.rewardMaxRecipients) || 0);
+        const registrationPriceCoins = Math.max(0, Number(req.body.registrationPriceCoins) || 0);
         const status = req.body.status || 'scheduled';
 
         const newSeminar = new Seminar({
@@ -131,8 +132,20 @@ exports.createSeminar = async (req, res) => {
             status,
             rewardEnabled,
             rewardPerUser,
-            rewardMaxRecipients
+            rewardMaxRecipients,
+            registrationPriceCoins,
+            // Pre-Recorded seminars: the host uploads audio via the normal POST /recordings
+            // flow first (transcribed via Whisper into their own account, same as any other
+            // recording), then passes the resulting Recording's id here so it's linked to
+            // this seminar. Verified to actually belong to this host before trusting it.
+            documentUrl: req.body.documentUrl || '',
+            documentName: req.body.documentName || ''
         });
+
+        if (req.body.recordingId) {
+            const ownRecording = await Recording.exists({ _id: req.body.recordingId, userId: req.user.id });
+            if (ownRecording) newSeminar.recordingId = req.body.recordingId;
+        }
 
         await newSeminar.validate();
 
@@ -165,25 +178,49 @@ exports.createSeminar = async (req, res) => {
     }
 };
 
+// @desc    Seminar detail - full record for the host, but the supporting document and
+//          audio/transcript (documentUrl, recordingId, its playback + transcript text) are
+//          only included for the host or a registered attendee. Anyone else gets everything
+//          else (title, abstract, date, price, etc.) plus isHost/isRegistered:false so the
+//          frontend can render a "Register to unlock" state instead of the real content.
+// @route   GET /api/v1/seminars/:id
 exports.getSeminarById = async (req, res) => {
     try {
         const seminar = await Seminar.findById(req.params.id)
-            .populate('recordingId', 'r2Key mimeType durationSeconds')
+            .populate('recordingId', 'r2Key s3Key mimeType durationSeconds transcriptId')
             .populate('summaryId', 'summaryText tags')
             .lean();
         if (!seminar) return res.status(404).json({ message: 'Seminar not found' });
 
-        // Attach a short-lived presigned playback URL so the recorded seminar's audio
-        // streams directly from R2 - same pattern recordingController uses for recordings.
-        if (seminar.recordingId?.r2Key) {
-            try {
-                seminar.recordingId.playbackUrl = await r2StorageService.getR2DownloadPresignedUrl(seminar.recordingId.r2Key);
-            } catch (err) {
-                console.error('Seminar recording playback URL error:', err.message);
+        const isHost = seminar.hostId.toString() === req.user.id;
+        const isRegistered = isHost || !!(await Registration.exists({ userId: req.user.id, seminarId: seminar._id }));
+
+        if (!isRegistered) {
+            seminar.documentUrl = '';
+            seminar.documentName = '';
+            seminar.recordingId = null;
+            seminar.summaryId = null;
+        } else if (seminar.recordingId) {
+            // Attach a playback URL - R2 when configured (presigned, short-lived), falling
+            // back to this app's own local /uploads static host otherwise (matches how the
+            // rest of the app serves locally-stored files when R2 isn't configured).
+            if (seminar.recordingId.r2Key) {
+                try {
+                    seminar.recordingId.playbackUrl = await r2StorageService.getR2DownloadPresignedUrl(seminar.recordingId.r2Key);
+                } catch (err) {
+                    console.error('Seminar recording playback URL error:', err.message);
+                }
+            } else if (seminar.recordingId.s3Key && !seminar.recordingId.s3Key.startsWith('pending-')) {
+                seminar.recordingId.playbackUrl = `${req.protocol}://${req.get('host')}/uploads/${seminar.recordingId.s3Key}`;
+            }
+
+            if (seminar.recordingId.transcriptId) {
+                const transcript = await Transcript.findById(seminar.recordingId.transcriptId).select('text editedText').lean();
+                seminar.transcriptText = transcript ? (transcript.editedText || transcript.text || '') : '';
             }
         }
 
-        res.status(200).json(seminar);
+        res.status(200).json({ ...seminar, isHost, isRegistered });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });
@@ -212,10 +249,17 @@ exports.updateSeminar = async (req, res) => {
             return res.status(400).json({ message: 'Reward campaign terms cannot be changed once coins are reserved. Cancel or complete this seminar first.' });
         }
 
-        const fields = ['title', 'abstract', 'category', 'imageUrl', 'location', 'date', 'startTime', 'endTime', 'format', 'hostName', 'hostImageUrl', 'status'];
+        const fields = ['title', 'abstract', 'category', 'imageUrl', 'location', 'date', 'startTime', 'endTime', 'format', 'hostName', 'hostImageUrl', 'status', 'documentUrl', 'documentName'];
         fields.forEach(f => {
             if (req.body[f] !== undefined) seminar[f] = req.body[f];
         });
+        if (req.body.registrationPriceCoins !== undefined) {
+            seminar.registrationPriceCoins = Math.max(0, Number(req.body.registrationPriceCoins) || 0);
+        }
+        if (req.body.recordingId !== undefined) {
+            const ownRecording = await Recording.exists({ _id: req.body.recordingId, userId: req.user.id });
+            if (ownRecording) seminar.recordingId = req.body.recordingId;
+        }
         if (req.body.tags !== undefined) {
             seminar.tags = String(req.body.tags).split(',').map(t => t.trim()).filter(Boolean);
         }
@@ -288,8 +332,50 @@ exports.registerForSeminar = async (req, res) => {
         const existing = await Registration.findOne({ userId, seminarId });
         if (existing) return res.status(400).json({ message: 'Already registered' });
 
-        // Registration always succeeds if not a duplicate - reward distribution below is
-        // a best-effort atomic sub-step that never blocks the join itself.
+        const isHost = seminar.hostId.toString() === userId;
+
+        // Registration price is separate from (and independent of) the rewardEnabled
+        // campaign below - a host is never charged to "register" for their own seminar.
+        // Charged and the registration record created atomically: if the debit/credit fails
+        // (insufficient balance), no Registration is created at all.
+        if (!isHost && seminar.registrationPriceCoins > 0) {
+            const paySession = await mongoose.startSession();
+            try {
+                await paySession.withTransaction(async () => {
+                    await coinWalletService.debitCoins(userId, seminar.registrationPriceCoins, {
+                        type: 'seminar_registration_paid',
+                        action: `Registered for "${seminar.title}"`,
+                        relatedUserId: seminar.hostId,
+                        relatedEntityType: 'Seminar',
+                        relatedEntityId: seminar._id,
+                        actorId: userId,
+                        actorRole: req.user.role,
+                        auditAction: 'seminar_registration_paid'
+                    }, paySession);
+
+                    await coinWalletService.creditCoins(seminar.hostId, seminar.registrationPriceCoins, {
+                        type: 'seminar_registration_received',
+                        action: `${req.user.fullName} registered for "${seminar.title}"`,
+                        relatedUserId: userId,
+                        relatedEntityType: 'Seminar',
+                        relatedEntityId: seminar._id,
+                        actorId: userId,
+                        actorRole: req.user.role,
+                        auditAction: 'seminar_registration_received'
+                    }, paySession);
+                });
+            } catch (err) {
+                if (err instanceof coinWalletService.InsufficientBalanceError) {
+                    return res.status(400).json({ message: 'Insufficient coin balance to register for this seminar.' });
+                }
+                throw err;
+            } finally {
+                paySession.endSession();
+            }
+        }
+
+        // Registration always succeeds if not a duplicate (and payment, if any, went through) -
+        // reward distribution below is a best-effort atomic sub-step that never blocks the join.
         const registration = await Registration.create({ userId, seminarId });
 
         if (seminar.rewardEnabled && seminar.rewardPerUser > 0) {

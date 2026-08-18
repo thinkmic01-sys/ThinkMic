@@ -95,7 +95,9 @@ export default function NearbySeminars() {
     const navigate = useNavigate();
     const token = useSelector(state => state.auth?.accessToken);
     const [seminars, setSeminars] = useState([]);
+    const [searchInput, setSearchInput] = useState('');
     const [distanceFilter, setDistanceFilter] = useState('Any Distance');
+    const [customDistanceKm, setCustomDistanceKm] = useState('');
 
     // Same Main Topic -> Sub Topic (optional) -> Keyword hierarchy admins add keywords under
     // (Management > Keywords) - a seminar's `category` is always one leaf keyword's text.
@@ -214,9 +216,15 @@ export default function NearbySeminars() {
         return { ...s, coords, distanceKm };
     });
 
-    const distanceThresholdKm = distanceFilter === '< 5 km' ? 5 : distanceFilter === '< 10 km' ? 10 : null;
+    const distanceThresholdKm = distanceFilter === '< 5 km' ? 5
+        : distanceFilter === '< 10 km' ? 10
+        : distanceFilter === 'Custom' ? (Number(customDistanceKm) > 0 ? Number(customDistanceKm) : null)
+        : null;
+
+    const searchQuery = searchInput.trim().toLowerCase();
 
     const filteredSeminars = enrichedSeminars
+        .filter((s) => !searchQuery || s.title?.toLowerCase().includes(searchQuery) || s.abstract?.toLowerCase().includes(searchQuery))
         .filter((s) => !isTopicFilterActive || matchingCategoryTexts.has(s.category))
         .filter((s) => distanceThresholdKm === null || (s.distanceKm !== null && s.distanceKm < distanceThresholdKm))
         .sort((a, b) => {
@@ -241,14 +249,26 @@ export default function NearbySeminars() {
             `}</style>
 
             {/* Top Toolbar */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[#e0e2eb] bg-white shrink-0 shadow-sm z-20 gap-3 sm:gap-0">
+            <div className="flex flex-col gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b border-[#e0e2eb] bg-white shrink-0 shadow-sm z-20">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
                 <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
                     <button onClick={() => navigate('/app/courses')} className="text-[#777682] hover:text-[#075e51] transition-colors w-8 h-8 rounded-full hover:bg-[#f1f3fc] flex items-center justify-center shrink-0">
                         <span className="material-symbols-outlined text-[20px] sm:text-[24px]">arrow_back</span>
                     </button>
                     <h1 className="text-[20px] sm:text-[24px] md:text-[28px] font-bold text-[#075e51] truncate">Nearby Seminars</h1>
                 </div>
-                <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto pl-11 sm:pl-0">
+                <div className="relative w-full sm:w-64">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#777682] text-[18px]">search</span>
+                    <input
+                        type="text"
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        placeholder="Search seminars by name..."
+                        className="w-full border border-[#c7c5d3] rounded-md py-2 pl-9 pr-3 text-[13px] sm:text-[14px] outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51]"
+                    />
+                </div>
+              </div>
+                <div className="flex flex-wrap gap-2 sm:gap-3 w-full pl-11 sm:pl-0">
                     <div className="relative flex-1 sm:flex-none min-w-[120px]">
                         <select
                             value={mainTopicFilter}
@@ -289,9 +309,22 @@ export default function NearbySeminars() {
                             <option>Any Distance</option>
                             <option>&lt; 5 km</option>
                             <option>&lt; 10 km</option>
+                            <option value="Custom">Custom...</option>
                         </select>
                         <span className="material-symbols-outlined absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-[#777682] pointer-events-none text-[18px]">expand_more</span>
                     </div>
+                    {distanceFilter === 'Custom' && (
+                        <div className="relative flex-1 sm:flex-none min-w-[120px]">
+                            <input
+                                type="number"
+                                min="0"
+                                value={customDistanceKm}
+                                onChange={(e) => setCustomDistanceKm(e.target.value)}
+                                placeholder="Distance in km"
+                                className="w-full bg-[#F4F9F8] sm:bg-white border border-[#e0e2eb] sm:border-[#c7c5d3] rounded text-[#181c22] px-3 sm:px-4 py-2 text-[13px] sm:text-[14px] font-medium outline-none focus:border-[#075e51]"
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -316,7 +349,11 @@ export default function NearbySeminars() {
                         <div className="text-center py-10 text-[#777682] text-[14px]">No seminars found.</div>
                     ) : (
                         filteredSeminars.map((seminar, idx) => (
-                            <div key={seminar._id || idx} className="bg-white border border-[#e0e2eb] rounded-lg p-4 sm:p-5 hover:border-[#075e51] transition-colors cursor-pointer relative shadow-sm">
+                            <div
+                                key={seminar._id || idx}
+                                onClick={() => navigate(`/app/courses/seminars/${seminar._id}`)}
+                                className="bg-white border border-[#e0e2eb] rounded-lg p-4 sm:p-5 hover:border-[#075e51] transition-colors cursor-pointer relative shadow-sm"
+                            >
                                 {idx === 0 && <div className="absolute top-0 left-0 w-1 h-full bg-[#EAB308] rounded-l-lg"></div>}
                                 <div className="flex justify-between items-start mb-2 sm:mb-3 pl-2">
                                     <span className="bg-[#FEF9C3] text-[#854d0e] font-mono text-[9px] sm:text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 uppercase">
@@ -343,7 +380,7 @@ export default function NearbySeminars() {
                                         <span className="material-symbols-outlined text-[14px]">calendar_today</span> {new Date(seminar.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • {seminar.startTime} - {seminar.endTime}
                                     </div>
                                     <button
-                                        onClick={() => handleRegister(seminar)}
+                                        onClick={(e) => { e.stopPropagation(); handleRegister(seminar); }}
                                         disabled={registeredIds.has(seminar._id) || registeringId === seminar._id}
                                         className={`w-full sm:w-auto px-5 py-2 sm:py-1.5 rounded text-[12px] font-bold transition-colors text-center disabled:opacity-70 disabled:cursor-not-allowed ${registeredIds.has(seminar._id) ? 'bg-[#FEF9C3] border border-[#EAB308] text-[#854d0e]' : idx === 0 ? 'bg-[#075e51] text-white hover:bg-[#097969] shadow-sm' : 'bg-white border border-[#075e51] text-[#075e51] hover:bg-[#f1f3fc]'}`}
                                     >
@@ -351,7 +388,9 @@ export default function NearbySeminars() {
                                             ? 'Registered'
                                             : registeringId === seminar._id
                                                 ? 'Joining...'
-                                                : seminar.format === 'Pre-Recorded' ? 'Watch Now' : 'Register'}
+                                                : seminar.format === 'Pre-Recorded'
+                                                    ? 'Watch Now'
+                                                    : seminar.registrationPriceCoins > 0 ? `Register · ${seminar.registrationPriceCoins}` : 'Register'}
                                     </button>
                                 </div>
                             </div>

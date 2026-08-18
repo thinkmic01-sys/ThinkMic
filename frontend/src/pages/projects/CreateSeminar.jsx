@@ -157,6 +157,19 @@ export default function CreateSeminar() {
     const [rewardEnabled, setRewardEnabled] = useState(false);
     const [rewardPerUser, setRewardPerUser] = useState(0);
     const [rewardMaxRecipients, setRewardMaxRecipients] = useState(0);
+    // Optional coin price to register - independent of the reward campaign above (that
+    // pays attendees; this charges them).
+    const [registrationPriceCoins, setRegistrationPriceCoins] = useState(0);
+    // Optional supporting document (any file type) attendees can download once registered
+    const [documentUrl, setDocumentUrl] = useState('');
+    const [documentName, setDocumentName] = useState('');
+    const [isUploadingDocument, setIsUploadingDocument] = useState(false);
+    // Pre-Recorded only: upload audio through the normal recordings pipeline so it gets
+    // transcribed via Whisper into the host's own account, then link the resulting
+    // Recording to this seminar.
+    const [preRecordedAudioName, setPreRecordedAudioName] = useState('');
+    const [preRecordedRecordingId, setPreRecordedRecordingId] = useState('');
+    const [isUploadingAudio, setIsUploadingAudio] = useState(false);
     const availableCoins = user?.coins || 0;
     const totalRewardRequired = (Number(rewardPerUser) || 0) * (Number(rewardMaxRecipients) || 0);
 
@@ -229,6 +242,46 @@ export default function CreateSeminar() {
         }
     };
 
+    const handleDocumentUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setIsUploadingDocument(true);
+        const formData = new FormData();
+        formData.append('document', file);
+        try {
+            const response = await api.post('/upload/document', formData);
+            setDocumentUrl(response.data.url);
+            setDocumentName(response.data.name || file.name);
+            showToast('Document uploaded successfully!', 'success');
+        } catch (error) {
+            showToast(error.response?.data?.message || 'Failed to upload document.', 'error');
+        } finally {
+            setIsUploadingDocument(false);
+        }
+    };
+
+    // Uploads through the same endpoint a normal recording upload uses (POST /recordings) -
+    // this is what makes the audio get transcribed via Whisper into the host's own account,
+    // rather than just being stored as an inert file attachment.
+    const handlePreRecordedAudioUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setIsUploadingAudio(true);
+        const formData = new FormData();
+        formData.append('audio', file);
+        formData.append('title', title || 'Pre-Recorded Seminar Audio');
+        try {
+            const response = await api.post('/recordings', formData);
+            setPreRecordedRecordingId(response.data.recording._id);
+            setPreRecordedAudioName(file.name);
+            showToast('Audio uploaded - transcribing in the background.', 'success');
+        } catch (error) {
+            showToast(error.response?.data?.message || 'Failed to upload audio.', 'error');
+        } finally {
+            setIsUploadingAudio(false);
+        }
+    };
+
     const formatOptions = [
         { id: 'Live Broadcast', icon: 'sensors' },
         { id: 'Pre-Recorded', icon: 'videocam' },
@@ -237,7 +290,10 @@ export default function CreateSeminar() {
 
     const handleSchedule = async (statusToSave = 'scheduled') => {
         if (!title) return alert("Please enter a seminar title.");
-        
+        if (format === 'Pre-Recorded' && statusToSave !== 'draft' && !preRecordedRecordingId) {
+            return alert("Upload the pre-recorded audio before scheduling this seminar.");
+        }
+
         try {
             const payload = {
                 title,
@@ -255,7 +311,11 @@ export default function CreateSeminar() {
                 status: statusToSave,
                 rewardEnabled,
                 rewardPerUser: Number(rewardPerUser) || 0,
-                rewardMaxRecipients: Number(rewardMaxRecipients) || 0
+                rewardMaxRecipients: Number(rewardMaxRecipients) || 0,
+                registrationPriceCoins: Number(registrationPriceCoins) || 0,
+                documentUrl,
+                documentName,
+                recordingId: format === 'Pre-Recorded' ? preRecordedRecordingId : undefined
             };
             await api.post('/seminars', payload);
             showToast(`Seminar "${title}" ${statusToSave === 'scheduled' ? 'scheduled' : 'saved as draft'} successfully!`, 'success');
@@ -455,6 +515,42 @@ export default function CreateSeminar() {
                                 </div>
                                 <div className="col-span-1">
                                     <label className="block text-[11px] sm:text-[12px] font-bold text-[#464651] mb-2 uppercase tracking-wider">
+                                        Supporting Document <span className="normal-case font-normal text-[#777682]">(optional)</span>
+                                    </label>
+                                    <p className="text-[11px] text-[#777682] mb-2">Slides, notes, or any file - only visible to registered attendees.</p>
+                                    <div className="flex flex-col gap-2">
+                                        {documentName && (
+                                            <div className="flex items-center justify-between gap-2 bg-[#f1f3fc] border border-[#e0e2eb] rounded-md px-3 py-2">
+                                                <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[#181c22] truncate">
+                                                    <span className="material-symbols-outlined text-[16px] text-[#075e51]">description</span>
+                                                    {documentName}
+                                                </span>
+                                                <button type="button" onClick={() => { setDocumentUrl(''); setDocumentName(''); }} className="text-[#777682] hover:text-[#ba1a1a] shrink-0">
+                                                    <span className="material-symbols-outlined text-[16px]">close</span>
+                                                </button>
+                                            </div>
+                                        )}
+                                        <input
+                                            type="file"
+                                            id="seminar-document-input"
+                                            className="hidden"
+                                            onChange={handleDocumentUpload}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => document.getElementById('seminar-document-input').click()}
+                                            disabled={isUploadingDocument}
+                                            className="bg-[#f1f3fc] text-[#075e51] border border-[#c7c5d3] px-4 py-2.5 rounded-md font-bold text-[13px] hover:bg-[#e0e2eb] transition-colors flex items-center justify-center gap-1.5 shadow-sm w-full"
+                                        >
+                                            <span className="material-symbols-outlined text-[18px]">
+                                                {isUploadingDocument ? 'hourglass_empty' : 'upload_file'}
+                                            </span>
+                                            {isUploadingDocument ? 'Uploading...' : documentName ? 'Replace Document' : 'Upload Document'}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="col-span-1">
+                                    <label className="block text-[11px] sm:text-[12px] font-bold text-[#464651] mb-2 uppercase tracking-wider">
                                         Guest Speaker / Host
                                     </label>
                                     <div className="flex flex-col gap-3">
@@ -587,6 +683,46 @@ export default function CreateSeminar() {
                                     </div>
                                 ))}
                             </div>
+
+                            {format === 'Pre-Recorded' && (
+                                <div className="border-t border-[#e0e2eb] pt-5 sm:pt-6 mt-5 sm:mt-6">
+                                    <label className="block text-[11px] sm:text-[12px] font-bold text-[#464651] mb-2 uppercase tracking-wider">
+                                        Pre-Recorded Audio <span className="text-[#ba1a1a]">*</span>
+                                    </label>
+                                    <p className="text-[11px] text-[#777682] mb-2">Uploaded audio is transcribed into your account automatically - registered attendees get the transcript.</p>
+                                    <div className="flex flex-col gap-2">
+                                        {preRecordedAudioName && (
+                                            <div className="flex items-center justify-between gap-2 bg-[#f1f3fc] border border-[#e0e2eb] rounded-md px-3 py-2">
+                                                <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[#181c22] truncate">
+                                                    <span className="material-symbols-outlined text-[16px] text-[#075e51]">graphic_eq</span>
+                                                    {preRecordedAudioName}
+                                                </span>
+                                                <button type="button" onClick={() => { setPreRecordedRecordingId(''); setPreRecordedAudioName(''); }} className="text-[#777682] hover:text-[#ba1a1a] shrink-0">
+                                                    <span className="material-symbols-outlined text-[16px]">close</span>
+                                                </button>
+                                            </div>
+                                        )}
+                                        <input
+                                            type="file"
+                                            id="seminar-audio-input"
+                                            accept="audio/*"
+                                            className="hidden"
+                                            onChange={handlePreRecordedAudioUpload}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => document.getElementById('seminar-audio-input').click()}
+                                            disabled={isUploadingAudio}
+                                            className="bg-[#f1f3fc] text-[#075e51] border border-[#c7c5d3] px-4 py-2.5 rounded-md font-bold text-[13px] hover:bg-[#e0e2eb] transition-colors flex items-center justify-center gap-1.5 shadow-sm w-full sm:w-auto"
+                                        >
+                                            <span className="material-symbols-outlined text-[18px]">
+                                                {isUploadingAudio ? 'hourglass_empty' : 'upload'}
+                                            </span>
+                                            {isUploadingAudio ? 'Uploading...' : preRecordedAudioName ? 'Replace Audio' : 'Upload Audio'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Step 4: Reward Campaign */}
@@ -644,6 +780,26 @@ export default function CreateSeminar() {
                                     )}
                                 </div>
                             )}
+                        </div>
+
+                        {/* Step 5: Charge for Access */}
+                        <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-5 sm:p-6 md:p-8">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#eef0f9] text-[#075e51] font-bold flex items-center justify-center text-[13px] sm:text-[14px] shrink-0">5</div>
+                                <h2 className="text-[18px] sm:text-[20px] font-bold text-[#075e51]">Charge for Access</h2>
+                            </div>
+                            <p className="text-[12px] text-[#777682] mb-5 sm:mb-6 pl-10">Optional - set a coin price attendees pay to register. Leave at 0 to keep this seminar free.</p>
+                            <div className="border-t border-[#e0e2eb] pt-5 sm:pt-6">
+                                <label className="block text-[11px] sm:text-[12px] font-bold text-[#464651] mb-2 uppercase tracking-wider">Registration Price (coins)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={registrationPriceCoins}
+                                    onChange={(e) => setRegistrationPriceCoins(e.target.value)}
+                                    placeholder="0 = free"
+                                    className="w-full sm:w-64 border border-[#c7c5d3] rounded-md p-2.5 sm:p-3 text-[14px] sm:text-[15px] text-[#181c22] bg-white focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51] outline-none transition-shadow"
+                                />
+                            </div>
                         </div>
 
                     </div>

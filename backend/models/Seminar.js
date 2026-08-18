@@ -80,6 +80,25 @@ const seminarSchema = new mongoose.Schema({
         default: 0,
         min: 0
     },
+    // Optional coin price to register/access this seminar - entirely separate from the
+    // rewardEnabled campaign above (that pays attendees; this charges them). Both can be
+    // set at once, though a host normally wouldn't. 0 = free to register.
+    registrationPriceCoins: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+    // Optional supporting file (slides, notes, any document) the host attaches at creation -
+    // stored locally under /uploads like seminar cover images, but any file type rather than
+    // images only. Visible only to the host and registered attendees (see getSeminarById).
+    documentUrl: {
+        type: String,
+        default: ''
+    },
+    documentName: {
+        type: String,
+        default: ''
+    },
     // Set when the host starts/ends the live broadcast (POST /seminars/:id/start|end).
     actualStartTime: {
         type: Date

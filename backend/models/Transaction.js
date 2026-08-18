@@ -25,7 +25,7 @@ const transactionSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['referral_l1', 'referral_l2', 'referral_l3', 'seminar_reward_reserved', 'seminar_reward_received', 'seminar_reward_refunded', 'coin_purchase', 'admin_adjustment', 'project_unlock_paid', 'project_unlock_received', 'other'],
+        enum: ['referral_l1', 'referral_l2', 'referral_l3', 'seminar_reward_reserved', 'seminar_reward_received', 'seminar_reward_refunded', 'coin_purchase', 'admin_adjustment', 'project_unlock_paid', 'project_unlock_received', 'seminar_registration_paid', 'seminar_registration_received', 'other'],
         default: 'other'
     },
     relatedUserId: {

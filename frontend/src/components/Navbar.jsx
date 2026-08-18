@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import api from '../services/api';
 import { API_BASE_URL } from '../config';
+import CoinPackagesModal from './CoinPackagesModal';
 
 const NOTIFICATION_META = {
     reminder: { icon: 'schedule', color: 'text-[#075e51] bg-[#eef0f9]', title: 'Reminder' },
@@ -28,6 +29,7 @@ export default function Navbar({ onMenuClick }) {
     
     const [notifications, setNotifications] = useState([]);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
+    const [isCoinPackagesOpen, setIsCoinPackagesOpen] = useState(false);
 
     useEffect(() => {
         if (!isAuthenticated || !accessToken) return;
@@ -176,10 +178,14 @@ export default function Navbar({ onMenuClick }) {
                 <div className="flex items-center gap-3 sm:gap-4 md:gap-6 shrink-0 pl-2">
 
                     {isAuthenticated && user && (
-                        <div className="hidden md:flex items-center gap-2 bg-[#FEF9C3] px-3 py-1.5 rounded-full border border-[#EAB308]/50 cursor-default shrink-0">
+                        <button
+                            onClick={() => setIsCoinPackagesOpen(true)}
+                            title="Get more coins"
+                            className="hidden md:flex items-center gap-2 bg-[#FEF9C3] px-3 py-1.5 rounded-full border border-[#EAB308]/50 hover:bg-[#EAB308]/20 transition-colors shrink-0"
+                        >
                             <span className="material-symbols-outlined text-[#854d0e] text-[16px]">toll</span>
                             <span className="text-[#854d0e] font-mono text-[13px] font-bold">+{user.coins.toLocaleString()}</span>
-                        </div>
+                        </button>
                     )}
 
                     <div className="flex gap-1 sm:gap-2 shrink-0">
@@ -243,6 +249,8 @@ export default function Navbar({ onMenuClick }) {
                     )}
                 </div>
             </header>
+
+            <CoinPackagesModal isOpen={isCoinPackagesOpen} onClose={() => setIsCoinPackagesOpen(false)} />
         </>
     );
 }

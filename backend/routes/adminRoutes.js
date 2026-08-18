@@ -21,6 +21,9 @@ const {
 const {
     listAllPackages, createPackage, updatePackage, deletePackage
 } = require('../controllers/packagesController');
+const {
+    listAllCoinPackages, createCoinPackage, updateCoinPackage, deleteCoinPackage
+} = require('../controllers/coinPackagesController');
 
 router.use(protect);
 // Every route below carries its own checkPermission() - there is deliberately no
@@ -89,5 +92,13 @@ router.get('/packages', checkPermission('packages.manage'), listAllPackages);
 router.post('/packages', checkPermission('packages.manage'), createPackage);
 router.patch('/packages/:id', checkPermission('packages.manage'), updatePackage);
 router.delete('/packages/:id', checkPermission('packages.manage'), deletePackage);
+
+// Coin packages - purchasable coin bundles, alongside the storage/minutes/searches
+// packages above under the same admin capability. Reading the active-only catalog is open
+// to any authenticated user via GET /api/v1/coin-packages instead.
+router.get('/coin-packages', checkPermission('packages.manage'), listAllCoinPackages);
+router.post('/coin-packages', checkPermission('packages.manage'), createCoinPackage);
+router.patch('/coin-packages/:id', checkPermission('packages.manage'), updateCoinPackage);
+router.delete('/coin-packages/:id', checkPermission('packages.manage'), deleteCoinPackage);
 
 module.exports = router;

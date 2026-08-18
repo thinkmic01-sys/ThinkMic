@@ -77,6 +77,7 @@ app.use('/api/v1/support', require('./routes/supportRoutes'));
 app.use('/api/v1/deepgram', require('./routes/deepgramRoutes'));
 app.use('/api/v1/keywords', require('./routes/keywordsRoutes'));
 app.use('/api/v1/packages', require('./routes/packagesRoutes'));
+app.use('/api/v1/coin-packages', require('./routes/coinPackagesRoutes'));
 
 // 404 for anything that didn't match a mounted route
 app.use((req, res) => {

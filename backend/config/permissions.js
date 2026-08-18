@@ -24,7 +24,8 @@ const PERMISSIONS = [
     { key: 'analytics.view', label: 'View Analytics', category: 'Analytics', description: 'View submission and platform analytics' },
     { key: 'submissions.view_all', label: 'View All Submissions', category: 'Submissions', description: 'List and view every user\'s form submissions' },
     { key: 'submissions.view_own', label: 'View Submissions To Own Schemas', category: 'Submissions', description: 'List and view submissions only for forms you created yourself' },
-    { key: 'exports.access', label: 'Access Exports', category: 'Exports', description: 'Access data export endpoints' }
+    { key: 'exports.access', label: 'Access Exports', category: 'Exports', description: 'Access data export endpoints' },
+    { key: 'packages.manage', label: 'Manage Packages', category: 'Packages', description: 'Create, edit, and delete the purchasable storage/transcription/search packages shown to users' }
 ];
 
 const PERMISSION_KEYS = PERMISSIONS.map((p) => p.key);

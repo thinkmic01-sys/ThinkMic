@@ -7,6 +7,7 @@ import { API_BASE_URL } from '../config';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import SupportSidebar from './SupportSidebar';
+import PackagesPromptModal from './PackagesPromptModal';
 
 export default function Layout({ children }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -69,6 +70,9 @@ export default function Layout({ children }) {
 
             {/* Support Chat Sidebar */}
             <SupportSidebar isOpen={isSupportOpen} onClose={() => setIsSupportOpen(false)} />
+
+            {/* Package purchase prompt - shown once per login to a user with no purchased package */}
+            <PackagesPromptModal />
 
             {/* Global AI Summary Ready Toast */}
             {summaryToast && (

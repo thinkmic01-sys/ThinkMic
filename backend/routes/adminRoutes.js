@@ -18,6 +18,9 @@ const { createKeyword, deleteKeyword } = require('../controllers/keywordsControl
 const {
     getSettings: getPromptSettings, updateSettings: updatePromptSettings
 } = require('../controllers/promptSettingsAdminController');
+const {
+    listAllPackages, createPackage, updatePackage, deletePackage
+} = require('../controllers/packagesController');
 
 router.use(protect);
 // Every route below carries its own checkPermission() - there is deliberately no
@@ -79,5 +82,12 @@ router.delete('/keywords/:id', checkPermission('keywords.manage'), deleteKeyword
 // (see backend/services/openaiService.js and models/PromptSettings.js).
 router.get('/prompts/settings', checkPermission('prompts.manage'), getPromptSettings);
 router.patch('/prompts/settings', checkPermission('prompts.manage'), updatePromptSettings);
+
+// Packages - purchasable storage/transcription/search bundles (Admin > Packages). Reading
+// the active-only catalog is open to any authenticated user via GET /api/v1/packages instead.
+router.get('/packages', checkPermission('packages.manage'), listAllPackages);
+router.post('/packages', checkPermission('packages.manage'), createPackage);
+router.patch('/packages/:id', checkPermission('packages.manage'), updatePackage);
+router.delete('/packages/:id', checkPermission('packages.manage'), deletePackage);
 
 module.exports = router;

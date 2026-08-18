@@ -29,7 +29,8 @@ export function normalizeUser(rawUser) {
         title: rawUser.title,
         coins: rawUser.coins || 0,
         referralCode: rawUser.referralCode,
-        avatar: rawUser.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(rawUser.fullName || '')}&background=222777&color=fff`
+        avatar: rawUser.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(rawUser.fullName || '')}&background=222777&color=fff`,
+        purchasedPackageId: rawUser.purchasedPackageId || null
     };
 }
 

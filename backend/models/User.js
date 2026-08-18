@@ -130,6 +130,15 @@ const UserSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Keyword'
     }],
+    // Set once this user completes a purchase from the Admin > Packages catalog - nothing
+    // sets this yet (no payment gateway is wired up, see CLAUDE.md's "Planned" list), so it
+    // stays null for every user for now. Its only current effect: PackagesPromptModal.jsx
+    // keeps showing the purchase prompt on login while this is null.
+    purchasedPackageId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Package',
+        default: null
+    },
     // Which Lecturer-role user(s) (schemas.manage_own permission) this student has been
     // assigned to by an admin (see adminController.updateLecturerStudents) - a student can
     // be assigned to multiple lecturers, which is what lets different lecturers share some

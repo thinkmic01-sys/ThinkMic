@@ -79,7 +79,8 @@ const issueAuthSession = async (res, user) => {
             coins: user.coins,
             referralCode: user.referralCode,
             avatarUrl: user.avatarUrl,
-            title: user.title
+            title: user.title,
+            purchasedPackageId: user.purchasedPackageId
         }
     };
 };
@@ -457,7 +458,8 @@ exports.refresh = async (req, res) => {
                 coins: user.coins,
                 referralCode: user.referralCode,
                 avatarUrl: user.avatarUrl,
-                title: user.title
+                title: user.title,
+                purchasedPackageId: user.purchasedPackageId
             }
         });
     } catch (error) {

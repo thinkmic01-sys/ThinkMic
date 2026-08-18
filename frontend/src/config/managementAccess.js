@@ -14,7 +14,8 @@ export const MANAGEMENT_PAGES = [
         ]
     },
     { to: '/app/admin/keywords', icon: 'sell', label: 'Keywords', permissions: ['keywords.manage'] },
-    { to: '/app/admin/prompts', icon: 'psychology', label: 'AI Prompts', permissions: ['prompts.manage'] }
+    { to: '/app/admin/prompts', icon: 'psychology', label: 'AI Prompts', permissions: ['prompts.manage'] },
+    { to: '/app/admin/packages', icon: 'inventory_2', label: 'Packages', permissions: ['packages.manage'] }
 ];
 
 export const isManagementUser = (permissions = []) =>

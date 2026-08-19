@@ -6,6 +6,7 @@ const path = require('path');
 const { getMyRecordings, uploadAudioLocal, getRecordingById, getUploadUrl, createRecordingDraft, deleteRecording, initLiveSession, getRecordingHistory } = require('../controllers/recordingController');
 const { protect } = require('../middleware/authMiddleware');
 const { expensiveOperationLimiter } = require('../middleware/rateLimiters');
+const { requireCapacity } = require('../middleware/usageGuard');
 
 // Ensure 'uploads' directory exists on your local machine
 const uploadDir = path.join(__dirname, '../uploads');
@@ -66,18 +67,24 @@ const handleAudioUpload = (req, res, next) => {
 // Protect all routes
 router.use(protect);
 
+// Every entry point that can create or finalize a new recording is gated on the user
+// having a package selected and not already at/over 100% storage or transcription-minutes
+// usage. /draft is gated too (not just /upload-url) since a client could call it directly
+// with no recordingId and create a brand new Recording without ever hitting /upload-url first.
+const requireRecordingCapacity = [requireCapacity('storage'), requireCapacity('transcription')];
+
 // Presigned R2 upload URL generator (falls back to { storage: 'local' } if R2 isn't configured)
-router.get('/upload-url', expensiveOperationLimiter, getUploadUrl);
+router.get('/upload-url', requireRecordingCapacity, expensiveOperationLimiter, getUploadUrl);
 
 // Finalizes a recording after a direct R2 upload completes
-router.post('/draft', expensiveOperationLimiter, createRecordingDraft);
+router.post('/draft', requireRecordingCapacity, expensiveOperationLimiter, createRecordingDraft);
 
 // Creates a placeholder Recording + empty Transcript the moment a live recording starts,
 // so the transcript text can be autosaved (PATCH /transcriptions/:id) as it streams in
-router.post('/live/start', initLiveSession);
+router.post('/live/start', requireRecordingCapacity, initLiveSession);
 
 // Our new Local Upload route. Multer handles the file labeled 'audio' in the form data
-router.post('/', expensiveOperationLimiter, handleAudioUpload, uploadAudioLocal);
+router.post('/', requireRecordingCapacity, expensiveOperationLimiter, handleAudioUpload, uploadAudioLocal);
 
 // Get recordings
 router.get('/', getMyRecordings);

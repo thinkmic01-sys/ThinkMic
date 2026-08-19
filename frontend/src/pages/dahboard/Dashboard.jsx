@@ -21,6 +21,7 @@ export default function Dashboard() {
     const [stats, setStats] = useState({ recordings: 0, reports: 0, searchesRun: 0 });
     const [timelineActivity, setTimelineActivity] = useState([]);
     const [chartData, setChartData] = useState([]);
+    const [packageUsage, setPackageUsage] = useState(null);
 
     useEffect(() => {
         if (!accessToken) return;
@@ -34,6 +35,9 @@ export default function Dashboard() {
                 // Fetch Recent Recordings
                 const recRes = await api.get('/recordings');
                 const recData = recRes.data;
+
+                // Fetch package usage (storage/transcription/searches vs the selected package)
+                api.get('/users/me/usage').then((res) => setPackageUsage(res.data)).catch(() => {});
 
                 if (kpiData.kpis) {
                     setStats({
@@ -141,7 +145,7 @@ export default function Dashboard() {
                     <div className="bg-white shadow-card rounded-lg p-5 border-l-[8px] border-[#075e51] flex flex-col justify-between h-[120px]">
                         <p className="font-mono text-[14px] font-bold text-[#464651] uppercase tracking-wider">Storage Used</p>
                         <div className="flex items-end justify-between">
-                            <p className="text-[32px] font-bold text-[#075e51] leading-none">45%</p>
+                            <p className="text-[32px] font-bold text-[#075e51] leading-none">{packageUsage?.hasPackage ? `${Math.round(packageUsage.storagePct)}%` : '-'}</p>
                             <span className="material-symbols-outlined text-[#c7c5d3] text-[24px]">cloud</span>
                         </div>
                     </div>
@@ -221,12 +225,16 @@ export default function Dashboard() {
                                 <h3 className="text-[18px] font-bold text-[#181c22] flex items-center gap-2">
                                     <span className="material-symbols-outlined text-[#777682]">cloud_done</span> Storage Allocation
                                 </h3>
-                                <p className="font-mono text-[14px] font-bold text-[#777682]">45GB / 100GB</p>
+                                <p className="font-mono text-[14px] font-bold text-[#777682]">
+                                    {packageUsage?.hasPackage ? `${packageUsage.storageGBUsed.toFixed(1)}GB / ${packageUsage.package.storageGB}GB` : 'No package selected'}
+                                </p>
                             </div>
                             <div className="w-full bg-[#e6e8f1] rounded-full h-3 mb-2 overflow-hidden">
-                                <div className="bg-gradient-to-r from-[#075e51] to-[#EAB308] h-3 rounded-full" style={{ width: '45%' }}></div>
+                                <div className="bg-gradient-to-r from-[#075e51] to-[#EAB308] h-3 rounded-full" style={{ width: `${Math.min(100, packageUsage?.storagePct || 0)}%` }}></div>
                             </div>
-                            <p className="font-mono text-[12px] font-bold text-[#464651] text-right">45% Used. Upgrade for more capacity.</p>
+                            <p className="font-mono text-[12px] font-bold text-[#464651] text-right">
+                                {packageUsage?.hasPackage ? `${Math.round(packageUsage.storagePct)}% Used${packageUsage.storagePct >= 80 ? '. Upgrade for more capacity.' : '.'}` : 'Select a package to see your usage.'}
+                            </p>
                         </div>
                     </div>
                 </div>

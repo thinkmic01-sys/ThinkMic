@@ -1,5 +1,6 @@
 const SearchResult = require('../models/SearchResult');
 const { searchQueue } = require('../queues');
+const usageService = require('../services/usageService');
 
 exports.createSearchSession = async (req, res) => {
     try {
@@ -38,6 +39,7 @@ exports.createSearchSession = async (req, res) => {
         }
 
         console.log(`[searchController] Finished enqueuing, sending 202`);
+        await usageService.checkAndNotify(req.user._id);
         res.status(202).json({ sessionId, jobIds });
     } catch (error) {
         console.error(`[searchController] Error in createSearchSession:`, error);

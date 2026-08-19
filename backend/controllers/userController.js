@@ -1,6 +1,8 @@
 const User = require('../models/User');
+const Package = require('../models/Package');
 const { encrypt } = require('../utils/encryption');
 const profileDocumentsService = require('../services/profileDocumentsService');
+const usageService = require('../services/usageService');
 
 // Builds the response-safe user object: decrypts kyc.idNumber and resolves private R2 keys
 // (ID document, certification files) into short-lived presigned URLs. `user` must have been
@@ -177,6 +179,37 @@ exports.searchStudents = async (req, res) => {
             ]
         }).select('fullName email').limit(10);
         res.status(200).json({ users });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+// @desc    Current user's usage against their selected package (storage/transcription
+//          minutes/searches, percentages, and which dimensions if any are full) - drives the
+//          Dashboard's storage widget and the upgrade-prompt trigger. When any dimension is
+//          full, also returns the active packages that exceed the user's current one so the
+//          frontend can offer them as upgrade options.
+// @route   GET /api/v1/users/me/usage
+// @access  Private
+exports.getMyUsage = async (req, res) => {
+    try {
+        const status = await usageService.getUsageStatus(req.user._id);
+
+        let upgradeOptions = [];
+        if (status.hasPackage && status.maxPct >= 100) {
+            const pkg = status.package;
+            upgradeOptions = await Package.find({
+                isActive: true,
+                _id: { $ne: pkg._id },
+                $or: [
+                    { storageGB: { $gt: pkg.storageGB } },
+                    { transcriptionMinutes: { $gt: pkg.transcriptionMinutes } },
+                    { searches: { $gt: pkg.searches } }
+                ]
+            }).sort({ priceUSD: 1 });
+        }
+
+        res.status(200).json({ ...status, upgradeOptions });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }

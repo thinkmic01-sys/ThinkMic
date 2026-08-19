@@ -130,11 +130,20 @@ const UserSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Keyword'
     }],
-    // Set once this user completes a purchase from the Admin > Packages catalog - nothing
-    // sets this yet (no payment gateway is wired up, see CLAUDE.md's "Planned" list), so it
-    // stays null for every user for now. Its only current effect: PackagesPromptModal.jsx
-    // keeps showing the purchase prompt on login while this is null.
+    // Set once this user selects a package from the Admin > Packages catalog (no payment
+    // gateway wired up yet, see CLAUDE.md's "Planned" list - selection is currently free).
+    // PackagesPromptModal.jsx forces selection on login while this is null, and
+    // usageService.js meters this user's storage/transcription/searches against whichever
+    // package is referenced here.
     purchasedPackageId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Package',
+        default: null
+    },
+    // Tracks which package the 80%-usage warning notification has already been sent for,
+    // so usageService.checkAndNotify never sends it twice for the same package - selecting
+    // a new/upgraded package naturally re-arms the warning since this won't match anymore.
+    usage80NotifiedForPackageId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Package',
         default: null

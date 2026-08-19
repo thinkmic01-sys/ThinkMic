@@ -1,4 +1,5 @@
 const Package = require('../models/Package');
+const User = require('../models/User');
 
 // @desc    Active packages, cheapest first - what the purchase-prompt dialog shows to any
 //          authenticated user (Layout.jsx's PackagesPromptModal).
@@ -8,6 +9,27 @@ exports.listActivePackages = async (req, res) => {
     try {
         const packages = await Package.find({ isActive: true }).sort({ priceUSD: 1 });
         res.status(200).json({ packages });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};
+
+// @desc    Selects (or upgrades to) a package for the current user - no payment gateway is
+//          wired up yet, so this simply assigns the package. Also re-arms the 80%-usage
+//          warning for the newly selected package.
+// @route   POST /api/v1/packages/:id/select
+// @access  Private (any authenticated user)
+exports.selectPackage = async (req, res) => {
+    try {
+        const pkg = await Package.findOne({ _id: req.params.id, isActive: true });
+        if (!pkg) return res.status(404).json({ message: 'Package not found.' });
+
+        await User.findByIdAndUpdate(req.user._id, {
+            purchasedPackageId: pkg._id,
+            usage80NotifiedForPackageId: null
+        });
+
+        res.status(200).json({ package: pkg });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }

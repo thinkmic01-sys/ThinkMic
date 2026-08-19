@@ -7,6 +7,7 @@ const Summary = require('../models/Summary');
 const Report = require('../models/Report');
 const { transcriptionQueue, summarizationQueue } = require('../queues');
 const r2StorageService = require('../services/r2StorageService');
+const usageService = require('../services/usageService');
 
 // Locale codes used consistently across deepgramService.js/SpeechWorkspace.jsx (en-US, ur-PK)
 const SUPPORTED_LOCALES = ['en-US', 'ur-PK'];
@@ -237,6 +238,8 @@ exports.uploadAudioLocal = async (req, res) => {
             });
         }
 
+        await usageService.checkAndNotify(req.user._id);
+
         res.status(isNewRecording ? 201 : 200).json({
             message: 'Audio uploaded successfully',
             recording
@@ -432,6 +435,8 @@ exports.createRecordingDraft = async (req, res) => {
                 style: req.body.style
             });
         }
+
+        await usageService.checkAndNotify(req.user._id);
 
         res.status(isNewRecording ? 201 : 200).json({ recording });
     } catch (error) {

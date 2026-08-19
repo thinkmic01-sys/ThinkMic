@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getMe, updateMe, getDocumentUploadUrl, getMyStudents, updateMyStudents, searchStudents } = require('../controllers/userController');
+const { getMe, updateMe, getDocumentUploadUrl, getMyStudents, updateMyStudents, searchStudents, getMyUsage } = require('../controllers/userController');
 const { protect, checkPermission } = require('../middleware/authMiddleware');
 const { expensiveOperationLimiter } = require('../middleware/rateLimiters');
 
@@ -8,6 +8,7 @@ const { expensiveOperationLimiter } = require('../middleware/rateLimiters');
 router.get('/me', protect, getMe);
 router.patch('/me', protect, updateMe);
 router.get('/me/documents/upload-url', protect, expensiveOperationLimiter, getDocumentUploadUrl);
+router.get('/me/usage', protect, getMyUsage);
 
 // Self-service roster for a Lecturer-style role (schemas.manage_own) - lets them add/remove
 // their own students without needing the admin-only users.view/manage_role_status

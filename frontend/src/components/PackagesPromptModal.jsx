@@ -3,17 +3,23 @@ import { useSelector } from 'react-redux';
 import api from '../services/api';
 import { isManagementUser } from '../config/managementAccess';
 
-// Shown once per login/app-load to a regular product user who hasn't purchased a package
-// yet (see backend/models/User.js purchasedPackageId - nothing sets it yet, no payment
-// gateway is wired up, this is groundwork for that). Purely informational at this stage -
-// the only interaction is dismissing via the X, per the initial-stage scope.
+const DIMENSION_LABELS = { storage: 'storage', transcription: 'transcription minutes', searches: 'searches' };
+
+// Two triggers share this one dialog (same catalog-card layout, different copy/behavior):
+// - 'noPackage': the user has never selected a package - mandatory, no way to dismiss, since
+//   they must pick one before using the app (see backend/middleware/usageGuard.js).
+// - 'limitFull': the user's selected package has hit 100% on storage/transcription/searches
+//   (backend/services/usageService.js) - dismissible (the specific blocked action already
+//   stops them server-side), but only shows packages that actually exceed their current one.
 export default function PackagesPromptModal() {
     const isAuthenticated = useSelector((state) => state.auth?.isAuthenticated);
     const user = useSelector((state) => state.auth?.user);
 
     const [packages, setPackages] = useState([]);
-    const [isOpen, setIsOpen] = useState(false);
+    const [mode, setMode] = useState(null); // null | 'noPackage' | 'limitFull'
+    const [fullDimensions, setFullDimensions] = useState([]);
     const [hasChecked, setHasChecked] = useState(false);
+    const [isSelecting, setIsSelecting] = useState(null);
 
     useEffect(() => {
         if (!isAuthenticated || !user || hasChecked) return;
@@ -22,20 +28,49 @@ export default function PackagesPromptModal() {
         // Management/admin users are configuring packages for others, not shopping for one
         // themselves - never interrupt them with this.
         if (isManagementUser(user.permissions || [])) return;
-        if (user.purchasedPackageId) return;
 
-        api.get('/packages')
+        api.get('/users/me/usage')
             .then((res) => {
-                const active = res.data.packages || [];
-                if (active.length > 0) {
-                    setPackages(active);
-                    setIsOpen(true);
+                const status = res.data;
+                if (!status.hasPackage) {
+                    api.get('/packages').then((r) => {
+                        const active = r.data.packages || [];
+                        if (active.length > 0) {
+                            setPackages(active);
+                            setMode('noPackage');
+                        }
+                    }).catch(() => {});
+                } else if (status.maxPct >= 100) {
+                    const full = Object.entries(status.isFull || {}).filter(([, v]) => v).map(([k]) => k);
+                    if (status.upgradeOptions?.length > 0) {
+                        setPackages(status.upgradeOptions);
+                        setFullDimensions(full);
+                        setMode('limitFull');
+                    }
                 }
             })
             .catch(() => {});
     }, [isAuthenticated, user, hasChecked]);
 
-    if (!isOpen) return null;
+    const handleSelect = async (pkgId) => {
+        setIsSelecting(pkgId);
+        try {
+            await api.post(`/packages/${pkgId}/select`);
+            setMode(null);
+        } catch (err) {
+            // Leave the dialog open - user can retry.
+        } finally {
+            setIsSelecting(null);
+        }
+    };
+
+    if (!mode) return null;
+
+    const isMandatory = mode === 'noPackage';
+    const title = isMandatory ? 'Choose a Package' : 'Upgrade Your Package';
+    const description = isMandatory
+        ? 'Select a package to start using ThinkMic - this defines your storage, transcription minutes, and search allowances.'
+        : `Your ${fullDimensions.map((d) => DIMENSION_LABELS[d]).join(' and ')} allowance is full. Upgrade to a package with a higher limit to continue.`;
 
     return (
         <div className="fixed inset-0 bg-[#181c22]/60 backdrop-blur-sm flex items-center justify-center z-[200] px-4 py-8">
@@ -47,16 +82,18 @@ export default function PackagesPromptModal() {
                 `}</style>
                 <div className="px-6 sm:px-8 py-6 border-b border-[#e0e2eb] flex items-start justify-between">
                     <div>
-                        <h2 className="text-[22px] sm:text-[26px] font-bold text-[#075e51]">Choose a Package</h2>
-                        <p className="text-[13px] sm:text-[14px] text-[#777682] mt-1">Get more storage, transcription minutes, and searches. You can decide later - just close this to continue.</p>
+                        <h2 className="text-[22px] sm:text-[26px] font-bold text-[#075e51]">{title}</h2>
+                        <p className="text-[13px] sm:text-[14px] text-[#777682] mt-1">{description}</p>
                     </div>
-                    <button
-                        onClick={() => setIsOpen(false)}
-                        title="Continue without choosing a package"
-                        className="text-[#777682] hover:text-[#181c22] transition-colors shrink-0 ml-4"
-                    >
-                        <span className="material-symbols-outlined text-[24px]">close</span>
-                    </button>
+                    {!isMandatory && (
+                        <button
+                            onClick={() => setMode(null)}
+                            title="Close"
+                            className="text-[#777682] hover:text-[#181c22] transition-colors shrink-0 ml-4"
+                        >
+                            <span className="material-symbols-outlined text-[24px]">close</span>
+                        </button>
+                    )}
                 </div>
 
                 <div className="p-6 sm:p-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -71,11 +108,18 @@ export default function PackagesPromptModal() {
                             <h3 className="text-[18px] font-bold text-[#181c22]">{pkg.name}</h3>
                             {pkg.description && <p className="text-[12px] text-[#777682] mt-1 mb-3">{pkg.description}</p>}
                             <div className="text-[30px] font-bold text-[#075e51] my-2">${pkg.priceUSD}</div>
-                            <div className="flex flex-col gap-2 text-[13px] text-[#464651] mt-2">
+                            <div className="flex flex-col gap-2 text-[13px] text-[#464651] mt-2 mb-4">
                                 <span className="flex items-center gap-2"><span className="material-symbols-outlined text-[18px] text-[#075e51]">cloud</span> {pkg.storageGB} GB storage</span>
                                 <span className="flex items-center gap-2"><span className="material-symbols-outlined text-[18px] text-[#075e51]">mic</span> {pkg.transcriptionMinutes} transcription minutes</span>
                                 <span className="flex items-center gap-2"><span className="material-symbols-outlined text-[18px] text-[#075e51]">search</span> {pkg.searches} searches</span>
                             </div>
+                            <button
+                                onClick={() => handleSelect(pkg._id)}
+                                disabled={isSelecting === pkg._id}
+                                className="mt-auto bg-[#075e51] text-white font-bold text-[13px] py-2.5 rounded-lg hover:bg-[#097969] transition-colors disabled:opacity-60"
+                            >
+                                {isSelecting === pkg._id ? 'Selecting...' : 'Select'}
+                            </button>
                         </div>
                     ))}
                 </div>

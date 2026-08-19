@@ -216,7 +216,12 @@ export default function PackagesManagement() {
     };
 
     return (
-        <div className="w-full p-4 sm:p-6 md:p-8 flex flex-col pb-20 min-h-full">
+        <div className="w-full h-[calc(100vh-64px)] overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-8 flex flex-col pb-20">
+            <style>{`
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c7c5d3; border-radius: 10px; }
+            `}</style>
             <div className="mb-5 sm:mb-6">
                 <h2 className="text-2xl sm:text-3xl font-bold text-[#075e51] mb-1 tracking-tight">Packages</h2>
                 <p className="text-[#777682] text-sm sm:text-base">

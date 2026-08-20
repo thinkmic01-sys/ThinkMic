@@ -1,5 +1,7 @@
 const Package = require('../models/Package');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
+const socket = require('../utils/socket');
 
 // @desc    Active packages, cheapest first - what the purchase-prompt dialog shows to any
 //          authenticated user (Layout.jsx's PackagesPromptModal).
@@ -123,6 +125,34 @@ exports.deletePackage = async (req, res) => {
     try {
         const pkg = await Package.findByIdAndDelete(req.params.id);
         if (!pkg) return res.status(404).json({ message: 'Package not found' });
+
+        // Anyone who had this package selected would otherwise silently fall back to
+        // "no package" with zero explanation (usageService.js's populate() already resolves
+        // the now-dangling purchasedPackageId to null gracefully - this just makes the change
+        // visible to the affected user and re-arms their mandatory selection prompt cleanly).
+        const affectedUsers = await User.find({ purchasedPackageId: pkg._id }).select('_id');
+        if (affectedUsers.length > 0) {
+            const userIds = affectedUsers.map((u) => u._id);
+            await User.updateMany(
+                { _id: { $in: userIds } },
+                { purchasedPackageId: null, usage80NotifiedForPackageId: null }
+            );
+
+            const notifDocs = await Notification.insertMany(userIds.map((id) => ({
+                userId: id,
+                type: 'package_removed',
+                message: `Your package "${pkg.name}" was removed by an admin. Please select a new package to continue.`,
+                link: '/app/dashboard'
+            })));
+
+            try {
+                const io = socket.getIO();
+                userIds.forEach((id, i) => io.to(id.toString()).emit('new_notification', { notification: notifDocs[i] }));
+            } catch (err) {
+                // Socket.io not initialized (e.g. a script/test context) - notifications are still saved.
+            }
+        }
+
         res.status(200).json({ message: 'Package deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });

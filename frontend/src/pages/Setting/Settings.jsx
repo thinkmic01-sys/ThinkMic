@@ -539,11 +539,14 @@ export default function Settings() {
     };
 
     return (
-        <div className="flex flex-col md:flex-row gap-6 md:gap-8 w-full p-4 sm:p-6 md:p-8 font-sans">
+        <div className="flex flex-col md:flex-row gap-6 md:gap-8 w-full h-[calc(100vh-64px)] overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-8 font-sans">
 
             <style>{`
                 .hide-scrollbar::-webkit-scrollbar { display: none; }
                 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #c7c5d3; border-radius: 10px; }
             `}</style>
 
             {/* Settings Sub-Navigation */}

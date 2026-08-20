@@ -104,7 +104,7 @@ export default function RolesManagement() {
     };
 
     return (
-        <div className="w-full p-4 sm:p-6 md:p-8 flex flex-col pb-20 min-h-full">
+        <div className="w-full h-[calc(100vh-64px)] overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-8 flex flex-col pb-20">
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }

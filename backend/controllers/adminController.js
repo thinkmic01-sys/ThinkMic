@@ -20,9 +20,13 @@ exports.listUsers = async (req, res) => {
         if (role) query.role = role;
         if (status) query.status = status;
         if (search) {
+            // Escape regex metacharacters - unescaped user input here is both a ReDoS risk
+            // (catastrophic backtracking hangs the event loop) and a plain functional bug
+            // (a name containing '(', '.', etc. throws "Invalid regular expression").
+            const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             query.$or = [
-                { fullName: new RegExp(search, 'i') },
-                { email: new RegExp(search, 'i') }
+                { fullName: new RegExp(escaped, 'i') },
+                { email: new RegExp(escaped, 'i') }
             ];
         }
 

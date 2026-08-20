@@ -18,6 +18,9 @@ const protect = async (req, res, next) => {
             // roleId is populated fresh on every request (never cached in the JWT) so a
             // permission change takes effect immediately, without waiting for token refresh.
             req.user = await User.findById(decoded.sub).select('-passwordHash').populate('roleId', 'slug name permissions');
+            if (!req.user) {
+                return res.status(401).json({ message: 'Not authorized, account no longer exists.' });
+            }
             req.user.permissions = req.user.roleId ? req.user.roleId.permissions : [];
 
             next(); // Move to the next middleware or controller

@@ -148,6 +148,17 @@ const UserSchema = new mongoose.Schema({
         ref: 'Package',
         default: null
     },
+    // Atomically-maintained running totals of this user's package usage - the source of
+    // truth usageService.reserveUsage() checks-and-increments in one indivisible MongoDB
+    // operation, which is what actually closes the race two concurrent uploads/searches could
+    // otherwise exploit (the same class of guarantee coinWalletService.js already relies on
+    // for coin balances). Kept in sync by reserveUsage (on create) and releaseUsage (on
+    // delete) - never recomputed by re-aggregating Recording/SearchResult on every check.
+    usage: {
+        storageBytes: { type: Number, default: 0, min: 0 },
+        transcriptionSeconds: { type: Number, default: 0, min: 0 },
+        searchesCount: { type: Number, default: 0, min: 0 }
+    },
     // Which Lecturer-role user(s) (schemas.manage_own permission) this student has been
     // assigned to by an admin (see adminController.updateLecturerStudents) - a student can
     // be assigned to multiple lecturers, which is what lets different lecturers share some

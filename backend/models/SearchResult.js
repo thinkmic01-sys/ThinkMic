@@ -20,7 +20,11 @@ const SearchResultSchema = new mongoose.Schema({
         title: String,
         url: String,
         snippet: String,
-        favicon: String
+        favicon: String,
+        // Tavily's own relevance score (0-1) for this result - searchWorker.js has always
+        // tried to save this, but it was silently dropped on every write since this field
+        // didn't exist on the schema yet.
+        score: Number
     }],
     selectedIndexes: {
         type: [Number]

@@ -92,10 +92,14 @@ module.exports = {
             // Host's browser relays each Deepgram transcript chunk here while broadcasting
             // live (see SeminarBroadcast.jsx) - only relayed onward if this socket actually
             // joined that seminar's room as its verified host (set above), so no other client
-            // can forge transcript content into a seminar it doesn't own.
-            socket.on('seminar_transcript_chunk', ({ seminarId, text, isFinal } = {}) => {
+            // can forge transcript content into a seminar it doesn't own. Also re-checks the
+            // seminar is still actually live - defense-in-depth against a host socket that
+            // somehow survived past the frontend's own disconnect() call on endBroadcast.
+            socket.on('seminar_transcript_chunk', async ({ seminarId, text, isFinal } = {}) => {
                 const room = `seminar_${seminarId}`;
                 if (!socket.data.hostedSeminarRooms?.has(room)) return;
+                const seminar = await Seminar.findById(seminarId).select('status');
+                if (seminar?.status !== 'live') return;
                 socket.to(room).emit('seminar_transcript_chunk', { text, isFinal });
             });
 

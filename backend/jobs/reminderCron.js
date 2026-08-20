@@ -3,12 +3,26 @@ const Seminar = require('../models/Seminar');
 const Registration = require('../models/Registration');
 const Notification = require('../models/Notification');
 const { _internal: seminarInternals } = require('../controllers/seminarsController');
+const redis = require('../config/redis');
 
 // Helper to calculate hours between two dates
 const getHoursBetween = (d1, d2) => Math.abs(d1 - d2) / 36e5;
 
+// Redis-backed lock so these jobs stay safe if the app ever runs more than one instance
+// (e.g. multiple Railway replicas) - without it, every replica's node-cron fires the same
+// schedule simultaneously: the reminder job would send N duplicate notifications per user,
+// and the refund sweep (below) could double-credit a host, since refundUnusedHold reads
+// rewardHeldAmount before zeroing it and only saves afterward. TTL is kept just under 24h so
+// a lock left behind by a crashed run can never block the *next* day's run, while still
+// blocking same-day duplicate runs for the entire day.
+const acquireDailyLock = async (key) => (await redis.set(key, '1', 'PX', 23 * 60 * 60 * 1000, 'NX')) === 'OK';
+
 // Run every day at 12:00 AM (midnight)
 cron.schedule('0 0 * * *', async () => {
+    if (!(await acquireDailyLock('cron-lock:seminar-reminders'))) {
+        console.log('[CRON] Reminder check already ran/running elsewhere today - skipping.');
+        return;
+    }
     console.log('[CRON] Running daily reminder check for upcoming seminars...');
     try {
         // Find all seminars that are scheduled and in the future
@@ -19,8 +33,10 @@ cron.schedule('0 0 * * *', async () => {
             if (!seminar.date) continue;
             
             // Try to parse the date and startTime
-            // Assume seminar.date is "YYYY-MM-DD" and startTime is "HH:mm"
-            const seminarDateTime = new Date(`${seminar.date}T${seminar.startTime || '00:00'}:00`);
+            // seminar.date is a Date object, not a "YYYY-MM-DD" string - must be normalized
+            // first (matches the auto-complete sweep below), otherwise this always produces
+            // an Invalid Date and silently skips every seminar.
+            const seminarDateTime = new Date(`${seminar.date.toISOString().split('T')[0]}T${seminar.startTime || '00:00'}:00`);
             const now = new Date();
 
             if (isNaN(seminarDateTime.getTime())) continue;
@@ -55,6 +71,10 @@ cron.schedule('0 0 * * *', async () => {
 // Run every day at 12:05 AM - auto-complete past-due seminars and refund any unused
 // escrowed reward coins back to the host.
 cron.schedule('5 0 * * *', async () => {
+    if (!(await acquireDailyLock('cron-lock:seminar-completion-sweep'))) {
+        console.log('[CRON] Completion sweep already ran/running elsewhere today - skipping.');
+        return;
+    }
     console.log('[CRON] Sweeping past-due seminars for auto-completion and reward refunds...');
     try {
         const pastDueSeminars = await Seminar.find({ status: { $in: ['scheduled', 'live'] } });

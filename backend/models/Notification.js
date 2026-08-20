@@ -17,7 +17,7 @@ const notificationSchema = new mongoose.Schema({
             'referral_pending', 'referral_approved', 'referral_rejected',
             'seminar_reward_received', 'seminar_coins_reserved', 'seminar_coins_refunded',
             'seminar_live', 'form_published', 'keyword_seminar_match', 'project_unlocked', 'keyword_project_match', 'admin_message',
-            'package_usage_warning'
+            'package_usage_warning', 'package_removed'
         ],
         default: 'reminder'
     },

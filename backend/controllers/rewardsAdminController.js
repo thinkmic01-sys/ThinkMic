@@ -108,9 +108,11 @@ exports.listPendingRewards = async (req, res) => {
         const query = { approvalStatus: 'pending' };
         if (level) query.level = Number(level);
         if (search) {
+            // Escape regex metacharacters - see the matching fix/comment in adminController.listUsers.
+            const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             query.$or = [
-                { referredName: new RegExp(search, 'i') },
-                { referredEmail: new RegExp(search, 'i') }
+                { referredName: new RegExp(escaped, 'i') },
+                { referredEmail: new RegExp(escaped, 'i') }
             ];
         }
 

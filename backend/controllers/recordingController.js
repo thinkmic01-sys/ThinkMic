@@ -8,6 +8,7 @@ const Report = require('../models/Report');
 const { transcriptionQueue, summarizationQueue } = require('../queues');
 const r2StorageService = require('../services/r2StorageService');
 const usageService = require('../services/usageService');
+const audioDurationService = require('../services/audioDurationService');
 
 // Locale codes used consistently across deepgramService.js/SpeechWorkspace.jsx (en-US, ur-PK)
 const SUPPORTED_LOCALES = ['en-US', 'ur-PK'];
@@ -148,6 +149,10 @@ exports.uploadAudioLocal = async (req, res) => {
             return res.status(400).json({ message: 'No audio file provided' });
         }
 
+        // Derived from the actual file, not trusted from the client - see usageService.js's
+        // transcription-minutes enforcement, which this feeds directly.
+        const durationSeconds = await audioDurationService.getDurationSecondsFromFile(req.file.path);
+
         // If recordingId points at an existing draft (see initLiveSession), finalize it in
         // place instead of creating a second Recording, which would orphan the transcript
         // already linked (and possibly already autosaved) to the original draft.
@@ -156,9 +161,35 @@ exports.uploadAudioLocal = async (req, res) => {
             : null;
         const isNewRecording = !recording;
 
+        // Reserve only the *increase* over whatever was previously counted for this same
+        // recording (normally 0, since initLiveSession's placeholder has no size yet) - this
+        // is the real, atomic enforcement point (see usageService.reserveUsage), closing the
+        // race a plain pre-check can't. If it fails, nothing about this recording is saved.
+        const previousFileSizeBytes = recording?.fileSizeBytes || 0;
+        const previousDurationSeconds = recording?.durationSeconds || 0;
+        const storageDelta = req.file.size - previousFileSizeBytes;
+        const transcriptionDelta = durationSeconds - previousDurationSeconds;
+        try {
+            if (storageDelta > 0) await usageService.reserveUsage(req.user._id, 'storage', storageDelta);
+            if (transcriptionDelta > 0) await usageService.reserveUsage(req.user._id, 'transcription', transcriptionDelta);
+        } catch (err) {
+            if (storageDelta > 0 && err.dimension === 'transcription') {
+                // Storage reserve already succeeded before the transcription one failed - undo it.
+                await usageService.releaseUsage(req.user._id, 'storage', storageDelta);
+            }
+            fs.unlink(req.file.path, () => {});
+            if (err.code === 'NO_PACKAGE' || err.code === 'LIMIT_REACHED') {
+                return res.status(403).json({ message: err.message, code: err.code, dimension: err.dimension });
+            }
+            throw err;
+        }
+        if (storageDelta < 0) await usageService.releaseUsage(req.user._id, 'storage', -storageDelta);
+        if (transcriptionDelta < 0) await usageService.releaseUsage(req.user._id, 'transcription', -transcriptionDelta);
+
         if (recording) {
             recording.mimeType = cleanMimeType(req.file.mimetype);
             recording.fileSizeBytes = req.file.size;
+            recording.durationSeconds = durationSeconds;
             recording.s3Key = req.file.filename;
             recording.status = 'uploaded';
             if (req.body.title) recording.title = req.body.title;
@@ -170,6 +201,7 @@ exports.uploadAudioLocal = async (req, res) => {
                 title: req.body.title || 'Untitled Research Audio',
                 mimeType: cleanMimeType(req.file.mimetype),
                 fileSizeBytes: req.file.size,
+                durationSeconds,
                 s3Key: req.file.filename, // We temporarily store the local filename here
                 status: 'uploaded'
             };
@@ -346,6 +378,21 @@ exports.createRecordingDraft = async (req, res) => {
     try {
         const { title, mimeType, fileSizeBytes, r2Key, recordingId, projectId, sttEngine, rawText } = req.body;
 
+        // Derived from the actual uploaded audio, not trusted from the client - see
+        // usageService.js's transcription-minutes enforcement, which this feeds directly.
+        // Only possible once the audio actually exists in R2 - a bare placeholder draft
+        // (no r2Key yet) has nothing to measure. Once we have the real buffer in hand anyway
+        // (to read its duration), its real byte length replaces the client-reported
+        // fileSizeBytes too, for the same reason: a spoofed value here would otherwise let
+        // someone dodge the storage limit exactly like the duration one could be dodged.
+        let durationSeconds;
+        let actualFileSizeBytes = fileSizeBytes;
+        if (r2Key) {
+            const audioBuffer = await r2StorageService.downloadR2ObjectBuffer(r2Key);
+            durationSeconds = await audioDurationService.getDurationSecondsFromBuffer(audioBuffer, mimeType);
+            actualFileSizeBytes = audioBuffer.length;
+        }
+
         // If recordingId points at an existing draft (see initLiveSession), finalize it in
         // place instead of creating a duplicate - Transcript.recordingId is unique, so a
         // second Recording would orphan the transcript already autosaved to the original.
@@ -354,9 +401,34 @@ exports.createRecordingDraft = async (req, res) => {
             : null;
         const isNewRecording = !recording;
 
+        // Reserve only the *increase* over whatever was previously counted for this same
+        // recording (normally 0) - the real, atomic enforcement point (see
+        // usageService.reserveUsage). If it fails, nothing about this recording is saved,
+        // and the already-uploaded R2 object is removed rather than left orphaned.
+        const previousFileSizeBytes = recording?.fileSizeBytes || 0;
+        const previousDurationSeconds = recording?.durationSeconds || 0;
+        const storageDelta = (actualFileSizeBytes || 0) - previousFileSizeBytes;
+        const transcriptionDelta = (durationSeconds || 0) - previousDurationSeconds;
+        try {
+            if (storageDelta > 0) await usageService.reserveUsage(req.user._id, 'storage', storageDelta);
+            if (transcriptionDelta > 0) await usageService.reserveUsage(req.user._id, 'transcription', transcriptionDelta);
+        } catch (err) {
+            if (storageDelta > 0 && err.dimension === 'transcription') {
+                await usageService.releaseUsage(req.user._id, 'storage', storageDelta);
+            }
+            if (r2Key) r2StorageService.deleteR2Object(r2Key).catch(() => {});
+            if (err.code === 'NO_PACKAGE' || err.code === 'LIMIT_REACHED') {
+                return res.status(403).json({ message: err.message, code: err.code, dimension: err.dimension });
+            }
+            throw err;
+        }
+        if (storageDelta < 0) await usageService.releaseUsage(req.user._id, 'storage', -storageDelta);
+        if (transcriptionDelta < 0) await usageService.releaseUsage(req.user._id, 'transcription', -transcriptionDelta);
+
         if (recording) {
             if (mimeType) recording.mimeType = mimeType;
-            if (fileSizeBytes !== undefined) recording.fileSizeBytes = fileSizeBytes;
+            if (actualFileSizeBytes !== undefined) recording.fileSizeBytes = actualFileSizeBytes;
+            if (durationSeconds !== undefined) recording.durationSeconds = durationSeconds;
             if (r2Key) { recording.r2Key = r2Key; recording.s3Key = r2Key; }
             if (title) recording.title = title;
             if (projectId) recording.projectId = projectId;
@@ -367,12 +439,13 @@ exports.createRecordingDraft = async (req, res) => {
                 userId: req.user._id,
                 title: title || 'Untitled Research Audio',
                 mimeType,
-                fileSizeBytes,
+                fileSizeBytes: actualFileSizeBytes,
                 // r2Key is the durable reference once uploaded; s3Key stays required by
                 // the schema, so mirror it there too for any code path still keyed on s3Key
                 s3Key: r2Key || `pending-${Date.now()}`,
                 status: 'uploaded'
             };
+            if (durationSeconds !== undefined) recordingData.durationSeconds = durationSeconds;
             if (r2Key) recordingData.r2Key = r2Key;
             if (projectId) recordingData.projectId = projectId;
             // Keep the Mongo _id in sync with the recordingId issued by GET /upload-url,
@@ -496,6 +569,11 @@ exports.deleteRecording = async (req, res) => {
 
         // 4. Finally, delete the Recording itself
         await Recording.deleteOne({ _id: recording._id });
+
+        // Release whatever this recording had reserved, so the user's package usage counters
+        // stay in sync with what actually still exists (see usageService.reserveUsage).
+        if (recording.fileSizeBytes) await usageService.releaseUsage(req.user._id, 'storage', recording.fileSizeBytes);
+        if (recording.durationSeconds) await usageService.releaseUsage(req.user._id, 'transcription', recording.durationSeconds);
 
         res.status(200).json({
             message: 'Recording and all associated data deleted successfully',

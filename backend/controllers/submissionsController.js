@@ -10,6 +10,29 @@ exports.submitForm = async (req, res) => {
     try {
         const { schemaId, answers, status } = req.body;
 
+        // Re-checks exactly the same eligibility rules listPublishedForms already filters
+        // its listing by - without this, submitForm trusted any schemaId in the request body,
+        // letting a user submit against a draft/unpublished schema or another lecturer's
+        // own-students-only form just by knowing/guessing its id.
+        const userTitle = (req.user.title || '').trim();
+        const orConditions = [{ targetRole: 'all' }];
+        if (userTitle) {
+            const escapedTitle = userTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            orConditions.push({ targetRole: { $regex: `^${escapedTitle}$`, $options: 'i' } });
+        }
+        if (req.user.assignedLecturers && req.user.assignedLecturers.length > 0) {
+            orConditions.push({ targetRole: 'own-students', createdBy: { $in: req.user.assignedLecturers } });
+        }
+
+        const eligibleSchema = await FieldSchema.exists({
+            _id: schemaId,
+            status: 'active',
+            $or: orConditions
+        });
+        if (!eligibleSchema) {
+            return res.status(403).json({ message: 'This form is not available to you.' });
+        }
+
         const submission = await Submission.create({
             schemaId,
             schemaVersion: 1, // Ideally we pull this from the schema

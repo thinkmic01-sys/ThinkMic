@@ -5,20 +5,31 @@ const usageService = require('../services/usageService');
 exports.createSearchSession = async (req, res) => {
     try {
         const { queries, config } = req.body;
-        
+
         // Let BullMQ worker create the session and return the ID, or we create the session here
         // Usually better to create a generic session document or multiple SearchResult docs here.
         // As per PDF: POST /search/sessions -> returns { sessionId, jobIds[] }
-        
+
         const mongoose = require('mongoose');
         const sessionId = req.body.sessionId || new mongoose.Types.ObjectId();
-        
+
+        // Reserve the exact number of valid queries atomically before creating anything -
+        // the real, race-proof enforcement point (see usageService.reserveUsage). Filtering
+        // to valid query text first so the reserved count always matches what actually gets
+        // created below.
+        const validQueryTexts = queries.map((q) => (typeof q === 'string' ? q : q.text)).filter(Boolean);
+        try {
+            await usageService.reserveUsage(req.user._id, 'searches', validQueryTexts.length);
+        } catch (err) {
+            if (err.code === 'NO_PACKAGE' || err.code === 'LIMIT_REACHED') {
+                return res.status(403).json({ message: err.message, code: err.code, dimension: err.dimension });
+            }
+            throw err;
+        }
+
         console.log(`[searchController] Creating session ${sessionId} with queries:`, queries);
         const jobIds = [];
-        for (const q of queries) {
-            const queryText = typeof q === 'string' ? q : q.text;
-            if (!queryText) continue;
-
+        for (const queryText of validQueryTexts) {
             console.log(`[searchController] Pre-creating SearchResult for query: ${queryText}`);
             const searchResult = await SearchResult.create({
                 sessionId,

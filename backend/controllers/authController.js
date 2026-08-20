@@ -6,9 +6,12 @@ const referralService = require('../services/referralService');
 const emailService = require('../services/emailService');
 const googleAuthService = require('../services/googleAuthService');
 
-// Helper to generate access token
+// Helper to generate access token - short-lived by design (the dual-token model's whole
+// point is that only the HttpOnly refreshToken cookie lives for 7 days; this one must match
+// what exports.refresh already mints, or every session carries a week-long exposure window
+// if this token ever leaks).
 const generateAccessToken = (id, role) => {
-    return jwt.sign({ sub: id, role }, process.env.JWT_PRIVATE_KEY, { expiresIn: '7d' }); // 7-day expiry
+    return jwt.sign({ sub: id, role }, process.env.JWT_PRIVATE_KEY, { expiresIn: '15m' });
 };
 
 // Every new signup lands on the "User" system role. It used to be permanently protected
@@ -91,6 +94,12 @@ const issueAuthSession = async (res, user) => {
 exports.register = async (req, res) => {
     try {
         const { email, password, fullName, referralCode } = req.body;
+
+        // Matches the same 8-character minimum resetPassword/changePassword already enforce -
+        // registration was the one path that let this through unchecked.
+        if (!password || password.length < 8) {
+            return res.status(400).json({ message: 'Password must be at least 8 characters long' });
+        }
 
         const newReferralCode = crypto.randomBytes(4).toString('hex');
         const verificationCode = generateOTP();

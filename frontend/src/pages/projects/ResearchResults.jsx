@@ -114,12 +114,7 @@ export default function ResearchResults() {
                         const regions = ["North America", "Europe", "Asia", "Global"];
                         const years = [2026, 2025, 2024, 2022, 2020];
                         const domain = new URL(r.url || 'https://example.com').hostname;
-                        
-                        // Generate realistic mock metadata
-                        const mockAuthors = ["Sarah Jenkins", "Dr. Robert Chen", "TechCrunch Staff", "Michael O'Connor", "Editorial Team"];
-                        const author = mockAuthors[idx % mockAuthors.length];
-                        const publishedDate = `${["Jan", "Mar", "Jun", "Sep", "Nov"][idx % 5]} ${10 + idx}, ${years[idx % years.length]}`;
-                        const reliability = domain.includes('.edu') || domain.includes('.gov') ? "98/100" : (idx % 2 === 0 ? "85/100" : "72/100");
+
                         // Real classification from the actual URL - not mocked, so blog and video
                         // results genuinely show up as such whenever Tavily's results include them.
                         const type = classifyResultType(domain);
@@ -135,7 +130,10 @@ export default function ResearchResults() {
                             metrics: [],
                             icon: ICON_BY_TYPE[type],
                             entities: [],
-                            metadata: { author: author, published: publishedDate, reliability: reliability },
+                            // Tavily's own relevance score (0-1) for this result - real, not
+                            // fabricated. Older SearchResult docs saved before the schema
+                            // tracked this will just be undefined here.
+                            score: typeof r.score === 'number' ? r.score : null,
                             region: regions[idx % regions.length],
                             language: "English",
                             year: years[idx % years.length]
@@ -673,36 +671,19 @@ export default function ResearchResults() {
                                 </div>
                             </div>
 
-                            <div className="h-px w-full bg-gray-100"></div>
+                            {activeSourceDetail.score !== null && (
+                                <>
+                                    <div className="h-px w-full bg-gray-100"></div>
+                                    <div>
+                                        <p className="font-mono text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-3">Metadata</p>
+                                        <div className="flex justify-between items-center text-[13px]">
+                                            <span className="text-gray-500 font-semibold">Relevance Score:</span>
+                                            <span className="text-cyan font-mono font-bold">{Math.round(activeSourceDetail.score * 100)}/100</span>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
 
-                            <div>
-                                <p className="font-mono text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-3">Metadata</p>
-                                <div className="space-y-2 text-[13px]">
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-500 font-semibold">Author:</span>
-                                        <span className="text-gray-900 font-bold text-right ml-2">{activeSourceDetail.metadata.author}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-500 font-semibold">Published:</span>
-                                        <span className="text-gray-900 font-bold">{activeSourceDetail.metadata.published}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-500 font-semibold">Extraction:</span>
-                                        <span className="text-gray-900 font-bold">Just now</span>
-                                    </div>
-                                    <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-50">
-                                        <span className="text-gray-500 font-semibold">Reliability Score:</span>
-                                        <span className="text-cyan font-mono font-bold">{activeSourceDetail.metadata.reliability}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="mt-8 p-3 bg-cyan/5 rounded-lg border border-cyan/20">
-                                <p className="font-mono text-[11px] font-bold text-gray-600 flex items-start gap-2 leading-relaxed">
-                                    <span className="material-symbols-outlined text-[16px] text-primary shrink-0 mt-0.5">psychology</span>
-                                    ThinkMic AI has verified this source against 3 cross-references.
-                                </p>
-                            </div>
                         </div>
                     ) : (
                         <div className="text-center text-gray-400 mt-10">

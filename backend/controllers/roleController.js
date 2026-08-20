@@ -3,6 +3,13 @@ const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const { PERMISSIONS } = require('../config/permissions');
 
+const VALID_PERMISSION_KEYS = new Set(PERMISSIONS.map((p) => p.key));
+// createRole/updateRole previously trusted any array of strings as-is - typos or stale keys
+// (e.g. from a permission that was later renamed/removed) were silently accepted and stored,
+// even though checkPermission() would never match them against anything real. Filtering here
+// keeps a role's stored permissions limited to keys that actually exist in the catalog.
+const filterToValidPermissions = (permissions) => permissions.filter((p) => VALID_PERMISSION_KEYS.has(p));
+
 // @desc    The fixed permission catalog - backs the checklist UI on the Roles page
 // @route   GET /api/v1/admin/roles/catalog
 exports.getPermissionCatalog = async (req, res) => {
@@ -44,7 +51,7 @@ exports.createRole = async (req, res) => {
             name: name.trim(),
             slug,
             description: description || '',
-            permissions: Array.isArray(permissions) ? permissions : [],
+            permissions: Array.isArray(permissions) ? filterToValidPermissions(permissions) : [],
             isSystem: false,
             createdBy: req.user._id
         });
@@ -87,7 +94,7 @@ exports.updateRole = async (req, res) => {
         const before = { name: role.name, permissions: role.permissions };
         if (name !== undefined && name.trim()) role.name = name.trim();
         if (description !== undefined) role.description = description;
-        if (Array.isArray(permissions)) role.permissions = permissions;
+        if (Array.isArray(permissions)) role.permissions = filterToValidPermissions(permissions);
         await role.save();
 
         await AuditLog.create({

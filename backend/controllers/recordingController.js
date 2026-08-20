@@ -394,7 +394,11 @@ exports.createRecordingDraft = async (req, res) => {
         // fileSizeBytes too, for the same reason: a spoofed value here would otherwise let
         // someone dodge the storage limit exactly like the duration one could be dodged.
         let durationSeconds;
-        let actualFileSizeBytes = fileSizeBytes;
+        // A bare placeholder draft (no r2Key means no audio actually exists in R2 yet) has
+        // nothing real to measure, so it gets 0 rather than trusting whatever fileSizeBytes
+        // the client happened to send - the finalize call that later supplies a real r2Key is
+        // what actually sets a real size, verified against the real uploaded bytes below.
+        let actualFileSizeBytes = 0;
         if (r2Key) {
             const audioBuffer = await r2StorageService.downloadR2ObjectBuffer(r2Key);
             durationSeconds = await audioDurationService.getDurationSecondsFromBuffer(audioBuffer, mimeType);

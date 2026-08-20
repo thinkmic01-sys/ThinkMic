@@ -22,6 +22,9 @@ export default function CourseLibrary() {
 
     const [courses, setCourses] = useState([]);
     const [myRegistrations, setMyRegistrations] = useState([]);
+    // Without this, the pre-fetch state and a genuinely-empty seminar list looked identical -
+    // both just showed the "no courses found" fallback with no way to tell them apart.
+    const [isLoading, setIsLoading] = useState(true);
     const token = useSelector(state => state.auth?.accessToken);
     const user = useSelector(state => state.auth?.user);
 
@@ -59,6 +62,8 @@ export default function CourseLibrary() {
             } catch (error) {
                 console.error("Failed to fetch seminars", error);
                 setCourses([]);
+            } finally {
+                setIsLoading(false);
             }
         };
         fetchSeminars();
@@ -280,7 +285,15 @@ export default function CourseLibrary() {
                     </div>
                 </div>
 
+                {/* Loading State */}
+                {isLoading && (
+                    <div className="flex items-center justify-center py-16">
+                        <span className="material-symbols-outlined animate-spin text-[32px] text-[#075e51]">sync</span>
+                    </div>
+                )}
+
                 {/* Grid Layout for Courses */}
+                {!isLoading && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {filteredCourses.map((course) => (
                         <div key={course.id} onClick={() => handleCourseClick(course)} className={`bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.08)] border overflow-hidden flex flex-col hover:shadow-md transition-shadow cursor-pointer group ${course.status === 'LIVE' ? 'border-[#EAB308] ring-1 ring-[#EAB308]/50' : 'border-[#e0e2eb]'}`}>
@@ -332,6 +345,7 @@ export default function CourseLibrary() {
                         </div>
                     )}
                 </div>
+                )}
             </div>
 
             {/* Slide-out Drawer Overlay */}

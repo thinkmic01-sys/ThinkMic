@@ -85,6 +85,23 @@ export default function SchemaLibrary() {
         setExpandedId(null);
     };
 
+    const handleExportCsv = async () => {
+        try {
+            const res = await api.get(`/exports/submissions/${viewingSchema.id}`, { responseType: 'blob' });
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${viewingSchema.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-submissions.csv`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error(err);
+            showToast('Failed to export submissions.', 'error');
+        }
+    };
+
     return (
         <div className="w-full h-[calc(100vh-64px)] overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-8 font-sans">
 
@@ -203,9 +220,19 @@ export default function SchemaLibrary() {
                                     {submissionsTotal} submitted result{submissionsTotal === 1 ? '' : 's'}
                                 </p>
                             </div>
-                            <button onClick={closeSubmissions} className="text-[#777682] hover:text-[#181c22] p-1 rounded-md hover:bg-[#f1f3fc]">
-                                <span className="material-symbols-outlined text-[20px]">close</span>
-                            </button>
+                            <div className="flex items-center gap-1">
+                                {permissions.includes('exports.access') && submissionsTotal > 0 && (
+                                    <button
+                                        onClick={handleExportCsv}
+                                        className="text-[#464651] hover:text-[#075e51] text-[12px] font-bold flex items-center gap-1 px-2 py-1 rounded-md hover:bg-[#f1f3fc]"
+                                    >
+                                        Export CSV <span className="material-symbols-outlined text-[16px]">download</span>
+                                    </button>
+                                )}
+                                <button onClick={closeSubmissions} className="text-[#777682] hover:text-[#181c22] p-1 rounded-md hover:bg-[#f1f3fc]">
+                                    <span className="material-symbols-outlined text-[20px]">close</span>
+                                </button>
+                            </div>
                         </div>
 
                         <div className="overflow-y-auto flex-1 p-4 sm:p-5 space-y-3">

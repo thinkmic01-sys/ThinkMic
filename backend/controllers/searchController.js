@@ -29,24 +29,37 @@ exports.createSearchSession = async (req, res) => {
 
         console.log(`[searchController] Creating session ${sessionId} with queries:`, queries);
         const jobIds = [];
-        for (const queryText of validQueryTexts) {
-            console.log(`[searchController] Pre-creating SearchResult for query: ${queryText}`);
-            const searchResult = await SearchResult.create({
-                sessionId,
-                userId: req.user._id,
-                query: queryText,
-                results: []
-            });
-            console.log(`[searchController] Created SearchResult ${searchResult._id}`);
+        let completedCount = 0;
+        try {
+            for (const queryText of validQueryTexts) {
+                console.log(`[searchController] Pre-creating SearchResult for query: ${queryText}`);
+                const searchResult = await SearchResult.create({
+                    sessionId,
+                    userId: req.user._id,
+                    query: queryText,
+                    results: []
+                });
+                console.log(`[searchController] Created SearchResult ${searchResult._id}`);
 
-            const job = await searchQueue.add('search', {
-                sessionId,
-                userId: req.user._id,
-                query: queryText,
-                config,
-                resultId: searchResult._id
-            });
-            jobIds.push(job.id);
+                const job = await searchQueue.add('search', {
+                    sessionId,
+                    userId: req.user._id,
+                    query: queryText,
+                    config,
+                    resultId: searchResult._id
+                });
+                jobIds.push(job.id);
+                completedCount++;
+            }
+        } catch (err) {
+            // The reservation above covered the whole batch upfront - release whatever wasn't
+            // actually fulfilled, so a mid-batch failure doesn't permanently charge the user
+            // for search slots that never turned into a real SearchResult/job.
+            const unfulfilled = validQueryTexts.length - completedCount;
+            if (unfulfilled > 0) {
+                await usageService.releaseUsage(req.user._id, 'searches', unfulfilled).catch(() => {});
+            }
+            throw err;
         }
 
         console.log(`[searchController] Finished enqueuing, sending 202`);

@@ -5,9 +5,11 @@ const { protect } = require('../middleware/authMiddleware');
 
 router.use(protect);
 
-router.route('/transactions')
-    .get(achievementsController.getTransactions)
-    .post(achievementsController.addTransaction);
+// GET only - no client-writable transaction endpoint exists here on purpose. Every real
+// coin mutation must go through coinWalletService.js (the app's single choke point for
+// balance changes); a prior POST /transactions let any authenticated user credit themselves
+// an arbitrary amount directly, bypassing that entirely.
+router.get('/transactions', achievementsController.getTransactions);
 
 router.get('/leaderboard', achievementsController.getLeaderboard);
 router.get('/timeline', achievementsController.getTimelineEvents);

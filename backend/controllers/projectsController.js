@@ -295,44 +295,61 @@ exports.unlockProject = async (req, res) => {
         if (project.userId.toString() === req.user._id.toString()) {
             return res.status(400).json({ message: 'You already own this project.' });
         }
-        if (project.unlockedBy.some((id) => id.toString() === req.user._id.toString())) {
+
+        // Atomically claim the unlock slot BEFORE charging anything - only succeeds if this
+        // user isn't already in unlockedBy. A plain pre-check-then-charge (the old code) let
+        // two concurrent requests both pass the check and both debit coins, since neither had
+        // committed yet when the other read the same "not unlocked" state. This findOneAndUpdate
+        // is a single atomic MongoDB operation, so only one concurrent request can ever win it.
+        const claimed = await Project.findOneAndUpdate(
+            { _id: project._id, unlockedBy: { $ne: req.user._id } },
+            { $addToSet: { unlockedBy: req.user._id } },
+            { new: true }
+        );
+        if (!claimed) {
             return res.status(200).json({ message: 'Already unlocked.', alreadyUnlocked: true });
         }
 
         const session = await mongoose.startSession();
         try {
-            await session.withTransaction(async () => {
-                await coinWalletService.debitCoins(req.user._id, project.sharePriceCoins, {
-                    type: 'project_unlock_paid',
-                    action: `Unlocked project "${project.name}"`,
-                    relatedUserId: project.userId,
-                    relatedEntityType: 'Project',
-                    relatedEntityId: project._id,
-                    actorId: req.user._id,
-                    actorRole: req.user.role,
-                    auditAction: 'project_unlock_paid'
-                }, session);
+            try {
+                await session.withTransaction(async () => {
+                    await coinWalletService.debitCoins(req.user._id, project.sharePriceCoins, {
+                        type: 'project_unlock_paid',
+                        action: `Unlocked project "${project.name}"`,
+                        relatedUserId: project.userId,
+                        relatedEntityType: 'Project',
+                        relatedEntityId: project._id,
+                        actorId: req.user._id,
+                        actorRole: req.user.role,
+                        auditAction: 'project_unlock_paid'
+                    }, session);
 
-                await coinWalletService.creditCoins(project.userId, project.sharePriceCoins, {
-                    type: 'project_unlock_received',
-                    action: `Someone unlocked your project "${project.name}"`,
-                    relatedUserId: req.user._id,
-                    relatedEntityType: 'Project',
-                    relatedEntityId: project._id,
-                    actorId: req.user._id,
-                    actorRole: req.user.role,
-                    auditAction: 'project_unlock_received'
-                }, session);
+                    await coinWalletService.creditCoins(project.userId, project.sharePriceCoins, {
+                        type: 'project_unlock_received',
+                        action: `Someone unlocked your project "${project.name}"`,
+                        relatedUserId: req.user._id,
+                        relatedEntityType: 'Project',
+                        relatedEntityId: project._id,
+                        actorId: req.user._id,
+                        actorRole: req.user.role,
+                        auditAction: 'project_unlock_received'
+                    }, session);
 
-                await Project.updateOne({ _id: project._id }, { $addToSet: { unlockedBy: req.user._id } }, { session });
-
-                await Notification.create([{
-                    userId: project.userId,
-                    type: 'project_unlocked',
-                    message: `${req.user.fullName} paid ${project.sharePriceCoins} coins to unlock your project "${project.name}".`,
-                    link: `/app/projects/${project._id}`
-                }], { session });
-            });
+                    await Notification.create([{
+                        userId: project.userId,
+                        type: 'project_unlocked',
+                        message: `${req.user.fullName} paid ${project.sharePriceCoins} coins to unlock your project "${project.name}".`,
+                        link: `/app/projects/${project._id}`
+                    }], { session });
+                });
+            } catch (paymentError) {
+                // Payment failed (e.g. insufficient balance) after the unlock slot was already
+                // claimed above - release the claim so the user isn't left marked as unlocked
+                // without having actually paid.
+                await Project.updateOne({ _id: project._id }, { $pull: { unlockedBy: req.user._id } });
+                throw paymentError;
+            }
         } finally {
             session.endSession();
         }

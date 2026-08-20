@@ -136,39 +136,6 @@ exports.getTransactions = async (req, res) => {
     }
 };
 
-exports.addTransaction = async (req, res) => {
-    try {
-        const { action, amount, icon } = req.body;
-
-        if (typeof amount !== 'number' || !Number.isInteger(amount) || amount === 0) {
-            return res.status(400).json({ message: 'amount must be a non-zero integer' });
-        }
-
-        // Debits only increment lifetimeCoins on the way up (never down) and can never
-        // push `coins` negative - guarded atomically so this can't race with itself.
-        const updateQuery = { $inc: { coins: amount } };
-        if (amount > 0) {
-            updateQuery.$inc.lifetimeCoins = amount;
-        }
-        const filter = amount < 0
-            ? { _id: req.user.id, coins: { $gte: -amount } }
-            : { _id: req.user.id };
-
-        const updatedUser = await User.findOneAndUpdate(filter, updateQuery, { new: true });
-        if (!updatedUser) {
-            return res.status(400).json({ message: 'Insufficient coin balance' });
-        }
-
-        const newTransaction = new Transaction({ userId: req.user.id, action, amount, icon });
-        await newTransaction.save();
-
-        res.status(201).json(newTransaction);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Server error' });
-    }
-};
-
 exports.getLeaderboard = async (req, res) => {
     try {
         const [topUsers, settings] = await Promise.all([

@@ -169,12 +169,20 @@ exports.uploadAudioLocal = async (req, res) => {
         const previousDurationSeconds = recording?.durationSeconds || 0;
         const storageDelta = req.file.size - previousFileSizeBytes;
         const transcriptionDelta = durationSeconds - previousDurationSeconds;
+        let storageReserved = false;
         try {
-            if (storageDelta > 0) await usageService.reserveUsage(req.user._id, 'storage', storageDelta);
+            if (storageDelta > 0) {
+                await usageService.reserveUsage(req.user._id, 'storage', storageDelta);
+                storageReserved = true;
+            }
             if (transcriptionDelta > 0) await usageService.reserveUsage(req.user._id, 'transcription', transcriptionDelta);
         } catch (err) {
-            if (storageDelta > 0 && err.dimension === 'transcription') {
-                // Storage reserve already succeeded before the transcription one failed - undo it.
+            // Roll back on ANY failure of the second reserve, not just a LIMIT_REACHED one -
+            // tracking actual success via storageReserved (rather than inspecting err.dimension,
+            // which is unset for NO_PACKAGE and any non-usageService error) means a package
+            // getting deleted mid-request, or a transient DB error, still correctly triggers
+            // the rollback instead of leaving usage.storageBytes permanently inflated.
+            if (storageReserved) {
                 await usageService.releaseUsage(req.user._id, 'storage', storageDelta);
             }
             fs.unlink(req.file.path, () => {});
@@ -409,11 +417,17 @@ exports.createRecordingDraft = async (req, res) => {
         const previousDurationSeconds = recording?.durationSeconds || 0;
         const storageDelta = (actualFileSizeBytes || 0) - previousFileSizeBytes;
         const transcriptionDelta = (durationSeconds || 0) - previousDurationSeconds;
+        let storageReserved = false;
         try {
-            if (storageDelta > 0) await usageService.reserveUsage(req.user._id, 'storage', storageDelta);
+            if (storageDelta > 0) {
+                await usageService.reserveUsage(req.user._id, 'storage', storageDelta);
+                storageReserved = true;
+            }
             if (transcriptionDelta > 0) await usageService.reserveUsage(req.user._id, 'transcription', transcriptionDelta);
         } catch (err) {
-            if (storageDelta > 0 && err.dimension === 'transcription') {
+            // Roll back on ANY failure of the second reserve, not just a LIMIT_REACHED one -
+            // see the matching comment in uploadAudioLocal.
+            if (storageReserved) {
                 await usageService.releaseUsage(req.user._id, 'storage', storageDelta);
             }
             if (r2Key) r2StorageService.deleteR2Object(r2Key).catch(() => {});

@@ -10,28 +10,34 @@ export default function ProjectNotes({ projectId }) {
     // --- RESPONSIVE STATE ---
     const [isLeftPaneOpen, setIsLeftPaneOpen] = useState(false);
 
-    // --- MOCK DATA STATE ---
+    // --- NOTES STATE ---
     const [notes, setNotes] = useState([]);
     const [activeNoteId, setActiveNoteId] = useState(null);
-    
+    const [loadError, setLoadError] = useState('');
+
     // --- DICTATION STATE ---
     const [isDictating, setIsDictating] = useState(false);
     const [dictationText, setDictationText] = useState('');
     const recognitionRef = React.useRef(null);
     const editorRef = React.useRef(null);
 
+    const fetchNotes = async () => {
+        setLoadError('');
+        try {
+            const url = projectId ? `/notes?projectId=${projectId}` : '/notes';
+            const response = await api.get(url);
+            const data = response.data;
+            setNotes(data);
+            if (data.length > 0) setActiveNoteId(data[0]._id);
+        } catch (error) {
+            console.error("Failed to fetch notes", error);
+            // Without this, a failed fetch and a genuinely-empty notes list looked identical
+            // (a blank editor) - no way to tell the user anything actually went wrong.
+            setLoadError(error.response?.data?.message || 'Failed to load your notes.');
+        }
+    };
+
     React.useEffect(() => {
-        const fetchNotes = async () => {
-            try {
-                const url = projectId ? `/notes?projectId=${projectId}` : '/notes';
-                const response = await api.get(url);
-                const data = response.data;
-                setNotes(data);
-                if (data.length > 0) setActiveNoteId(data[0]._id);
-            } catch (error) {
-                console.error("Failed to fetch notes", error);
-            }
-        };
         fetchNotes();
     }, [projectId]);
 
@@ -313,6 +319,21 @@ export default function ProjectNotes({ projectId }) {
 
     return (
         <div className="flex w-full h-[calc(100vh-64px)] bg-[#F4F9F8] overflow-hidden relative">
+
+            {/* Load Error Banner - persistent (unlike the transient toast below), since a
+                failed initial fetch otherwise left this page looking identical to "no notes
+                yet" with no way to tell anything went wrong. */}
+            {loadError && (
+                <div className="absolute top-0 left-0 right-0 z-[90] bg-[#ba1a1a] text-white px-4 py-2.5 flex items-center justify-between gap-3 text-[13px] font-bold">
+                    <span className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[18px]">error</span>
+                        {loadError}
+                    </span>
+                    <button onClick={fetchNotes} className="underline hover:no-underline shrink-0">
+                        Try Again
+                    </button>
+                </div>
+            )}
 
             {/* Custom Toast */}
             {toast.show && (

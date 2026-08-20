@@ -23,14 +23,17 @@ export default function PackagesPromptModal() {
 
     useEffect(() => {
         if (!isAuthenticated || !user || hasChecked) return;
-        setHasChecked(true);
 
         // Management/admin users are configuring packages for others, not shopping for one
         // themselves - never interrupt them with this.
-        if (isManagementUser(user.permissions || [])) return;
+        if (isManagementUser(user.permissions || [])) {
+            setHasChecked(true);
+            return;
+        }
 
-        api.get('/users/me/usage')
+        const checkUsage = (isRetry) => api.get('/users/me/usage')
             .then((res) => {
+                setHasChecked(true);
                 const status = res.data;
                 if (!status.hasPackage) {
                     api.get('/packages').then((r) => {
@@ -49,7 +52,21 @@ export default function PackagesPromptModal() {
                     }
                 }
             })
-            .catch(() => {});
+            .catch((err) => {
+                // A silent, permanent no-op here would let a user with no package sail past
+                // this mandatory step on a transient network blip, then hit a confusing raw
+                // 403 the first time they try to record or search with no context why. Retry
+                // once before giving up - a real backend enforcement failure will surface as
+                // a proper 403 on their next action either way.
+                console.warn('PackagesPromptModal: failed to load usage status', err.message);
+                if (!isRetry) {
+                    setTimeout(() => checkUsage(true), 3000);
+                } else {
+                    setHasChecked(true);
+                }
+            });
+
+        checkUsage(false);
     }, [isAuthenticated, user, hasChecked]);
 
     const handleSelect = async (pkgId) => {

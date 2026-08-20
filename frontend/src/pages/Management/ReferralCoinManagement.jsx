@@ -244,7 +244,12 @@ export default function ReferralCoinManagement() {
     };
 
     const handleAddRankTier = () => {
-        setRankTiers(prev => [...prev, { name: '', minCoins: 0 }]);
+        // clientId gives a brand-new tier (not yet saved, so no real _id from Mongo yet) a
+        // stable React key - keying the list on array index instead broke focus tracking
+        // when deleting a tier from the middle of the list, since every later tier's index
+        // shifts down and React reconciles by position rather than identity.
+        const clientId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString();
+        setRankTiers(prev => [...prev, { clientId, name: '', minCoins: 0 }]);
     };
 
     const handleRemoveRankTier = (index) => {
@@ -575,7 +580,7 @@ export default function ReferralCoinManagement() {
 
                         <div className="flex flex-col gap-3">
                             {rankTiers.map((tier, i) => (
-                                <div key={i} className="flex items-center gap-3">
+                                <div key={tier._id || tier.clientId} className="flex items-center gap-3">
                                     <div className="flex-1">
                                         <input
                                             type="text"

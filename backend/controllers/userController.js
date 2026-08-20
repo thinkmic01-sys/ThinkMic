@@ -68,8 +68,30 @@ exports.updateMe = async (req, res) => {
         // string means "leave the stored number as-is" (the client never sees the decrypted
         // value change, so it can't round-trip an already-masked/empty field back in).
         if (kycIdNumber) update['kyc.idNumberEncrypted'] = encrypt(kycIdNumber);
-        // Set after a successful presigned upload (see getDocumentUploadUrl) - the key of the
-        // scan/photo just placed in R2.
+
+        // A presigned PUT (getDocumentUploadUrl) has no server-enforced size cap the way a
+        // multer route does, so any genuinely new kycIdDocumentKey/certificateKey needs its
+        // real uploaded size verified here before being trusted - one lookup covers both,
+        // only fetched when either field is actually present in this request.
+        if (kycIdDocumentKey !== undefined || certifications !== undefined) {
+            const current = await User.findById(req.user._id).select('kyc.idDocumentKey certifications');
+            const keysToVerify = [];
+            if (kycIdDocumentKey && kycIdDocumentKey !== current?.kyc?.idDocumentKey) {
+                keysToVerify.push(kycIdDocumentKey);
+            }
+            if (certifications !== undefined) {
+                const existingKeys = new Set((current?.certifications || []).map((c) => c.certificateKey).filter(Boolean));
+                keysToVerify.push(...certifications.map((c) => c.certificateKey).filter((k) => k && !existingKeys.has(k)));
+            }
+            try {
+                for (const key of keysToVerify) {
+                    await profileDocumentsService.verifyUploadedDocumentSize(key);
+                }
+            } catch (sizeError) {
+                return res.status(400).json({ message: sizeError.message });
+            }
+        }
+        // Set after a successful presigned upload - the key of the scan/photo just placed in R2.
         if (kycIdDocumentKey !== undefined) update['kyc.idDocumentKey'] = kycIdDocumentKey;
         // Full-array replace, same convention as notificationPrefs - the frontend already
         // has the complete list (including certificateKey from a prior document upload) and

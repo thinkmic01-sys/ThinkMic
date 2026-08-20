@@ -5,7 +5,7 @@
 // instead of AWS - everything else (presigning, buffers, deletes) works the
 // same way it would against real S3.
 
-const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, HeadObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
 const isR2Configured = () => !!(
@@ -93,10 +93,26 @@ async function deleteR2Object(key) {
     return getClient().send(command);
 }
 
+// Reads an object's real size without downloading it - used to verify a direct-to-R2 upload
+// (presigned PUT, where the app never sees the bytes as they go by) didn't exceed its
+// intended size limit, since a presigned PUT URL itself has no server-enforced size cap the
+// way a multer upload does. Returns null if the object doesn't exist.
+async function getR2ObjectSize(key) {
+    try {
+        const command = new HeadObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: key });
+        const response = await getClient().send(command);
+        return response.ContentLength ?? null;
+    } catch (err) {
+        if (err.name === 'NotFound' || err.$metadata?.httpStatusCode === 404) return null;
+        throw err;
+    }
+}
+
 module.exports = {
     isR2Configured,
     getR2UploadPresignedUrl,
     getR2DownloadPresignedUrl,
+    getR2ObjectSize,
     uploadR2Buffer,
     downloadR2ObjectBuffer,
     deleteR2Object

@@ -54,25 +54,31 @@ export default function ReportExport() {
     const [emailSuccessMsg, setEmailSuccessMsg] = useState('');
     const [emailErrorMsg, setEmailErrorMsg] = useState('');
     const [report, setReport] = useState(null);
+    const [loadError, setLoadError] = useState('');
     const userId = useSelector((state) => state.auth?.user?._id || state.auth?.user?.id);
+
+    const fetchReport = async () => {
+        setLoadError('');
+        try {
+            const res = await api.get(`/reports/${id}`);
+            const data = res.data;
+            if (data.report) {
+                setReport(data.report);
+                setTitle(data.report.title || "Untitled Document");
+                setSubtitle(data.report.subtitle || "Prepared by ThinkMic AI");
+                if (data.report.template) setTemplate(data.report.template);
+                setLanguage(data.report.language || "");
+            }
+        } catch (err) {
+            console.error(err);
+            // Without a visible error state here, a bad/stale link left the title stuck on
+            // "Loading Report..." forever with no indication anything went wrong.
+            setLoadError(err.response?.data?.message || 'Failed to load this report.');
+        }
+    };
 
     useEffect(() => {
         if (!accessToken || !id) return;
-        const fetchReport = async () => {
-            try {
-                const res = await api.get(`/reports/${id}`);
-                const data = res.data;
-                if (data.report) {
-                    setReport(data.report);
-                    setTitle(data.report.title || "Untitled Document");
-                    setSubtitle(data.report.subtitle || "Prepared by ThinkMic AI");
-                    if (data.report.template) setTemplate(data.report.template);
-                    setLanguage(data.report.language || "");
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        };
         fetchReport();
     }, [id, accessToken]);
 
@@ -161,6 +167,22 @@ export default function ReportExport() {
             setIsSendingEmail(false);
         }
     };
+
+    if (loadError) {
+        return (
+            <div className="w-full h-[calc(100vh-64px)] flex flex-col items-center justify-center gap-4 bg-[#F4F9F8] font-sans">
+                <p className="text-[#464651] font-semibold">{loadError}</p>
+                <div className="flex items-center gap-3">
+                    <button onClick={fetchReport} className="bg-[#075e51] text-white font-bold px-5 py-2.5 rounded-lg hover:bg-[#097969] transition-colors">
+                        Try Again
+                    </button>
+                    <Link to="/app/reports" className="text-[#075e51] font-bold hover:text-[#EAB308] transition-colors">
+                        Back to Reports
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full h-[calc(100vh-64px)] overflow-y-auto bg-[#F4F9F8] font-sans">

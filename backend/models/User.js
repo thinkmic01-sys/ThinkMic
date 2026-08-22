@@ -157,7 +157,13 @@ const UserSchema = new mongoose.Schema({
     usage: {
         storageBytes: { type: Number, default: 0, min: 0 },
         transcriptionSeconds: { type: Number, default: 0, min: 0 },
-        searchesCount: { type: Number, default: 0, min: 0 }
+        searchesCount: { type: Number, default: 0, min: 0 },
+        // Coin-purchased bonus allowance (usageService.purchaseTopUp) - additive on top of
+        // whatever package is currently selected, and persists across package changes/
+        // upgrades (buying a top-up doesn't get wiped out by switching plans).
+        extraStorageBytes: { type: Number, default: 0, min: 0 },
+        extraTranscriptionSeconds: { type: Number, default: 0, min: 0 },
+        extraSearches: { type: Number, default: 0, min: 0 }
     },
     // Which Lecturer-role user(s) (schemas.manage_own permission) this student has been
     // assigned to by an admin (see adminController.updateLecturerStudents) - a student can

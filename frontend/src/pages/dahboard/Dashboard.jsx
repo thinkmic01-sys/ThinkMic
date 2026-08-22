@@ -2,6 +2,36 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import UsageTopUpModal from '../../components/UsageTopUpModal';
+
+// Drives the three package-usage rows below - one shared shape for storage, transcription
+// minutes, and searches so the JSX doesn't repeat itself three times.
+const USAGE_CARDS = [
+    {
+        dimension: 'storage',
+        icon: 'cloud_done',
+        label: 'Storage Allocation',
+        used: (u) => `${u.storageGBUsed.toFixed(1)}GB`,
+        limit: (u) => `${u.storageGBLimit.toFixed(1)}GB`,
+        pct: (u) => u.storagePct
+    },
+    {
+        dimension: 'transcription',
+        icon: 'mic',
+        label: 'Transcription Minutes',
+        used: (u) => `${Math.round(u.transcriptionMinutesUsed)} min`,
+        limit: (u) => `${Math.round(u.transcriptionMinutesLimit)} min`,
+        pct: (u) => u.transcriptionPct
+    },
+    {
+        dimension: 'searches',
+        icon: 'search',
+        label: 'Searches',
+        used: (u) => `${u.searchesUsed}`,
+        limit: (u) => `${u.searchesLimit}`,
+        pct: (u) => u.searchesPct
+    }
+];
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -22,6 +52,7 @@ export default function Dashboard() {
     const [timelineActivity, setTimelineActivity] = useState([]);
     const [chartData, setChartData] = useState([]);
     const [packageUsage, setPackageUsage] = useState(null);
+    const [topUpDimension, setTopUpDimension] = useState(null);
 
     useEffect(() => {
         if (!accessToken) return;
@@ -219,26 +250,46 @@ export default function Dashboard() {
                             )}
                         </div>
 
-                        {/* Storage */}
-                        <div className="bg-white shadow-card rounded-lg p-6 border border-[#e0e2eb]">
-                            <div className="flex justify-between items-center mb-3">
-                                <h3 className="text-[18px] font-bold text-[#181c22] flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-[#777682]">cloud_done</span> Storage Allocation
-                                </h3>
-                                <p className="font-mono text-[14px] font-bold text-[#777682]">
-                                    {packageUsage?.hasPackage ? `${packageUsage.storageGBUsed.toFixed(1)}GB / ${packageUsage.package.storageGB}GB` : 'No package selected'}
-                                </p>
-                            </div>
-                            <div className="w-full bg-[#e6e8f1] rounded-full h-3 mb-2 overflow-hidden">
-                                <div className="bg-gradient-to-r from-[#075e51] to-[#EAB308] h-3 rounded-full" style={{ width: `${Math.min(100, packageUsage?.storagePct || 0)}%` }}></div>
-                            </div>
-                            <p className="font-mono text-[12px] font-bold text-[#464651] text-right">
-                                {packageUsage?.hasPackage ? `${Math.round(packageUsage.storagePct)}% Used${packageUsage.storagePct >= 80 ? '. Upgrade for more capacity.' : '.'}` : 'Select a package to see your usage.'}
-                            </p>
+                        {/* Package Usage: storage / transcription / searches */}
+                        <div className="bg-white shadow-card rounded-lg p-6 border border-[#e0e2eb] flex flex-col gap-5">
+                            {USAGE_CARDS.map(({ dimension, icon, label, used, limit, pct }) => (
+                                <div key={dimension}>
+                                    <div className="flex justify-between items-center mb-3 gap-3">
+                                        <h3 className="text-[18px] font-bold text-[#181c22] flex items-center gap-2">
+                                            <span className="material-symbols-outlined text-[#777682]">{icon}</span> {label}
+                                        </h3>
+                                        <div className="flex items-center gap-3 shrink-0">
+                                            <p className="font-mono text-[14px] font-bold text-[#777682]">
+                                                {packageUsage?.hasPackage ? `${used(packageUsage)} / ${limit(packageUsage)}` : 'No package selected'}
+                                            </p>
+                                            {packageUsage?.hasPackage && (
+                                                <button
+                                                    onClick={() => setTopUpDimension(dimension)}
+                                                    className="text-[11px] font-bold text-[#075e51] border border-[#e0e2eb] hover:bg-[#f1f3fc] transition-colors py-1.5 px-3 rounded-md flex items-center gap-1 shrink-0"
+                                                >
+                                                    <span className="material-symbols-outlined text-[14px]">toll</span> Top Up
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="w-full bg-[#e6e8f1] rounded-full h-3 mb-2 overflow-hidden">
+                                        <div className="bg-gradient-to-r from-[#075e51] to-[#EAB308] h-3 rounded-full" style={{ width: `${Math.min(100, packageUsage?.hasPackage ? pct(packageUsage) : 0)}%` }}></div>
+                                    </div>
+                                    <p className="font-mono text-[12px] font-bold text-[#464651] text-right">
+                                        {packageUsage?.hasPackage ? `${Math.round(pct(packageUsage))}% Used${pct(packageUsage) >= 80 ? '. Top up or upgrade for more capacity.' : '.'}` : 'Select a package to see your usage.'}
+                                    </p>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
             </div>
+
+            <UsageTopUpModal
+                dimension={topUpDimension}
+                onClose={() => setTopUpDimension(null)}
+                onSuccess={(usage) => setPackageUsage((prev) => ({ ...prev, ...usage }))}
+            />
         </div>
     );
 }

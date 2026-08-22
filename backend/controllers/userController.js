@@ -236,3 +236,28 @@ exports.getMyUsage = async (req, res) => {
         res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };
+
+// @desc    Spend coins to buy extra allowance (in the dimension's own display unit - GB /
+//          minutes / count) for one usage dimension, on top of whatever the user's selected
+//          package already grants - a second way past a full allowance besides an admin
+//          package upgrade.
+// @route   POST /api/v1/users/me/usage/topup
+// @access  Private
+exports.purchaseUsageTopUp = async (req, res) => {
+    try {
+        const { dimension, quantity } = req.body;
+        const result = await usageService.purchaseTopUp(req.user._id, dimension, Number(quantity));
+        res.status(200).json(result);
+    } catch (error) {
+        if (error.code === 'NO_PACKAGE') {
+            return res.status(403).json({ message: error.message, code: error.code });
+        }
+        if (error.code === 'INVALID_DIMENSION' || error.code === 'INVALID_QUANTITY') {
+            return res.status(400).json({ message: error.message, code: error.code });
+        }
+        if (error.name === 'InsufficientBalanceError') {
+            return res.status(400).json({ message: error.message, code: 'INSUFFICIENT_BALANCE' });
+        }
+        res.status(500).json({ message: 'Server Error', error: error.message });
+    }
+};

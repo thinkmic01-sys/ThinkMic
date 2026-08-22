@@ -3,6 +3,7 @@ import api from '../../services/api';
 
 const emptyForm = { name: '', description: '', storageGB: '', transcriptionMinutes: '', searches: '', priceUSD: '' };
 const emptyCoinForm = { name: '', description: '', coins: '', priceUSD: '' };
+const emptyRatesForm = { coinsPerStorageGB: '', coinsPerTranscriptionMinute: '', coinsPerSearch: '' };
 
 export default function PackagesManagement() {
     const [packages, setPackages] = useState([]);
@@ -24,6 +25,12 @@ export default function PackagesManagement() {
     const [isCoinSaving, setIsCoinSaving] = useState(false);
     const [coinEditingId, setCoinEditingId] = useState(null);
     const [coinEditForm, setCoinEditForm] = useState(emptyCoinForm);
+
+    // Usage top-up rates - a singleton settings form (no list), unlike the two catalogs
+    // above, since there's only ever one set of coin-per-unit rates.
+    const [ratesForm, setRatesForm] = useState(emptyRatesForm);
+    const [isRatesLoading, setIsRatesLoading] = useState(true);
+    const [isRatesSaving, setIsRatesSaving] = useState(false);
 
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
     const showToast = (message, type = 'success') => {
@@ -55,7 +62,24 @@ export default function PackagesManagement() {
         }
     };
 
-    useEffect(() => { fetchPackages(); fetchCoinPackages(); }, []);
+    const fetchRates = async () => {
+        setIsRatesLoading(true);
+        try {
+            const res = await api.get('/users/usage-rates');
+            const s = res.data.settings || {};
+            setRatesForm({
+                coinsPerStorageGB: s.coinsPerStorageGB,
+                coinsPerTranscriptionMinute: s.coinsPerTranscriptionMinute,
+                coinsPerSearch: s.coinsPerSearch
+            });
+        } catch (err) {
+            showToast('Failed to load usage top-up rates.', 'error');
+        } finally {
+            setIsRatesLoading(false);
+        }
+    };
+
+    useEffect(() => { fetchPackages(); fetchCoinPackages(); fetchRates(); }, []);
 
     const handleCreate = async () => {
         if (!form.name.trim()) return showToast('Package name is required.', 'error');
@@ -212,6 +236,31 @@ export default function PackagesManagement() {
             showToast('Coin package deleted.', 'success');
         } catch (err) {
             showToast(err.response?.data?.message || 'Failed to delete coin package.', 'error');
+        }
+    };
+
+    const handleSaveRates = async () => {
+        if ([ratesForm.coinsPerStorageGB, ratesForm.coinsPerTranscriptionMinute, ratesForm.coinsPerSearch].some((v) => v === '' || Number(v) < 0)) {
+            return showToast('All three rates must be filled in with non-negative numbers.', 'error');
+        }
+        setIsRatesSaving(true);
+        try {
+            const res = await api.patch('/admin/usage-rates', {
+                coinsPerStorageGB: Number(ratesForm.coinsPerStorageGB),
+                coinsPerTranscriptionMinute: Number(ratesForm.coinsPerTranscriptionMinute),
+                coinsPerSearch: Number(ratesForm.coinsPerSearch)
+            });
+            const s = res.data.settings;
+            setRatesForm({
+                coinsPerStorageGB: s.coinsPerStorageGB,
+                coinsPerTranscriptionMinute: s.coinsPerTranscriptionMinute,
+                coinsPerSearch: s.coinsPerSearch
+            });
+            showToast('Usage top-up rates updated.', 'success');
+        } catch (err) {
+            showToast(err.response?.data?.message || 'Failed to update usage top-up rates.', 'error');
+        } finally {
+            setIsRatesSaving(false);
         }
     };
 
@@ -436,6 +485,45 @@ export default function PackagesManagement() {
                     ))}
                 </div>
             )}
+
+            {/* --- USAGE TOP-UP RATES --- */}
+            <div className="mb-5 sm:mb-6 pt-2 border-t border-[#e0e2eb]">
+                <h2 className="text-2xl sm:text-3xl font-bold text-[#075e51] mb-1 tracking-tight mt-6">Usage Top-Up Rates</h2>
+                <p className="text-[#777682] text-sm sm:text-base">
+                    How many coins buy one extra unit of storage, transcription time, or searches. Users spend their existing coin balance against these rates to extend a full package allowance (Dashboard "Top Up" button) without needing to switch packages.
+                </p>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-[0_1px_4px_rgba(58,63,143,0.05)] border border-[#e0e2eb] p-5 sm:p-6">
+                {isRatesLoading ? (
+                    <p className="text-center text-[#777682] py-4 text-sm">Loading rates...</p>
+                ) : (
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                            <div>
+                                <label className="block text-[10px] font-bold text-[#464651] uppercase tracking-wide mb-1.5">Coins per GB (Storage)</label>
+                                <input type="number" min="0" value={ratesForm.coinsPerStorageGB} onChange={(e) => setRatesForm((f) => ({ ...f, coinsPerStorageGB: e.target.value }))} className="w-full border border-[#c7c5d3] rounded-md py-2.5 px-3 text-[14px] outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51]" />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-bold text-[#464651] uppercase tracking-wide mb-1.5">Coins per Minute (Transcription)</label>
+                                <input type="number" min="0" value={ratesForm.coinsPerTranscriptionMinute} onChange={(e) => setRatesForm((f) => ({ ...f, coinsPerTranscriptionMinute: e.target.value }))} className="w-full border border-[#c7c5d3] rounded-md py-2.5 px-3 text-[14px] outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51]" />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-bold text-[#464651] uppercase tracking-wide mb-1.5">Coins per Search</label>
+                                <input type="number" min="0" value={ratesForm.coinsPerSearch} onChange={(e) => setRatesForm((f) => ({ ...f, coinsPerSearch: e.target.value }))} className="w-full border border-[#c7c5d3] rounded-md py-2.5 px-3 text-[14px] outline-none focus:border-[#075e51] focus:ring-1 focus:ring-[#075e51]" />
+                            </div>
+                        </div>
+                        <button
+                            onClick={handleSaveRates}
+                            disabled={isRatesSaving}
+                            className="bg-[#075e51] text-white text-[13px] font-bold px-5 py-2.5 rounded-md hover:bg-[#097969] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                        >
+                            <span className="material-symbols-outlined text-[18px]">save</span>
+                            {isRatesSaving ? 'Saving...' : 'Save Rates'}
+                        </button>
+                    </>
+                )}
+            </div>
 
             {toast.show && (
                 <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-[13px] font-bold ${toast.type === 'error' ? 'bg-[#ba1a1a]' : 'bg-[#075e51]'}`}>

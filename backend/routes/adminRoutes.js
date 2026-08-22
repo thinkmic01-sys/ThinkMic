@@ -24,6 +24,7 @@ const {
 const {
     listAllCoinPackages, createCoinPackage, updateCoinPackage, deleteCoinPackage
 } = require('../controllers/coinPackagesController');
+const { updateRates: updateUsageRates } = require('../controllers/usageRatesController');
 
 router.use(protect);
 // Every route below carries its own checkPermission() - there is deliberately no
@@ -100,5 +101,10 @@ router.get('/coin-packages', checkPermission('packages.manage'), listAllCoinPack
 router.post('/coin-packages', checkPermission('packages.manage'), createCoinPackage);
 router.patch('/coin-packages/:id', checkPermission('packages.manage'), updateCoinPackage);
 router.delete('/coin-packages/:id', checkPermission('packages.manage'), deleteCoinPackage);
+
+// Usage top-up rates - coins-per-unit an admin sets for storage/transcription/searches
+// top-ups (usageService.purchaseTopUp). Reading the current rates is open to any
+// authenticated user via GET /api/v1/users/usage-rates instead (drives the topup modal).
+router.patch('/usage-rates', checkPermission('packages.manage'), updateUsageRates);
 
 module.exports = router;

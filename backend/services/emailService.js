@@ -1,11 +1,13 @@
 const nodemailer = require('nodemailer');
 
+// Matches the live site's current theme (frontend/src/index.css --color-primary/--color-cyan) -
+// not the older navy/cyan brand.
 const BRAND = {
-    navy: '#222777',
-    cyan: '#00C2CB',
+    navy: '#075e51',
+    cyan: '#EAB308',
     dark: '#181c22',
     muted: '#777682',
-    bg: '#f9f9ff'
+    bg: '#F4F9F8'
 };
 
 const isSmtpConfigured = () => !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
@@ -132,7 +134,7 @@ function otpBlockHtml(code) {
 function ctaButtonHtml(href, label) {
     return `
     <div style="text-align:center; margin:24px 0;">
-        <a href="${href}" style="display:inline-block; background:${BRAND.cyan}; color:${BRAND.navy}; font-weight:700; text-decoration:none; padding:12px 28px; border-radius:8px; font-size:14px;">${label}</a>
+        <a href="${href}" style="display:inline-block; background:${BRAND.navy}; color:#ffffff; font-weight:700; text-decoration:none; padding:12px 28px; border-radius:8px; font-size:14px;">${label}</a>
     </div>`;
 }
 

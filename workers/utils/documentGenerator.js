@@ -64,19 +64,21 @@ const mirrorToR2 = async (key, buffer, contentType) => {
     }
 };
 
+// Matches the live site's current theme (frontend/src/index.css --color-primary/--color-cyan,
+// mirrored in ReportExport.jsx's .report-content styles) - not the older navy/cyan brand.
 const COLORS = {
-    navy: '#222777',
-    cyan: '#00C2CB',
+    navy: '#075e51',
+    cyan: '#EAB308',
     dark: '#181c22',
     slate: '#464651',
     muted: '#777682',
-    templateBadgeBg: '#e6fbfc',
-    templateBadgeText: '#006e73',
-    templateBadgeBorder: '#6bf6ff',
+    templateBadgeBg: '#FEF9C3',
+    templateBadgeText: '#854d0e',
+    templateBadgeBorder: '#f4d983',
     badgeBg: '#eef0f9',
     badgeBorder: '#c7c5d3',
     divider: '#e0e2eb',
-    quoteBg: '#f8f9fc',
+    quoteBg: '#F4F9F8',
     tableHeaderBg: '#f1f3fc',
     tableBorder: '#e0e2eb',
     tableAltRow: '#fbfbfd'
@@ -589,7 +591,7 @@ function buildRuns(tokens, { size = 22, color = '181c22' } = {}) {
             text: t.text,
             bold: !!t.bold,
             italics: !!t.italic,
-            color: t.link ? '00C2CB' : color,
+            color: t.link ? 'EAB308' : color,
             underline: t.link ? {} : undefined,
             size
         });
@@ -616,7 +618,7 @@ function buildHeadingParagraph(level, innerHtml) {
     const headingIsArabic = containsArabicScript(text);
     const size = level === 1 ? 36 : level === 2 ? 32 : 26;
     return new Paragraph({
-        children: [new TextRun({ text, color: '222777', bold: true, size })],
+        children: [new TextRun({ text, color: '075E51', bold: true, size })],
         spacing: { before: 300, after: 150 },
         border: level <= 2 ? { bottom: { color: 'E0E2EB', space: 4, style: BorderStyle.SINGLE, size: 6 } } : undefined,
         alignment: headingIsArabic ? AlignmentType.RIGHT : undefined,
@@ -672,8 +674,8 @@ function buildBlockquoteParagraph(innerHtml) {
         children: [new TextRun({ text, italics: true, color: '464651', size: 21 })],
         spacing: { before: 150, after: 200 },
         indent: { left: 200 },
-        shading: { type: ShadingType.CLEAR, fill: 'F8F9FC' },
-        border: { left: { color: '00C2CB', size: 28, style: BorderStyle.SINGLE, space: 8 } },
+        shading: { type: ShadingType.CLEAR, fill: 'F4F9F8' },
+        border: { left: { color: 'EAB308', size: 28, style: BorderStyle.SINGLE, space: 8 } },
         alignment: quoteIsArabic ? AlignmentType.RIGHT : undefined,
         bidirectional: quoteIsArabic
     });
@@ -700,8 +702,8 @@ async function buildDocxTable(innerHtml, qrCache) {
             const url = linkMatch ? linkMatch[1] : (isUrl(plain) ? plain : null);
 
             const runChildren = url
-                ? [new ExternalHyperlink({ link: url, children: [new TextRun({ text: plain, color: '00C2CB', underline: {}, size: 19 })] })]
-                : [new TextRun({ text: plain, bold: isHeader, color: isHeader ? '222777' : '181c22', size: 19 })];
+                ? [new ExternalHyperlink({ link: url, children: [new TextRun({ text: plain, color: 'EAB308', underline: {}, size: 19 })] })]
+                : [new TextRun({ text: plain, bold: isHeader, color: isHeader ? '075E51' : '181c22', size: 19 })];
             if (url && !isHeader) await appendQrRuns(runChildren, [url], qrCache);
 
             cells.push(new TableCell({
@@ -780,7 +782,7 @@ const generateDOCX = async (reportId, title, content, subtitle, template = 'stan
         }
 
         headerElements.push(new Paragraph({
-            children: [new TextRun({ text: title || 'Research Report', color: '222777', size: 48, bold: true })],
+            children: [new TextRun({ text: title || 'Research Report', color: '075E51', size: 48, bold: true })],
             alignment: AlignmentType.CENTER,
             spacing: { after: subtitle ? 100 : 200 }
         }));
@@ -794,7 +796,7 @@ const generateDOCX = async (reportId, title, content, subtitle, template = 'stan
         }
 
         headerElements.push(new Paragraph({
-            children: [new TextRun({ text: 'THINKMIC AI RESEARCH HUB', color: '00C2CB', size: 20 })],
+            children: [new TextRun({ text: 'THINKMIC AI RESEARCH HUB', color: 'EAB308', size: 20 })],
             alignment: AlignmentType.CENTER,
             spacing: { after: 150 }
         }));

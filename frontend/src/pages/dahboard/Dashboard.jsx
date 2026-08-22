@@ -250,8 +250,11 @@ export default function Dashboard() {
                             )}
                         </div>
 
-                        {/* Package Usage: storage / transcription / searches */}
-                        <div className="bg-white shadow-card rounded-lg p-6 border border-[#e0e2eb] flex flex-col gap-5">
+                        {/* Package Usage: storage / transcription / searches - height capped to
+                            match the Recent Activity column so the page never needs to scroll;
+                            this box scrolls its own rows instead via custom-scrollbar. */}
+                        <div className="bg-white shadow-card rounded-lg p-6 border border-[#e0e2eb] h-[136px] overflow-y-auto custom-scrollbar">
+                            <div className="flex flex-col gap-5">
                             {USAGE_CARDS.map(({ dimension, icon, label, used, limit, pct }) => (
                                 <div key={dimension}>
                                     <div className="flex justify-between items-center mb-3 gap-3">
@@ -280,6 +283,7 @@ export default function Dashboard() {
                                     </p>
                                 </div>
                             ))}
+                            </div>
                         </div>
                     </div>
                 </div>
